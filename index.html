@@ -348,6 +348,14 @@ textarea { resize: vertical; min-height: 60px; }
   background: var(--gray-200); padding: 1px 5px;
   border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 11px;
 }
+.admin-edit-btn {
+  display: none; margin-left: auto; font-size: 11px; cursor: pointer;
+  color: var(--gray-400); padding: 2px 6px; border-radius: 4px;
+  border: 1px solid var(--gray-200); background: var(--gray-50);
+  transition: all 0.12s;
+}
+.admin-edit-btn:hover { background: var(--blue-light); color: var(--blue); border-color: var(--blue); }
+body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
 .sync-dot {
   width: 8px; height: 8px; border-radius: 50%;
   background: var(--gray-400); flex-shrink: 0; transition: background 0.3s;
@@ -539,6 +547,7 @@ textarea { resize: vertical; min-height: 60px; }
             <div class="card-header-dot" style="background:var(--blue)"></div>
             <span class="card-title">Performance — Desempeño actual</span>
             <span class="card-subtitle">Score 1–5 · Promedio: <span id="avg-perf" class="score-avg">—</span></span>
+            <span class="admin-edit-btn" onclick="openDimEditor('perf')" title="Editar dimensiones (admin)">✏</span>
           </div>
           <div class="card-body" style="padding:0">
             <table class="score-table">
@@ -562,6 +571,7 @@ textarea { resize: vertical; min-height: 60px; }
             <div class="card-header-dot" style="background:var(--teal)"></div>
             <span class="card-title">Potencial — Proyección de crecimiento</span>
             <span class="card-subtitle">Score 1–5 · Promedio: <span id="avg-pot" class="score-avg">—</span></span>
+            <span class="admin-edit-btn" onclick="openDimEditor('pot')" title="Editar dimensiones (admin)">✏</span>
           </div>
           <div class="card-body" style="padding:0">
             <table class="score-table">
@@ -585,6 +595,7 @@ textarea { resize: vertical; min-height: 60px; }
             <div class="card-header-dot" style="background:var(--orange)"></div>
             <span class="card-title">Madurez técnica — Skill map</span>
             <span class="card-subtitle">Nivel actual vs target a 6 meses</span>
+            <span class="admin-edit-btn" onclick="openDimEditor('skills')" title="Editar skills (admin)">✏</span>
           </div>
           <div class="card-body" style="padding:0">
             <table class="score-table">
@@ -612,6 +623,7 @@ textarea { resize: vertical; min-height: 60px; }
             <div class="card-header-dot" style="background:var(--purple)"></div>
             <span class="card-title">Madurez profesional</span>
             <span class="card-subtitle">Modelo Junior → Principal</span>
+            <span class="admin-edit-btn" onclick="openDimEditor('mat')" title="Editar dimensiones (admin)">✏</span>
           </div>
           <div class="card-body" style="padding:0">
             <table class="score-table">
@@ -960,6 +972,20 @@ textarea { resize: vertical; min-height: 60px; }
   </div>
 </div>
 
+<!-- DIMENSION EDITOR MODAL -->
+<div class="modal-overlay" id="dimModal">
+  <div class="modal" style="width:600px;max-height:85vh;overflow-y:auto">
+    <h3 id="dimModalTitle">✏ Editar dimensiones</h3>
+    <p style="font-size:12px;color:var(--gray-400);margin-bottom:16px" id="dimModalDesc">Solo visible para administradores.</p>
+    <div id="dimEditorList" style="margin-bottom:16px"></div>
+    <button class="btn btn-ghost btn-sm" style="width:100%;border:1px dashed var(--gray-300);color:var(--gray-500)" onclick="addDimRow()">+ Agregar dimensión</button>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('dimModal').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-blue btn-sm" onclick="applyDimEdits()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
 <!-- BENCHMARK EDITOR MODAL -->
 <div class="modal-overlay" id="benchmarkModal">
   <div class="modal" style="width:720px;max-height:85vh;overflow-y:auto">
@@ -1039,7 +1065,16 @@ function onAuthSuccess(user) {
   document.getElementById('userName').textContent = name;
   document.getElementById('userAvatar').textContent = initials;
   document.getElementById('userChip').style.display = 'flex';
-  loadBenchmarks().then(() => pullFromSupabase());
+  if(isAdmin()) {
+    document.body.classList.add('is-admin');
+    document.getElementById('userAvatar').style.background = 'var(--blue)';
+    document.getElementById('userChip').title = 'Admin — Clic para cerrar sesión';
+  }
+  loadBenchmarks().then(() => loadDimensions()).then(() => pullFromSupabase());
+}
+
+function isAdmin() {
+  return currentUser?.user_metadata?.is_admin === true;
 }
 
 // ─── SUPABASE DATA ───
@@ -1108,7 +1143,7 @@ async function pullFromSupabase() {
 // ═══════════════════════════════════════════════════════════════
 // DATA DEFINITIONS
 // ═══════════════════════════════════════════════════════════════
-const PERF_DIMS = [
+let PERF_DIMS = [
   "Calidad técnica del trabajo",
   "Cumplimiento de objetivos / OKRs",
   "Autonomía y ownership",
@@ -1116,7 +1151,7 @@ const PERF_DIMS = [
   "Colaboración e impacto en equipo",
   "Comunicación con stakeholders",
 ];
-const POT_DIMS = [
+let POT_DIMS = [
   "Capacidad de aprendizaje (Learning Agility)",
   "Pensamiento sistémico / visión de negocio",
   "Liderazgo / influencia sin autoridad",
@@ -1162,6 +1197,37 @@ async function loadBenchmarks() {
   }
 }
 
+async function loadDimensions() {
+  // Try local first
+  try {
+    const local = JSON.parse(localStorage.getItem('talent_dimensions') || 'null');
+    if(local) applyDimensions(local);
+  } catch(e) {}
+  // Then remote
+  if(!supabaseClient) return;
+  const { data, error } = await supabaseClient.from('talent_config').select('data').eq('id', 'dimensions').single();
+  if(!error && data?.data) {
+    applyDimensions(data.data);
+    localStorage.setItem('talent_dimensions', JSON.stringify(data.data));
+  }
+}
+
+function applyDimensions(d) {
+  if(d.PERF_DIMS)   PERF_DIMS   = d.PERF_DIMS;
+  if(d.POT_DIMS)    POT_DIMS    = d.POT_DIMS;
+  if(d.MAT_DIMS)    MAT_DIMS    = d.MAT_DIMS;
+  if(d.SKILL_GROUPS) SKILL_GROUPS = d.SKILL_GROUPS;
+}
+
+async function saveDimensions() {
+  const d = { PERF_DIMS, POT_DIMS, MAT_DIMS, SKILL_GROUPS };
+  localStorage.setItem('talent_dimensions', JSON.stringify(d));
+  if(supabaseClient && currentUser) {
+    await supabaseClient.from('talent_config')
+      .upsert({ id: 'dimensions', data: d, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+  }
+}
+
 function getBenchmark(prefix, seniority, dimIdx) {
   return benchmarks[prefix]?.[seniority]?.[dimIdx] ?? null;
 }
@@ -1175,12 +1241,12 @@ function getGapColor(gap) {
 }
 
 
-const SKILL_GROUPS = {
+let SKILL_GROUPS = {
   "DATA & ANALYTICS": ["SQL / Data Engineering","Python (ML / DS)","BI / Data Viz (PowerBI / Tableau)","Estadística aplicada","Data Architecture"],
   "AI / MACHINE LEARNING": ["ML Algorithms & Modeling","LLMs / Generative AI","MLOps / AI Deployment","Prompt Engineering","AI Ethics & Governance"],
   "SOFT / LEADERSHIP": ["Comunicación ejecutiva","Gestión de stakeholders","Pensamiento crítico / Problem solving","Gestión de proyectos / Agile","Mentoría / Transferencia de conocimiento"],
 };
-const MAT_DIMS = [
+let MAT_DIMS = [
   "Impacto del trabajo (individual → organizacional)",
   "Nivel de supervisión requerida (inverso)",
   "Complejidad de problemas que resuelve",
@@ -1887,6 +1953,174 @@ function resetBenchmarks() {
   benchmarks = JSON.parse(JSON.stringify(DEFAULT_BENCHMARKS));
   saveBenchmarks();
   renderBenchmarkEditor();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DIMENSION EDITOR (admin only)
+// ═══════════════════════════════════════════════════════════════
+let dimEditTarget = null; // 'perf' | 'pot' | 'mat' | 'skills'
+
+const DIM_CONFIG = {
+  perf:   { title: 'Performance — Dimensiones', desc: 'Dimensiones evaluadas en desempeño actual (1–5)', getArr: () => PERF_DIMS, setArr: v => { PERF_DIMS = v; } },
+  pot:    { title: 'Potencial — Dimensiones',   desc: 'Dimensiones evaluadas en proyección de crecimiento (1–5)', getArr: () => POT_DIMS, setArr: v => { POT_DIMS = v; } },
+  mat:    { title: 'Madurez Profesional — Dimensiones', desc: 'Dimensiones del modelo de madurez profesional', getArr: () => MAT_DIMS, setArr: v => { MAT_DIMS = v; } },
+  skills: { title: 'Madurez Técnica — Skills',  desc: 'Grupos y skills del skill map técnico', getArr: () => null, setArr: null },
+};
+
+function openDimEditor(target) {
+  if(!isAdmin()) return;
+  dimEditTarget = target;
+  const cfg = DIM_CONFIG[target];
+  document.getElementById('dimModalTitle').textContent = '✏ ' + cfg.title;
+  document.getElementById('dimModalDesc').textContent = cfg.desc;
+  renderDimEditorList();
+  document.getElementById('dimModal').classList.add('open');
+}
+
+function renderDimEditorList() {
+  const list = document.getElementById('dimEditorList');
+  list.innerHTML = '';
+  if(dimEditTarget === 'skills') {
+    renderSkillGroupEditor(list);
+    return;
+  }
+  const arr = DIM_CONFIG[dimEditTarget].getArr();
+  arr.forEach((dim, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px';
+    row.innerHTML = `
+      <span style="font-size:11px;color:var(--gray-400);font-family:DM Mono,monospace;width:20px;flex-shrink:0">${i+1}</span>
+      <input type="text" value="${dim}" data-idx="${i}"
+        style="flex:1;border:1px solid var(--gray-200);border-radius:6px;padding:7px 10px;font-size:13px"
+        oninput="updateDimTemp(${i}, this.value)">
+      <button onclick="removeDimRow(${i})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:16px;padding:0 4px" title="Eliminar">×</button>`;
+    list.appendChild(row);
+  });
+}
+
+function renderSkillGroupEditor(list) {
+  Object.entries(SKILL_GROUPS).forEach(([group, skills], gi) => {
+    const groupDiv = document.createElement('div');
+    groupDiv.style.cssText = 'margin-bottom:16px;border:1px solid var(--gray-200);border-radius:8px;overflow:hidden';
+    groupDiv.innerHTML = `
+      <div style="background:var(--gray-50);padding:8px 12px;display:flex;align-items:center;gap:8px">
+        <input type="text" value="${group}" data-group="${gi}"
+          style="flex:1;border:1px solid var(--gray-200);border-radius:4px;padding:4px 8px;font-size:12px;font-weight:600"
+          oninput="updateGroupName(${gi}, this.value)">
+        <button onclick="removeGroup(${gi})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px" title="Eliminar grupo">×</button>
+      </div>
+      <div style="padding:8px 12px" id="skill-group-${gi}">
+        ${skills.map((s, si) => `
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+            <input type="text" value="${s}" data-group="${gi}" data-skill="${si}"
+              style="flex:1;border:1px solid var(--gray-200);border-radius:4px;padding:4px 8px;font-size:12px"
+              oninput="updateSkillName(${gi}, ${si}, this.value)">
+            <button onclick="removeSkill(${gi},${si})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:13px">×</button>
+          </div>`).join('')}
+        <button onclick="addSkill(${gi})" style="font-size:11px;color:var(--blue);background:none;border:1px dashed var(--blue-light);border-radius:4px;padding:3px 10px;cursor:pointer;width:100%">+ Skill</button>
+      </div>`;
+    list.appendChild(groupDiv);
+  });
+  const addGrpBtn = document.createElement('button');
+  addGrpBtn.className = 'btn btn-ghost btn-sm';
+  addGrpBtn.style.cssText = 'width:100%;border:1px dashed var(--gray-300);color:var(--gray-500);margin-top:4px';
+  addGrpBtn.textContent = '+ Grupo';
+  addGrpBtn.onclick = addSkillGroup;
+  list.appendChild(addGrpBtn);
+}
+
+// Temp state for editing
+let dimTempArr = [];
+function updateDimTemp(i, val) {
+  dimTempArr[i] = val;
+}
+
+function addDimRow() {
+  if(dimEditTarget === 'skills') { addSkillGroup(); return; }
+  const arr = DIM_CONFIG[dimEditTarget].getArr();
+  arr.push('Nueva dimensión');
+  renderDimEditorList();
+}
+
+function removeDimRow(i) {
+  const arr = DIM_CONFIG[dimEditTarget].getArr();
+  if(arr.length <= 1) { alert('Debe haber al menos una dimensión.'); return; }
+  arr.splice(i, 1);
+  renderDimEditorList();
+}
+
+function updateGroupName(gi, val) {
+  const keys = Object.keys(SKILL_GROUPS);
+  const skills = Object.values(SKILL_GROUPS);
+  const newGroups = {};
+  keys.forEach((k, i) => { newGroups[i === gi ? val : k] = skills[i]; });
+  SKILL_GROUPS = newGroups;
+}
+function updateSkillName(gi, si, val) {
+  const skills = Object.values(SKILL_GROUPS);
+  skills[gi][si] = val;
+}
+function removeSkill(gi, si) {
+  const skills = Object.values(SKILL_GROUPS);
+  if(skills[gi].length <= 1) { alert('Debe haber al menos un skill.'); return; }
+  skills[gi].splice(si, 1);
+  renderDimEditorList();
+}
+function addSkill(gi) {
+  const skills = Object.values(SKILL_GROUPS);
+  skills[gi].push('Nuevo skill');
+  renderDimEditorList();
+}
+function removeGroup(gi) {
+  const keys = Object.keys(SKILL_GROUPS);
+  if(keys.length <= 1) { alert('Debe haber al menos un grupo.'); return; }
+  keys.splice(gi, 1);
+  const vals = Object.values(SKILL_GROUPS);
+  vals.splice(gi, 1);
+  const newGroups = {};
+  keys.forEach((k, i) => { newGroups[k] = vals[i]; });
+  SKILL_GROUPS = newGroups;
+  renderDimEditorList();
+}
+function addSkillGroup() {
+  SKILL_GROUPS['Nuevo grupo'] = ['Nuevo skill'];
+  renderDimEditorList();
+}
+
+async function applyDimEdits() {
+  if(dimEditTarget !== 'skills') {
+    // Read current input values
+    const inputs = document.querySelectorAll('#dimEditorList input[type=text]');
+    const arr = Array.from(inputs).map(inp => inp.value.trim()).filter(Boolean);
+    if(!arr.length) { alert('Debe haber al menos una dimensión.'); return; }
+    DIM_CONFIG[dimEditTarget].setArr(arr);
+    // Rebuild benchmark arrays if size changed
+    rebuildBenchmarksForDim(dimEditTarget, arr.length);
+  }
+  await saveDimensions();
+  document.getElementById('dimModal').classList.remove('open');
+  // Refresh current profile view
+  if(currentId && activeView === 'profile') {
+    const p = profiles[currentId];
+    if(dimEditTarget === 'perf') buildScoreTable('perf-tbody', PERF_DIMS, p.perf.scores, p.perf.evidence, 'perf', 'avg-perf');
+    if(dimEditTarget === 'pot')  buildScoreTable('pot-tbody',  POT_DIMS,  p.pot.scores,  p.pot.evidence,  'pot',  'avg-pot');
+    if(dimEditTarget === 'mat')  buildMatTable();
+    if(dimEditTarget === 'skills') buildSkillTable();
+  }
+  showSaveIndicator();
+}
+
+function rebuildBenchmarksForDim(prefix, newLen) {
+  if(prefix !== 'perf' && prefix !== 'pot') return;
+  SENIORITY_LEVELS.forEach(lvl => {
+    const cur = benchmarks[prefix][lvl] || [];
+    if(cur.length < newLen) {
+      while(cur.length < newLen) cur.push(3.0);
+    } else if(cur.length > newLen) {
+      benchmarks[prefix][lvl] = cur.slice(0, newLen);
+    }
+  });
+  saveBenchmarks();
 }
 
 function showMethodology() {
