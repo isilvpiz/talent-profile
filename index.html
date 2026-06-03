@@ -943,7 +943,8 @@ async function pullFromSupabase() {
   renderSidebar();
   if(currentId && profiles[currentId]) loadProfileToUI();
   const ids2 = Object.keys(profiles);
-  if(ids2.length && !currentId) openProfile(ids2[0]);
+  const inOverview = document.getElementById('overviewView').style.display !== 'none';
+  if(ids2.length && !currentId && !inOverview) openProfile(ids2[0]);
   else if(!ids2.length) {
     document.getElementById('profileView').style.display = 'none';
     document.getElementById('emptyState').style.display = 'block';
