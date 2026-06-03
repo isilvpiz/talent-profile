@@ -884,10 +884,10 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
         </div>
       </div>
       <div class="card" style="margin-bottom:1rem">
-        <div class="card-header"><div class="card-header-dot" style="background:var(--teal)"></div><span class="card-title">Matriz 9-Box</span></div>
+        <div class="card-header"><div class="card-header-dot" style="background:var(--teal)"></div><span class="card-title">Matriz 9-Box + Overlay Técnico</span></div>
         <div class="card-body">
-          <p style="font-size:13px;margin-bottom:10px"><strong>¿Qué es?</strong> Combina Performance (eje X) y Potencial (eje Y) en 9 cuadrantes para orientar decisiones de talento.</p>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
+          <p style="font-size:13px;margin-bottom:10px"><strong>¿Qué es?</strong> Combina Performance (eje X) y Potencial (eje Y) en 9 cuadrantes para orientar decisiones de talento. Para NTT DATA, se agrega un <strong>overlay de Madurez Técnica</strong> como tercera dimensión — clave en una consultora tecnológica.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px">
             <div style="background:#ede9fe;border:1px solid #c4b5fd;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#5b21b6">💡 Alto potencial</strong><br><span style="color:#7c3aed">Invertir en desarrollo</span></div>
             <div style="background:#fef9c3;border:1px solid #fde047;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#854d0e">⭐ Top talent</strong><br><span style="color:#92400e">Retener y promover</span></div>
             <div style="background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#166534">🚀 High performer</strong><br><span style="color:#166534">Reconocer y estabilizar</span></div>
@@ -898,6 +898,25 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
             <div style="background:#ffedd5;border:1px solid #fdba74;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#9a3412">🔄 En transición</strong><br><span style="color:#9a3412">Diagnóstico y soporte</span></div>
             <div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#475569">📋 Performer estable</strong><br><span style="color:#475569">Reconocer estabilidad</span></div>
           </div>
+          <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:14px;margin-bottom:10px">
+            <div style="font-size:12px;font-weight:600;margin-bottom:10px;color:var(--navy)">🔬 Overlay Técnico — Tercera dimensión</div>
+            <p style="font-size:12px;color:var(--gray-600);margin-bottom:10px">El nivel técnico se calcula como el promedio de todos los skills evaluados y se muestra como un indicador adicional en el cuadrante. Permite distinguir perfiles con el mismo cuadrante 9-Box pero diferente impacto técnico real.</p>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;font-size:12px">
+                <span>🟢</span><div><strong style="color:#166534">Avanzado (avg ≥ 4)</strong> — Dominio técnico sólido. Alta empleabilidad y valor de entrega en proyectos complejos.</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:#eff6ff;border:1px solid #93c5fd;border-radius:6px;font-size:12px">
+                <span>🔵</span><div><strong style="color:#1e40af">Intermedio (avg 3–4)</strong> — Buen nivel técnico. Con foco puede alcanzar perfil avanzado en 6–12 meses.</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;font-size:12px">
+                <span>🟡</span><div><strong style="color:#92400e">Básico (avg 2–3)</strong> — Nivel técnico en desarrollo. Requiere plan de formación activo y acompañamiento.</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;font-size:12px">
+                <span>🔴</span><div><strong style="color:#991b1b">Inicial (avg &lt; 2)</strong> — Brecha técnica significativa. Priorizar upskilling antes de nuevas responsabilidades.</div>
+              </div>
+            </div>
+          </div>
+          <p style="font-size:12px;color:var(--gray-400)">⚠ El overlay técnico no modifica el cuadrante 9-Box — es un contexto adicional para la toma de decisiones. Un "Top Talent" con overlay 🔴 requiere una estrategia de desarrollo técnico urgente antes de una promoción.</p>
         </div>
       </div>
       <div class="card" style="margin-bottom:1rem">
@@ -1859,8 +1878,16 @@ function updateNinebox() {
     }
   }
 
-  el.innerHTML = `
-    <div class="ninebox-display" style="background:${matched?matched.bg:'var(--gray-100)'};border:1px solid ${matched?matched.bc:'var(--gray-200)'};border-radius:10px">
+  // Technical overlay
+  const skillVals = Object.values(p.skills || {}).map(s => s.actual).filter(v => v > 0);
+  const techAvg = skillVals.length ? skillVals.reduce((a,b) => a+b, 0) / skillVals.length : 0;
+  let techIcon, techLabel, techColor, techBg, techBorder, techDesc;
+  if(techAvg >= 4)      { techIcon='🟢'; techLabel='Avanzado';    techColor='var(--green)';  techBg='#f0fdf4'; techBorder='#86efac'; techDesc='Dominio técnico sólido — perfil de alta empleabilidad y valor de entrega.'; }
+  else if(techAvg >= 3) { techIcon='🔵'; techLabel='Intermedio';  techColor='var(--blue)';   techBg='#eff6ff'; techBorder='#93c5fd'; techDesc='Buen nivel técnico. Con foco puede alcanzar perfil avanzado.'; }
+  else if(techAvg >= 2) { techIcon='🟡'; techLabel='Básico';      techColor='var(--amber)';  techBg='#fffbeb'; techBorder='#fcd34d'; techDesc='Nivel técnico en desarrollo. Requiere plan de formación activo.'; }
+  else if(techAvg > 0)  { techIcon='🔴'; techLabel='Inicial';     techColor='var(--red)';    techBg='#fef2f2'; techBorder='#fca5a5'; techDesc='Brecha técnica significativa. Priorizar upskilling antes de nuevas responsabilidades.'; }
+
+  el.innerHTML = ` style="background:${matched?matched.bg:'var(--gray-100)'};border:1px solid ${matched?matched.bc:'var(--gray-200)'};border-radius:10px">
       <div>
         <div class="ninebox-tag" style="background:${matched?matched.bg:'var(--gray-100)'};color:${matched?matched.tc:'var(--gray-600)'};border:1px solid ${matched?matched.bc:'var(--gray-200)'}">${matched?matched.label:'—'}</div>
         <div style="font-size:11px;color:var(--gray-500);margin-top:4px">${matched?matched.desc:''}</div>
@@ -1874,8 +1901,20 @@ function updateNinebox() {
           <div class="val" style="color:var(--teal)">${pot>0?pot.toFixed(1):'—'}</div>
           <div class="lbl">Potencial</div>
         </div>
+        <div class="ninebox-score-item">
+          <div class="val" style="color:${techAvg>=4?'var(--green)':techAvg>=3?'var(--blue)':techAvg>=2?'var(--amber)':techAvg>0?'var(--red)':'var(--gray-400)'}">${techAvg>0?techAvg.toFixed(1):'—'}</div>
+          <div class="lbl">Técnico</div>
+        </div>
       </div>
-    </div>`;
+    </div>
+    ${techAvg > 0 ? `
+    <div style="margin-top:10px;padding:10px 14px;border-radius:8px;background:${techBg};border:1px solid ${techBorder};display:flex;align-items:center;gap:10px">
+      <span style="font-size:18px">${techIcon}</span>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:${techColor}">${techLabel} — Madurez Técnica</div>
+        <div style="font-size:11px;color:var(--gray-500);margin-top:2px">${techDesc}</div>
+      </div>
+    </div>` : ''}`;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1971,6 +2010,16 @@ function showSaveIndicator(force) {
 // ═══════════════════════════════════════════════════════════════
 // TEAM OVERVIEW
 // ═══════════════════════════════════════════════════════════════
+function techOverlayBadge(p) {
+  const vals = Object.values(p.skills || {}).map(s => s.actual).filter(v => v > 0);
+  if(!vals.length) return '';
+  const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
+  if(avg >= 4) return '<span title="Técnico: Avanzado" style="font-size:10px">🟢</span>';
+  if(avg >= 3) return '<span title="Técnico: Intermedio" style="font-size:10px">🔵</span>';
+  if(avg >= 2) return '<span title="Técnico: Básico" style="font-size:10px">🟡</span>';
+  return '<span title="Técnico: Inicial" style="font-size:10px">🔴</span>';
+}
+
 function skillMatuLabel(p) {
   const vals = Object.values(p.skills || {}).map(s => s.actual).filter(v => v > 0);
   if(!vals.length) return '—';
@@ -2329,7 +2378,7 @@ function renderOverview() {
       <td>${p.general.seniority||'—'}</td>
       <td><span style="font-weight:600;font-family:'DM Mono',monospace;color:${perf>=4?'var(--green)':perf>=3?'var(--amber)':perf>0?'var(--red)':'var(--gray-400)'}">${perf>0?perf.toFixed(1):'—'}</span></td>
       <td><span style="font-weight:600;font-family:'DM Mono',monospace;color:${pot>=4?'var(--purple)':pot>=3?'var(--blue)':pot>0?'var(--amber)':'var(--gray-400)'}">${pot>0?pot.toFixed(1):'—'}</span></td>
-      <td style="font-size:12px">${nb}</td>
+      <td style="font-size:12px">${nb} ${techOverlayBadge(p)}</td>
       <td style="font-size:12px">${skillMatuLabel(p)}</td>
       <td style="font-size:12px">${p.madurez.final||'—'}</td>
       <td><span style="color:${riskColor};font-size:12px">${p.risk.global||'—'}</span></td>
