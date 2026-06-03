@@ -1057,10 +1057,13 @@ async function pullFromSupabase() {
   saveLocalState();
   setSyncStatus('ok', `${data.length} perfiles`);
   renderSidebar();
-  if(currentId && profiles[currentId]) loadProfileToUI();
+  const inProfile = document.getElementById('profileView').style.display !== 'none';
+  if(currentId && profiles[currentId] && inProfile) loadProfileToUI();
   const ids2 = Object.keys(profiles);
   const inOverview = document.getElementById('overviewView').style.display !== 'none';
-  if(ids2.length && !currentId && !inOverview) openProfile(ids2[0]);
+  const inMethodology = document.getElementById('methodologyView').style.display !== 'none';
+  if(ids2.length && !currentId && !inOverview && !inMethodology) openProfile(ids2[0]);
+  else if(inOverview) renderOverview();
   else if(!ids2.length) {
     document.getElementById('profileView').style.display = 'none';
     document.getElementById('emptyState').style.display = 'block';
