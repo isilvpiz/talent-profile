@@ -1516,7 +1516,11 @@ function setProfileFilter(f) {
 }
 
 function getFilteredIds() {
-  return Object.keys(profiles).filter(id => canSeeProfile(profiles[id]));
+  const uname = currentUser?.user_metadata?.full_name || currentUser?.email;
+  return Object.keys(profiles).filter(id => {
+    const p = profiles[id];
+    return p._createdByName === uname || p._updatedByName === uname;
+  });
 }
 
 function renderSidebar() {
@@ -2360,13 +2364,16 @@ function showOverview(filter) {
 function renderOverview() {
   const tbody = document.getElementById('overviewBody');
   tbody.innerHTML = '';
-  let ids = Object.keys(profiles).filter(id => canSeeProfile(profiles[id]));
-  if(overviewFilter === 'mine' && currentUser) {
-    const uname = currentUser.user_metadata?.full_name || currentUser.email;
+  let ids = Object.keys(profiles);
+  if(overviewFilter === 'mine') {
+    const uname = currentUser?.user_metadata?.full_name || currentUser?.email;
     ids = ids.filter(id => {
       const p = profiles[id];
       return p._createdByName === uname || p._updatedByName === uname;
     });
+  } else {
+    // 'all' — filter by hierarchy visibility
+    ids = ids.filter(id => canSeeProfile(profiles[id]));
   }
   if(!ids.length) {
     tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--gray-400)">${overviewFilter==='mine' ? 'No tienes perfiles asignados' : 'Sin perfiles aún'}</td></tr>`;
