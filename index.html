@@ -429,7 +429,8 @@ textarea { resize: vertical; min-height: 60px; }
       <span id="userName">—</span>
       <span style="opacity:0.5;font-size:10px">salir</span>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="showOverview()">Vista equipo</button>
+    <button class="btn btn-ghost btn-sm" onclick="openBenchmarkModal()" title="Editar benchmarks por seniority">⚖ Benchmarks</button>
+    <button class="btn btn-ghost btn-sm" onclick="showOverview('mine')">Vista equipo</button>
     <button class="btn btn-ghost btn-sm" onclick="exportJSON()">Exportar JSON</button>
     <button class="btn btn-teal btn-sm" onclick="openAddModal()">+ Nuevo perfil</button>
   </div>
@@ -542,9 +543,11 @@ textarea { resize: vertical; min-height: 60px; }
           <div class="card-body" style="padding:0">
             <table class="score-table">
               <thead><tr>
-                <th style="width:32%">Dimensión</th>
+                <th style="width:28%">Dimensión</th>
                 <th>Score</th>
-                <th style="width:45%">Evidencia / Comentario</th>
+                <th style="width:8%;text-align:center">Bench.</th>
+                <th style="width:8%;text-align:center">Gap</th>
+                <th style="width:38%">Evidencia / Comentario</th>
               </tr></thead>
               <tbody id="perf-tbody"></tbody>
             </table>
@@ -563,9 +566,11 @@ textarea { resize: vertical; min-height: 60px; }
           <div class="card-body" style="padding:0">
             <table class="score-table">
               <thead><tr>
-                <th style="width:32%">Dimensión</th>
+                <th style="width:28%">Dimensión</th>
                 <th>Score</th>
-                <th style="width:45%">Observación / Evidencia</th>
+                <th style="width:8%;text-align:center">Bench.</th>
+                <th style="width:8%;text-align:center">Gap</th>
+                <th style="width:38%">Observación / Evidencia</th>
               </tr></thead>
               <tbody id="pot-tbody"></tbody>
             </table>
@@ -905,6 +910,19 @@ textarea { resize: vertical; min-height: 60px; }
           <p style="font-size:12px;color:var(--gray-400)">Ponderación: Datos generales 20% · Performance 20% · Potencial 10% · Skills 10% · Madurez 10% · 9-Box 10% · Risk 10% · Resumen/Decisión 10%</p>
         </div>
       </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-dot" style="background:var(--navy)"></div>
+          <span class="card-title">Benchmarks por Seniority</span>
+          <span class="card-subtitle" style="margin-left:auto">
+            <button class="btn btn-ghost btn-sm" onclick="openBenchmarkModal()" style="font-size:11px">✏ Editar</button>
+          </span>
+        </div>
+        <div class="card-body">
+          <p style="font-size:13px;margin-bottom:12px">Scores esperados por nivel y dimensión. Usados para calcular el <strong>gap</strong> en las evaluaciones de Performance y Potencial. Un gap negativo indica que el colaborador supera las expectativas del nivel; positivo indica brecha a desarrollar.</p>
+          <div id="methodologyBenchmarkTable"></div>
+        </div>
+      </div>
     </div><!-- end methodologyView -->
 
   </div><!-- end main -->
@@ -938,6 +956,20 @@ textarea { resize: vertical; min-height: 60px; }
     <div class="modal-actions">
       <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="closeAddModal()">Cancelar</button>
       <button class="btn btn-blue btn-sm" onclick="createProfile()">Crear perfil</button>
+    </div>
+  </div>
+</div>
+
+<!-- BENCHMARK EDITOR MODAL -->
+<div class="modal-overlay" id="benchmarkModal">
+  <div class="modal" style="width:720px;max-height:85vh;overflow-y:auto">
+    <h3>⚖ Benchmarks por Seniority</h3>
+    <p style="font-size:12px;color:var(--gray-400);margin-bottom:16px">Define el score esperado (1–5) por dimensión y nivel. Estos valores se usan para calcular el gap en Performance y Potencial.</p>
+    <div id="benchmarkEditorContent"></div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="resetBenchmarks()">Restaurar defaults</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('benchmarkModal').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-blue btn-sm" onclick="applyBenchmarks()">Guardar benchmarks</button>
     </div>
   </div>
 </div>
@@ -1007,7 +1039,7 @@ function onAuthSuccess(user) {
   document.getElementById('userName').textContent = name;
   document.getElementById('userAvatar').textContent = initials;
   document.getElementById('userChip').style.display = 'flex';
-  pullFromSupabase();
+  loadBenchmarks().then(() => pullFromSupabase());
 }
 
 // ─── SUPABASE DATA ───
@@ -1092,6 +1124,57 @@ const POT_DIMS = [
   "Iniciativa y proactividad estratégica",
   "Aspiraciones de crecimiento declaradas",
 ];
+const SENIORITY_LEVELS = ['Junior', 'Engineer / Analyst', 'Lead', 'Expert'];
+
+// Default benchmarks — editable from the app
+const DEFAULT_BENCHMARKS = {
+  perf: {
+    'Junior':             [2.0, 2.5, 1.5, 2.0, 2.0, 1.5],
+    'Engineer / Analyst': [3.0, 3.0, 3.0, 3.0, 3.0, 2.5],
+    'Lead':               [3.5, 3.5, 4.0, 3.5, 4.0, 4.0],
+    'Expert':             [4.5, 4.0, 4.5, 4.0, 4.5, 4.5],
+  },
+  pot: {
+    'Junior':             [3.0, 1.5, 1.0, 1.5, 1.5, 3.0],
+    'Engineer / Analyst': [3.0, 2.5, 2.0, 2.5, 2.5, 3.0],
+    'Lead':               [3.5, 3.5, 4.0, 3.5, 3.5, 3.0],
+    'Expert':             [4.0, 4.5, 4.0, 4.5, 4.5, 3.0],
+  }
+};
+
+let benchmarks = JSON.parse(localStorage.getItem('talent_benchmarks') || 'null') || DEFAULT_BENCHMARKS;
+
+function saveBenchmarks() {
+  localStorage.setItem('talent_benchmarks', JSON.stringify(benchmarks));
+  if(supabaseClient && currentUser) {
+    supabaseClient.from('talent_config')
+      .upsert({ id: 'benchmarks', data: benchmarks, updated_at: new Date().toISOString() }, { onConflict: 'id' })
+      .then(({ error }) => { if(error) console.error('Benchmark save error:', error); });
+  }
+}
+
+async function loadBenchmarks() {
+  if(!supabaseClient) return;
+  const { data, error } = await supabaseClient.from('talent_config').select('data').eq('id', 'benchmarks').single();
+  if(!error && data?.data) {
+    benchmarks = data.data;
+    localStorage.setItem('talent_benchmarks', JSON.stringify(benchmarks));
+  }
+}
+
+function getBenchmark(prefix, seniority, dimIdx) {
+  return benchmarks[prefix]?.[seniority]?.[dimIdx] ?? null;
+}
+
+function getGapColor(gap) {
+  if(gap === null || gap === 0) return 'var(--gray-400)';
+  if(gap >= 1.0) return 'var(--red)';
+  if(gap >= 0.5) return 'var(--amber)';
+  if(gap < 0)    return 'var(--green)';
+  return 'var(--gray-400)';
+}
+
+
 const SKILL_GROUPS = {
   "DATA & ANALYTICS": ["SQL / Data Engineering","Python (ML / DS)","BI / Data Viz (PowerBI / Tableau)","Estadística aplicada","Data Architecture"],
   "AI / MACHINE LEARNING": ["ML Algorithms & Modeling","LLMs / Generative AI","MLOps / AI Deployment","Prompt Engineering","AI Ethics & Governance"],
@@ -1360,7 +1443,14 @@ function loadProfileToUI() {
 function buildScoreTable(tbodyId, dims, scores, evidence, prefix, avgId) {
   const tbody = document.getElementById(tbodyId);
   tbody.innerHTML = '';
+  const seniority = currentId ? profiles[currentId]?.general?.seniority : null;
   dims.forEach((dim, i) => {
+    const bench = seniority ? getBenchmark(prefix, seniority, i) : null;
+    const score = scores[i] || 0;
+    const gap   = (bench !== null && score > 0) ? score - bench : null;
+    const gapLabel = gap === null ? '—' : (gap > 0 ? '+' : '') + gap.toFixed(1);
+    const gapColor = gap === null ? 'var(--gray-300)' : getGapColor(-gap); // negative gap = below benchmark
+    const benchLabel = bench !== null ? bench.toFixed(1) : '—';
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><span class="dim-label">${dim}</span></td>
@@ -1369,6 +1459,8 @@ function buildScoreTable(tbodyId, dims, scores, evidence, prefix, avgId) {
           ${[1,2,3,4,5].map(n => `<div class="star ${scores[i]>=n?'active-'+n:''}" onclick="setScore('${prefix}',${i},${n},'${avgId}')">${n}</div>`).join('')}
         </div>
       </td>
+      <td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;color:var(--gray-500)">${benchLabel}</td>
+      <td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:${gapColor}">${gapLabel}</td>
       <td><textarea class="evidence-input" rows="1" placeholder="Evidencia…" onchange="setEvidence('${prefix}',${i},this.value)">${evidence[i]||''}</textarea></td>`;
     tbody.appendChild(tr);
   });
@@ -1732,6 +1824,72 @@ function skillMatuLabel(p) {
   return '🔴 Inicial';
 }
 
+// ═══════════════════════════════════════════════════════════════
+// BENCHMARK EDITOR
+// ═══════════════════════════════════════════════════════════════
+function openBenchmarkModal() {
+  renderBenchmarkEditor();
+  document.getElementById('benchmarkModal').classList.add('open');
+}
+
+function renderBenchmarkEditor() {
+  const el = document.getElementById('benchmarkEditorContent');
+  let html = '';
+  ['perf', 'pot'].forEach(prefix => {
+    const dims = prefix === 'perf' ? PERF_DIMS : POT_DIMS;
+    const title = prefix === 'perf' ? 'Performance' : 'Potencial';
+    html += `<div style="margin-bottom:20px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--navy)">${title}</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:var(--gray-50)">
+          <th style="text-align:left;padding:6px 8px;border:1px solid var(--gray-200)">Dimensión</th>
+          ${SENIORITY_LEVELS.map(l => `<th style="text-align:center;padding:6px 8px;border:1px solid var(--gray-200);white-space:nowrap">${l}</th>`).join('')}
+        </tr></thead>
+        <tbody>`;
+    dims.forEach((dim, i) => {
+      html += `<tr>
+        <td style="padding:6px 8px;border:1px solid var(--gray-200);color:var(--gray-700)">${dim}</td>
+        ${SENIORITY_LEVELS.map(lvl => `
+          <td style="text-align:center;padding:4px;border:1px solid var(--gray-200)">
+            <input type="number" min="0.5" max="5" step="0.5"
+              data-prefix="${prefix}" data-level="${lvl}" data-idx="${i}"
+              value="${benchmarks[prefix][lvl][i]}"
+              style="width:52px;text-align:center;border:1px solid var(--gray-200);border-radius:4px;padding:3px 4px;font-family:'DM Mono',monospace;font-size:12px">
+          </td>`).join('')}
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+  });
+  el.innerHTML = html;
+}
+
+function applyBenchmarks() {
+  const inputs = document.querySelectorAll('#benchmarkEditorContent input[type=number]');
+  inputs.forEach(inp => {
+    const prefix = inp.dataset.prefix;
+    const level  = inp.dataset.level;
+    const idx    = parseInt(inp.dataset.idx);
+    const val    = parseFloat(inp.value) || 0;
+    benchmarks[prefix][level][idx] = Math.min(5, Math.max(0, val));
+  });
+  saveBenchmarks();
+  document.getElementById('benchmarkModal').classList.remove('open');
+  // Refresh current profile table if open
+  if(currentId && activeView === 'profile') {
+    const p = profiles[currentId];
+    buildScoreTable('perf-tbody', PERF_DIMS, p.perf.scores, p.perf.evidence, 'perf', 'avg-perf');
+    buildScoreTable('pot-tbody', POT_DIMS, p.pot.scores, p.pot.evidence, 'pot', 'avg-pot');
+  }
+  showSaveIndicator();
+}
+
+function resetBenchmarks() {
+  if(!confirm('¿Restaurar los benchmarks a los valores por defecto?')) return;
+  benchmarks = JSON.parse(JSON.stringify(DEFAULT_BENCHMARKS));
+  saveBenchmarks();
+  renderBenchmarkEditor();
+}
+
 function showMethodology() {
   currentId = null;
   activeView = 'methodology';
@@ -1743,6 +1901,37 @@ function showMethodology() {
   document.getElementById('nav-overview-all').classList.remove('active');
   document.getElementById('nav-methodology').classList.add('active');
   renderSidebar();
+  renderMethodologyBenchmarkTable();
+}
+
+function renderMethodologyBenchmarkTable() {
+  const el = document.getElementById('methodologyBenchmarkTable');
+  if(!el) return;
+  let html = '';
+  ['perf', 'pot'].forEach(prefix => {
+    const dims = prefix === 'perf' ? PERF_DIMS : POT_DIMS;
+    const title = prefix === 'perf' ? '📊 Performance' : '🚀 Potencial';
+    html += `<div style="margin-bottom:20px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px">${title}</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:var(--gray-50)">
+          <th style="text-align:left;padding:7px 10px;border:1px solid var(--gray-200)">Dimensión</th>
+          ${SENIORITY_LEVELS.map(l => `<th style="text-align:center;padding:7px 10px;border:1px solid var(--gray-200);white-space:nowrap;font-family:'DM Mono',monospace">${l}</th>`).join('')}
+        </tr></thead>
+        <tbody>
+          ${dims.map((dim, i) => `<tr>
+            <td style="padding:7px 10px;border:1px solid var(--gray-200);color:var(--gray-700)">${dim}</td>
+            ${SENIORITY_LEVELS.map(lvl => {
+              const val = benchmarks[prefix][lvl][i];
+              const color = val >= 4 ? 'var(--green)' : val >= 3 ? 'var(--blue)' : val >= 2 ? 'var(--amber)' : 'var(--gray-500)';
+              return `<td style="text-align:center;padding:7px 10px;border:1px solid var(--gray-200);font-family:'DM Mono',monospace;font-weight:600;color:${color}">${val.toFixed(1)}</td>`;
+            }).join('')}
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  });
+  el.innerHTML = html;
 }
 
 let overviewFilter = 'all';
