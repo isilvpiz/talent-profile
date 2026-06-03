@@ -464,7 +464,16 @@ textarea { resize: vertical; min-height: 60px; }
       <div id="profileHeader" style="margin-bottom:1.25rem; display:flex; align-items:center; justify-content:space-between;">
         <div>
           <div style="font-size:18px; font-weight:600" id="profileName">—</div>
-          <div style="font-size:12px; color:var(--gray-400)" id="profileMeta">—</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:3px">
+            <div style="font-size:12px; color:var(--gray-400)" id="profileMeta">—</div>
+            <div id="profileCompleteness" style="display:none;align-items:center;gap:6px">
+              <div style="width:80px;height:5px;background:var(--gray-200);border-radius:3px;overflow:hidden">
+                <div id="complBar" style="height:100%;border-radius:3px;transition:width 0.3s"></div>
+              </div>
+              <span id="complPct" style="font-size:11px;font-family:'DM Mono',monospace;font-weight:600"></span>
+            </div>
+          </div>
+          <div id="profileAlert" style="display:none;margin-top:6px;font-size:12px;color:var(--amber);background:var(--amber-light);padding:4px 10px;border-radius:6px;border:1px solid #fcd34d"></div>
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="deleteCurrent()">Eliminar perfil</button>
@@ -1049,8 +1058,50 @@ function getAvg(scores) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// RENDER SIDEBAR
+// COMPLETENESS
 // ═══════════════════════════════════════════════════════════════
+function calcCompleteness(p) {
+  const checks = [
+    // General (20%)
+    !!p.general?.nombre,
+    !!p.general?.rol,
+    !!p.general?.seniority,
+    !!p.general?.ingreso,
+    !!p.general?.entrevistador,
+    // Performance (20%)
+    p.performance?.scores?.some(s => s > 0),
+    p.performance?.scores?.filter(s => s > 0).length >= 3,
+    !!p.performance?.overall,
+    !!p.performance?.evidencias?.some(e => e?.length > 0),
+    // Potencial (10%)
+    p.potencial?.scores?.some(s => s > 0),
+    // Skills (10%)
+    Object.values(p.skills || {}).some(s => s.actual > 0),
+    // Madurez (10%)
+    !!p.madurez?.final,
+    !!p.madurez?.justif,
+    // 9-Box (10%)
+    !!p.ninebox?.perf,
+    !!p.ninebox?.pot,
+    // Risk (10%)
+    !!p.risk?.global,
+    p.riskItems?.some(r => r.estado),
+    // Resumen (10%)
+    !!p.resumen?.decision,
+    !!p.resumen?.fortalezas,
+    !!p.resumen?.mejoras,
+  ];
+  const done = checks.filter(Boolean).length;
+  return Math.round((done / checks.length) * 100);
+}
+
+function completenessColor(pct) {
+  if(pct >= 80) return 'var(--green)';
+  if(pct >= 50) return 'var(--amber)';
+  return 'var(--red)';
+}
+
+
 function renderSidebar() {
   const list = document.getElementById('personList');
   list.innerHTML = '';
@@ -1062,13 +1113,21 @@ function renderSidebar() {
   ids.forEach(id => {
     const p = profiles[id];
     const initials = (p.nombre || '??').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+    const pct = calcCompleteness(p);
+    const col = completenessColor(pct);
     const chip = document.createElement('div');
     chip.className = 'person-chip' + (currentId === id ? ' active' : '');
     chip.innerHTML = `
       <div class="person-avatar" style="background:${p.color}22;color:${p.color}">${initials}</div>
-      <div style="min-width:0">
+      <div style="min-width:0;flex:1">
         <div class="person-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre || '(sin nombre)'}</div>
-        <div class="person-role">${p.rol || '—'}</div>
+        <div style="display:flex;align-items:center;gap:5px;margin-top:2px">
+          <div style="flex:1;height:3px;background:var(--gray-200);border-radius:2px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:${col};border-radius:2px;transition:width 0.3s"></div>
+          </div>
+          <span style="font-size:10px;font-family:'DM Mono',monospace;color:${col};font-weight:600;flex-shrink:0">${pct}%</span>
+          ${pct < 100 ? '<span style="font-size:10px;color:var(--amber)">⚠</span>' : '<span style="font-size:10px">✓</span>'}
+        </div>
       </div>`;
     chip.onclick = () => openProfile(id);
     list.appendChild(chip);
@@ -1093,6 +1152,33 @@ function loadProfileToUI() {
   const p = profiles[currentId];
   document.getElementById('profileName').textContent = p.nombre || '(sin nombre)';
   document.getElementById('profileMeta').textContent = (p.rol || '') + (p.general.seniority ? ' · ' + p.general.seniority : '');
+
+  // Completeness
+  const pct = calcCompleteness(p);
+  const col = completenessColor(pct);
+  const complDiv = document.getElementById('profileCompleteness');
+  complDiv.style.display = 'flex';
+  document.getElementById('complBar').style.width = pct + '%';
+  document.getElementById('complBar').style.background = col;
+  document.getElementById('complPct').textContent = pct + '%';
+  document.getElementById('complPct').style.color = col;
+  const alertDiv = document.getElementById('profileAlert');
+  if(pct < 100) {
+    alertDiv.style.display = 'block';
+    const missing = [];
+    if(!p.general?.seniority) missing.push('Seniority');
+    if(!p.performance?.scores?.some(s=>s>0)) missing.push('Performance');
+    if(!p.potencial?.scores?.some(s=>s>0)) missing.push('Potencial');
+    if(!p.madurez?.final) missing.push('Madurez profesional');
+    if(!p.ninebox?.perf || !p.ninebox?.pot) missing.push('9-Box');
+    if(!p.risk?.global) missing.push('Flight risk');
+    if(!p.resumen?.decision) missing.push('Decisión');
+    alertDiv.textContent = missing.length
+      ? `⚠ Pendiente: ${missing.join(', ')}`
+      : `⚠ Perfil incompleto — ${100-pct}% restante`;
+  } else {
+    alertDiv.style.display = 'none';
+  }
 
   // General
   ['nombre','rol','ingreso','seniority','tiempo','lasteval','proyectos','entrevistador','notas'].forEach(f => {
