@@ -1272,11 +1272,11 @@ function openProfile(id) {
   currentId = id;
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('overviewView').style.display = 'none';
-  document.getElementById('methodologyView').style.display = 'none';
+  document.getElementById('methodologyView')&&(document.getElementById('methodologyView').style.display = 'none');
   document.getElementById('profileView').style.display = 'block';
-  document.getElementById('nav-overview-mine').classList.remove('active');
-  document.getElementById('nav-overview-all').classList.remove('active');
-  document.getElementById('nav-methodology').classList.remove('active');
+  document.getElementById('nav-overview-mine')?.classList.remove('active');
+  document.getElementById('nav-overview-all')?.classList.remove('active');
+  document.getElementById('nav-methodology')?.classList.remove('active');
   renderSidebar();
   loadProfileToUI();
   switchTab('general', document.querySelector('.section-tab'));
