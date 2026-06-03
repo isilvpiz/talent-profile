@@ -470,7 +470,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
       <span id="userName">—</span>
       <span style="opacity:0.5;font-size:10px">salir</span>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="openBenchmarkModal()" title="Editar benchmarks por seniority">⚖ Benchmarks</button>
+    <button class="btn btn-ghost btn-sm" id="benchmarkBtn" onclick="openBenchmarkModal()" title="Editar benchmarks por seniority" style="display:none">⚖ Benchmarks</button>
     <button class="btn btn-ghost btn-sm" onclick="showOverview('mine')">Vista equipo</button>
     <button class="btn btn-ghost btn-sm" onclick="exportJSON()">Exportar JSON</button>
     <button class="btn btn-teal btn-sm" onclick="openAddModal()">+ Nuevo perfil</button>
@@ -1186,7 +1186,10 @@ function onAuthSuccess(user) {
   const roleColors = { admin:'var(--blue)', director:'var(--purple)', manager:'var(--teal)', lider:'var(--green)' };
   document.getElementById('userAvatar').style.background = roleColors[role] || 'var(--gray-400)';
   document.getElementById('userChip').title = `${name} · ${role} — Clic para cerrar sesión`;
-  if(isAdmin()) document.body.classList.add('is-admin');
+  if(isAdmin()) {
+    document.body.classList.add('is-admin');
+    document.getElementById('benchmarkBtn').style.display = '';
+  }
   loadBenchmarks().then(() => loadDimensions()).then(() => pullFromSupabase());
 }
 
@@ -1254,18 +1257,20 @@ async function pullFromSupabase() {
     }
   });
   saveLocalState();
-  setSyncStatus('ok', `${data.length} perfiles`);
+  const ownCount = getFilteredIds().length;
+  setSyncStatus('ok', `${ownCount} perfil${ownCount !== 1 ? 'es' : ''}`);
   renderSidebar();
   // Never change the active view during a sync — only update data in place
   if(activeView === 'profile' && currentId && profiles[currentId]) {
     loadProfileToUI();
   } else if(activeView === 'overview') {
     renderOverview();
-  } else if(activeView === 'empty' || activeView === 'methodology') {
-    // Don't navigate away from methodology; only auto-open if truly empty state
-    if(activeView === 'empty') {
-      const ids2 = Object.keys(profiles);
-      if(ids2.length) openProfile(ids2[0]);
+  } else if(activeView === 'empty') {
+    const ownIds = getFilteredIds();
+    if(ownIds.length) openProfile(ownIds[0]);
+    else {
+      document.getElementById('profileView').style.display = 'none';
+      document.getElementById('emptyState').style.display = 'block';
     }
   }
 }
