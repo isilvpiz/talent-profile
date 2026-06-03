@@ -725,8 +725,43 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
               </div>
             </div>
             <div style="margin-top:1rem">
-              <div class="form-group"><label>Comentario del manager sobre el cuadrante</label>
+              <div class="form-group"><label>Comentario del evaluador sobre el cuadrante</label>
                 <textarea id="ninebox-comment" rows="2" oninput="autoSave()"></textarea>
+              </div>
+              <div style="background:var(--blue-light);border:1px solid #bfdbfe;border-radius:8px;padding:12px 14px;margin-top:10px">
+                <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:8px">✅ Validación del manager (admin)</div>
+                <div class="form-grid" style="gap:10px">
+                  <div class="form-group" style="margin-bottom:0">
+                    <label style="font-size:11px">Cuadrante validado</label>
+                    <select id="ninebox-validated" onchange="autoSave()">
+                      <option value="">— Confirmar o ajustar —</option>
+                      <option>⭐ Top talent</option>
+                      <option>🚀 High performer</option>
+                      <option>💡 Alto potencial</option>
+                      <option>✅ Core contributor</option>
+                      <option>🏅 Performer sólido</option>
+                      <option>📈 En desarrollo</option>
+                      <option>🔄 En transición</option>
+                      <option>📋 Performer estable</option>
+                      <option>⚠️ Under review</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="margin-bottom:0">
+                    <label style="font-size:11px">Aspiraciones declaradas</label>
+                    <select id="ninebox-aspiraciones" onchange="autoSave()">
+                      <option value="">— Seleccionar —</option>
+                      <option>Crecer técnicamente (IC track)</option>
+                      <option>Crecer hacia liderazgo (Manager track)</option>
+                      <option>Mantenerse en rol actual</option>
+                      <option>Cambio de área / rol</option>
+                      <option>No declaradas</option>
+                    </select>
+                  </div>
+                  <div class="form-group full" style="margin-bottom:0">
+                    <label style="font-size:11px">Justificación del ajuste (si aplica)</label>
+                    <textarea id="ninebox-justif-valid" rows="2" placeholder="¿Por qué ajustaste el cuadrante calculado automáticamente?" oninput="autoSave()"></textarea>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -767,6 +802,10 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
                   <option>🟡 Medio — monitorear</option>
                   <option>🟢 Bajo — estable</option>
                 </select>
+              </div>
+              <div class="form-group">
+                <label>Próxima revisión de riesgo</label>
+                <input type="date" id="risk-nextrev" onchange="autoSave()">
               </div>
               <div class="form-group full"><label>Acción prioritaria de retención</label><textarea id="risk-accion" rows="2" oninput="autoSave()"></textarea></div>
             </div>
@@ -831,6 +870,17 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
             </div>
           </div>
         </div>
+        <div class="card" style="margin-top:0.75rem">
+          <div class="card-header">
+            <div class="card-header-dot" style="background:var(--blue)"></div>
+            <span class="card-title">Conexión IDP — Gaps técnicos detectados</span>
+            <span class="card-subtitle">Basado en Madurez Técnica</span>
+          </div>
+          <div class="card-body">
+            <div id="idp-gaps-summary" style="font-size:13px;color:var(--gray-500);margin-bottom:10px">Completa Madurez Técnica para ver los gaps.</div>
+            <button class="btn btn-ghost btn-sm" style="border:1px solid var(--blue);color:var(--blue)" onclick="suggestIDPFromGaps()">⚡ Sugerir acciones en IDP desde gaps</button>
+          </div>
+        </div>
       </div>
 
     </div><!-- end profileView -->
@@ -865,14 +915,97 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
     <div id="methodologyView" style="display:none">
       <div style="margin-bottom:1.5rem">
         <div style="font-size:18px;font-weight:600">Guía metodológica</div>
-        <div style="font-size:12px;color:var(--gray-400)">Cómo se calculan y qué significa cada dimensión</div>
+        <div style="font-size:12px;color:var(--gray-400)">Modelo de evaluación de talento Data & AI — NTT DATA</div>
       </div>
+
+      <!-- NARRATIVE CONNECTOR -->
+      <div class="card" style="margin-bottom:1rem;border-left:4px solid var(--navy)">
+        <div class="card-header"><div class="card-header-dot" style="background:var(--navy)"></div><span class="card-title">Modelo integrado — Cómo se conectan todas las dimensiones</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;line-height:1.8;margin-bottom:14px">El modelo de Talent Profile no es una suma de evaluaciones independientes — es un sistema de diagnóstico integrado donde cada dimensión alimenta a la siguiente. El orden importa: comenzamos con lo observable (performance), avanzamos hacia lo proyectable (potencial y técnico), identificamos el riesgo de perder ese talento (flight risk), y terminamos con el plan de acción (IDP y decisión).</p>
+
+          <div style="position:relative;padding-left:20px">
+
+            <div style="display:flex;gap:14px;margin-bottom:16px;align-items:flex-start">
+              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;flex-shrink:0">1</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;margin-bottom:3px">Performance → ¿Qué está entregando hoy?</div>
+                <div style="font-size:12px;color:var(--gray-600)">Es el punto de partida y el único dato completamente observable. Mide resultados concretos en el rol actual. Un score bajo aquí no significa que la persona no tenga valor — puede estar mal ubicada o en período de rampa.</div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:14px;margin-bottom:16px;align-items:flex-start">
+              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;flex-shrink:0">2</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;margin-bottom:3px">Potencial → ¿Qué puede ser mañana?</div>
+                <div style="font-size:12px;color:var(--gray-600)">Complementa a la performance. Un perfil con performance media pero potencial alto es una inversión — alguien con performance alta pero potencial bajo es un activo a retener, no necesariamente a promover. Las dimensiones miden capacidad de adaptación, no resultados pasados. <strong>La velocidad de incorporación de feedback</strong> es el predictor más confiable de crecimiento sostenido.</div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:14px;margin-bottom:16px;align-items:flex-start">
+              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;flex-shrink:0">3</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;margin-bottom:3px">Madurez Técnica → ¿Cuál es su stack real?</div>
+                <div style="font-size:12px;color:var(--gray-600)">En una consultora tech, dos personas con el mismo cuadrante 9-Box pueden tener valor de mercado completamente distinto si una tiene dominio avanzado en LLMs y la otra no. El gap técnico (objetivo - actual) alimenta directamente el IDP. Sin este diagnóstico, el plan de desarrollo es genérico e ineficiente.</div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:14px;margin-bottom:16px;align-items:flex-start">
+              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;flex-shrink:0">4</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;margin-bottom:3px">Madurez Profesional → ¿Opera a nivel de su rol?</div>
+                <div style="font-size:12px;color:var(--gray-600)">Es el "termómetro organizacional" — mide si la persona se comporta al nivel de complejidad que exige su seniority. Alguien técnicamente brillante que requiere supervisión constante no está listo para un Lead. Este gap es la señal más clara de si una promoción es prematura.</div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:14px;margin-bottom:16px;align-items:flex-start">
+              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;flex-shrink:0">5</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;margin-bottom:3px">9-Box → ¿Dónde clasifica en el equipo?</div>
+                <div style="font-size:12px;color:var(--gray-600)">Sintetiza performance + potencial en un cuadrante accionable. El cuadrante calculado es automático — el cuadrante <strong>validado</strong> es la decisión del manager con criterio y contexto. El overlay técnico añade la dimensión diferenciadora de NTT DATA. Las <strong>aspiraciones declaradas</strong> se separan del potencial para evitar confundir voluntad con capacidad.</div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:14px;margin-bottom:16px;align-items:flex-start">
+              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;flex-shrink:0">6</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;margin-bottom:3px">Flight Risk → ¿Cuánto tiempo tenemos para actuar?</div>
+                <div style="font-size:12px;color:var(--gray-600)">El diagnóstico previo pierde valor si la persona se va antes de que podamos actuar. El flight risk calibra la urgencia. Un Top Talent con riesgo Alto requiere acción inmediata — sus gaps de desarrollo son secundarios frente a la retención. Los <strong>indicadores de desenganche</strong> (motivación, participación, iniciativa) son más objetivos y observables que "señales de búsqueda de empleo".</div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:14px;margin-bottom:16px;align-items:flex-start">
+              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;flex-shrink:0">7</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;margin-bottom:3px">IDP → ¿Qué haremos concretamente?</div>
+                <div style="font-size:12px;color:var(--gray-600)">El IDP cierra el ciclo. Debe derivarse <strong>directamente de los gaps técnicos</strong> identificados en Madurez Técnica — no ser un listado genérico de cursos. La función "Sugerir desde gaps" automatiza esta conexión. Sin IDP, el perfil es diagnóstico sin prescripción.</div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:14px;align-items:flex-start">
+              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;flex-shrink:0">8</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;margin-bottom:3px">Resumen & Decisión → ¿Cuál es la acción de negocio?</div>
+                <div style="font-size:12px;color:var(--gray-600)">La decisión (promoción, retención, PIP, movimiento lateral) debe estar justificada por la combinación de todos los inputs anteriores. Un perfil con 9-Box "Top Talent" pero madurez profesional baja y riesgo Alto puede tener una decisión muy diferente a otro con el mismo cuadrante pero estable y técnicamente avanzado.</div>
+              </div>
+            </div>
+
+          </div>
+
+          <div style="margin-top:16px;padding:12px 16px;background:var(--gray-50);border-radius:8px;border:1px solid var(--gray-200);font-size:12px;color:var(--gray-600)">
+            <strong>Principio rector:</strong> Ninguna dimensión decide sola. La decisión correcta emerge de leer el perfil como un sistema — Performance × Potencial × Técnico × Madurez × Riesgo = Decisión estratégica de talento.
+          </div>
+        </div>
+      </div>
+
+      <!-- PERFORMANCE -->
       <div class="card" style="margin-bottom:1rem">
         <div class="card-header"><div class="card-header-dot" style="background:var(--green)"></div><span class="card-title">Performance</span></div>
         <div class="card-body">
           <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> El desempeño actual observable en el rol, basado en comportamientos y resultados concretos.</p>
           <p style="font-size:13px;margin-bottom:8px"><strong>Escala:</strong> 1 (Muy por debajo) → 2 (Por debajo) → 3 (Cumple) → 4 (Supera) → 5 (Excepcional)</p>
           <p style="font-size:13px;margin-bottom:8px"><strong>Cálculo:</strong> Promedio simple de 6 dimensiones — Calidad técnica, Cumplimiento OKRs, Autonomía/ownership, Velocidad de entrega, Colaboración, Comunicación con stakeholders.</p>
+          <p style="font-size:12px;color:var(--gray-400);margin-bottom:8px">⚠ Evaluar con evidencias concretas. El score debe poder justificarse con ejemplos observables, no percepciones.</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">1.0–2.4 Bajo</span>
             <span style="background:var(--amber-light);color:var(--amber);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">2.5–3.4 Medio</span>
@@ -880,19 +1013,27 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
           </div>
         </div>
       </div>
+
+      <!-- POTENCIAL -->
       <div class="card" style="margin-bottom:1rem">
         <div class="card-header"><div class="card-header-dot" style="background:var(--purple)"></div><span class="card-title">Potencial</span></div>
         <div class="card-body">
-          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Capacidad de crecer, asumir mayor complejidad y responsabilidad futura. No es performance actual — es proyección.</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Capacidad de crecer, asumir mayor complejidad y responsabilidad futura. No es performance actual — es proyección de crecimiento.</p>
           <p style="font-size:13px;margin-bottom:8px"><strong>Escala:</strong> 1 (Muy limitado) → 5 (Excepcional)</p>
-          <p style="font-size:13px;margin-bottom:8px"><strong>Cálculo:</strong> Promedio de 6 dimensiones — Learning Agility, Pensamiento sistémico, Liderazgo/influencia, Gestión de ambigüedad, Proactividad estratégica, Aspiraciones declaradas.</p>
-          <p style="font-size:12px;color:var(--gray-400)">⚠ Triangular con evidencias concretas. Evitar sesgos de afinidad.</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>Cálculo:</strong> Promedio de 6 dimensiones — Learning Agility, Pensamiento sistémico, Liderazgo/influencia, Gestión de ambigüedad, Proactividad estratégica, <strong>Velocidad de incorporación de feedback</strong>.</p>
+          <div style="background:var(--blue-light);border-radius:6px;padding:10px 12px;margin-bottom:8px;font-size:12px">
+            <strong style="color:var(--navy)">¿Por qué "Velocidad de incorporación de feedback" y no "Aspiraciones"?</strong><br>
+            Las aspiraciones son un indicador de motivación y retención — no de capacidad. Una persona puede querer crecer pero no tener las condiciones para hacerlo, o tener alto potencial pero no aspirar a un cargo de liderazgo (IC track). Mezclar ambas contamina el score. Las aspiraciones se capturan por separado en la sección 9-Box para orientar la decisión de desarrollo, no para calcular el potencial.
+          </div>
+          <p style="font-size:12px;color:var(--gray-400)">⚠ Triangular con evidencias concretas. Evitar sesgos de afinidad o similaridad con el evaluador.</p>
         </div>
       </div>
+
+      <!-- 9-BOX -->
       <div class="card" style="margin-bottom:1rem">
-        <div class="card-header"><div class="card-header-dot" style="background:var(--teal)"></div><span class="card-title">Matriz 9-Box + Overlay Técnico</span></div>
+        <div class="card-header"><div class="card-header-dot" style="background:var(--teal)"></div><span class="card-title">Matriz 9-Box + Overlay Técnico + Validación</span></div>
         <div class="card-body">
-          <p style="font-size:13px;margin-bottom:10px"><strong>¿Qué es?</strong> Combina Performance (eje X) y Potencial (eje Y) en 9 cuadrantes para orientar decisiones de talento. Para NTT DATA, se agrega un <strong>overlay de Madurez Técnica</strong> como tercera dimensión — clave en una consultora tecnológica.</p>
+          <p style="font-size:13px;margin-bottom:10px"><strong>¿Qué es?</strong> Combina Performance (eje X) y Potencial (eje Y) en 9 cuadrantes para orientar decisiones de talento. Para NTT DATA se añaden dos capas: el <strong>overlay técnico</strong> y la <strong>validación del manager</strong>.</p>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px">
             <div style="background:#ede9fe;border:1px solid #c4b5fd;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#5b21b6">💡 Alto potencial</strong><br><span style="color:#7c3aed">Invertir en desarrollo</span></div>
             <div style="background:#fef9c3;border:1px solid #fde047;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#854d0e">⭐ Top talent</strong><br><span style="color:#92400e">Retener y promover</span></div>
@@ -904,33 +1045,30 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
             <div style="background:#ffedd5;border:1px solid #fdba74;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#9a3412">🔄 En transición</strong><br><span style="color:#9a3412">Diagnóstico y soporte</span></div>
             <div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#475569">📋 Performer estable</strong><br><span style="color:#475569">Reconocer estabilidad</span></div>
           </div>
-          <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:14px;margin-bottom:10px">
-            <div style="font-size:12px;font-weight:600;margin-bottom:10px;color:var(--navy)">🔬 Overlay Técnico — Tercera dimensión</div>
-            <p style="font-size:12px;color:var(--gray-600);margin-bottom:10px">El nivel técnico se calcula como el promedio de todos los skills evaluados y se muestra como un indicador adicional en el cuadrante. Permite distinguir perfiles con el mismo cuadrante 9-Box pero diferente impacto técnico real.</p>
-            <div style="display:flex;flex-direction:column;gap:6px">
-              <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;font-size:12px">
-                <span>🟢</span><div><strong style="color:#166534">Avanzado (avg ≥ 4)</strong> — Dominio técnico sólido. Alta empleabilidad y valor de entrega en proyectos complejos.</div>
-              </div>
-              <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:#eff6ff;border:1px solid #93c5fd;border-radius:6px;font-size:12px">
-                <span>🔵</span><div><strong style="color:#1e40af">Intermedio (avg 3–4)</strong> — Buen nivel técnico. Con foco puede alcanzar perfil avanzado en 6–12 meses.</div>
-              </div>
-              <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;font-size:12px">
-                <span>🟡</span><div><strong style="color:#92400e">Básico (avg 2–3)</strong> — Nivel técnico en desarrollo. Requiere plan de formación activo y acompañamiento.</div>
-              </div>
-              <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;font-size:12px">
-                <span>🔴</span><div><strong style="color:#991b1b">Inicial (avg &lt; 2)</strong> — Brecha técnica significativa. Priorizar upskilling antes de nuevas responsabilidades.</div>
-              </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:12px;font-size:12px">
+              <strong style="color:var(--navy)">🔬 Overlay Técnico</strong><br>
+              Promedio de skills evaluados en Madurez Técnica. 🟢 Avanzado (≥4) · 🔵 Intermedio (3–4) · 🟡 Básico (2–3) · 🔴 Inicial (&lt;2). Un "Top Talent" con 🔴 requiere upskilling urgente antes de cualquier promoción.
+            </div>
+            <div style="background:var(--blue-light);border:1px solid #bfdbfe;border-radius:8px;padding:12px;font-size:12px">
+              <strong style="color:var(--navy)">✅ Cuadrante validado vs calculado</strong><br>
+              El cuadrante calculado es automático por scores. El cuadrante <strong>validado</strong> es la decisión final del manager — puede diferir si hay contexto que los números no capturan (proyecto especial, período de transición, circunstancias personales). Siempre se documenta la justificación del ajuste.
+            </div>
+            <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:12px;font-size:12px">
+              <strong style="color:#5b21b6">🎯 Aspiraciones declaradas (separadas del potencial)</strong><br>
+              Se registran en la sección 9-Box pero <strong>no afectan el score de potencial</strong>. Orientan la decisión de desarrollo: un perfil con alto potencial que elige el IC track no debería recibir las mismas oportunidades que uno que aspira al liderazgo.
             </div>
           </div>
-          <p style="font-size:12px;color:var(--gray-400)">⚠ El overlay técnico no modifica el cuadrante 9-Box — es un contexto adicional para la toma de decisiones. Un "Top Talent" con overlay 🔴 requiere una estrategia de desarrollo técnico urgente antes de una promoción.</p>
         </div>
       </div>
+
+      <!-- MADUREZ TÉCNICA -->
       <div class="card" style="margin-bottom:1rem">
         <div class="card-header"><div class="card-header-dot" style="background:var(--blue)"></div><span class="card-title">Madurez Técnica</span></div>
         <div class="card-body">
-          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Nivel de dominio actual y objetivo en habilidades técnicas Data & AI.</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Nivel de dominio actual y objetivo en habilidades técnicas Data & AI. El gap alimenta directamente el IDP.</p>
           <p style="font-size:13px;margin-bottom:8px"><strong>Escala por skill:</strong> 0 (Sin conocimiento) → 1 (Básico) → 2 (Funcional) → 3 (Avanzado) → 4 (Experto) → 5 (Referente)</p>
-          <p style="font-size:13px;margin-bottom:8px"><strong>Gap:</strong> Nivel objetivo − Nivel actual. Gap positivo = área de desarrollo prioritaria.</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>Gap:</strong> Nivel objetivo − Nivel actual. Gap ≥ 1 = área prioritaria en IDP. Gap ≥ 2 = brecha crítica que limita el crecimiento.</p>
           <p style="font-size:13px;margin-bottom:8px"><strong>Grupos:</strong> DATA & ANALYTICS · AI / ML · SOFT / LEADERSHIP</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">Avg &lt;2 Inicial</span>
@@ -939,47 +1077,63 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
           </div>
         </div>
       </div>
+
+      <!-- MADUREZ PROFESIONAL -->
       <div class="card" style="margin-bottom:1rem">
         <div class="card-header"><div class="card-header-dot" style="background:var(--orange)"></div><span class="card-title">Madurez Profesional</span></div>
         <div class="card-body">
-          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Nivel de autonomía y madurez organizacional, independiente del rol técnico.</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Nivel de autonomía y madurez organizacional, independiente del rol técnico. Es el termómetro de si la persona opera al nivel de complejidad que exige su seniority.</p>
           <p style="font-size:13px;margin-bottom:8px"><strong>Escala:</strong> 1 (Ejecutor guiado) → 2 (Ejecutor independiente) → 3 (Contribuidor de equipo) → 4 (Referente de área) → 5 (Líder estratégico)</p>
-          <p style="font-size:13px;margin-bottom:8px"><strong>Dimensiones:</strong> Impacto del trabajo, Supervisión requerida (inverso), Alcance de decisiones, Gestión de stakeholders, Tolerancia a la ambigüedad, Mentoría.</p>
-          <p style="font-size:12px;color:var(--gray-400)">El nivel final es asignado por el evaluador integrando promedio + juicio cualitativo + gap con nivel esperado del rol.</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>Dimensiones:</strong> Impacto del trabajo · Supervisión requerida (inverso) · Complejidad de problemas · Mentoría a otros · Visibilidad externa.</p>
+          <p style="font-size:12px;color:var(--gray-400)">El nivel final es asignado por el evaluador integrando promedio + juicio cualitativo. El gap con el nivel esperado del seniority declarado es la señal más clara de si una promoción es prematura.</p>
         </div>
       </div>
+
+      <!-- FLIGHT RISK -->
       <div class="card" style="margin-bottom:1rem">
-        <div class="card-header"><div class="card-header-dot" style="background:var(--red)"></div><span class="card-title">Flight Risk</span></div>
+        <div class="card-header"><div class="card-header-dot" style="background:var(--red)"></div><span class="card-title">Flight Risk & Engagement</span></div>
         <div class="card-body">
-          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Probabilidad de abandono voluntario en los próximos 6–12 meses.</p>
-          <p style="font-size:13px;margin-bottom:8px"><strong>Factores:</strong> Satisfacción con el rol · Relación con el equipo · Alineación estratégica · Equidad percibida (salario/reconocimiento)</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Probabilidad de abandono voluntario y nivel de engagement en los próximos 6–12 meses. Calibra la urgencia de actuar sobre el perfil.</p>
+          <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px">
+            <strong style="color:#991b1b">¿Por qué "Indicadores de desenganche" y no "Señales de búsqueda de empleo"?</strong><br>
+            "Señales de búsqueda de empleo" es una percepción subjetiva del manager, difícil de observar sin invadir la privacidad. Los <strong>indicadores de desenganche</strong> (reducción de participación, menor iniciativa, cambios en patrones de comunicación, motivación percibida) son comportamientos observables en el día a día, más objetivos y defensibles.
+          </div>
+          <p style="font-size:13px;margin-bottom:8px"><strong>Factores evaluados:</strong> Motivación percibida · Indicadores de desenganche · Satisfacción con el rol · Relación con el equipo · Alineación estratégica · Equidad percibida</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>Fecha de revisión:</strong> Todo riesgo "Alto" o "Medio" debe tener una fecha de próxima revisión. Un riesgo sin fecha de seguimiento es una alerta sin acción.</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <span style="background:var(--green-light);color:var(--green);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">Bajo — Retención estable</span>
-            <span style="background:var(--amber-light);color:var(--amber);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">Medio — Monitorear</span>
+            <span style="background:var(--amber-light);color:var(--amber);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">Medio — Monitorear con fecha</span>
             <span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">Alto — Acción inmediata</span>
           </div>
         </div>
       </div>
+
+      <!-- IDP -->
       <div class="card" style="margin-bottom:1rem">
         <div class="card-header"><div class="card-header-dot" style="background:var(--teal)"></div><span class="card-title">IDP — Plan de Desarrollo Individual</span></div>
         <div class="card-body">
-          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué es?</strong> Plan estructurado de acciones concretas para cerrar gaps y acelerar el crecimiento.</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué es?</strong> Plan de acciones concretas para cerrar gaps técnicos y acelerar el crecimiento. Debe derivarse <strong>directamente de los gaps de Madurez Técnica</strong> — no ser un listado genérico.</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>Conexión con el modelo:</strong> Gap técnico ≥ 1 → acción en IDP. La función "⚡ Sugerir desde gaps" en Resumen automatiza esta conexión tomando los 3 mayores gaps como punto de partida.</p>
           <p style="font-size:13px;margin-bottom:8px"><strong>Componentes:</strong> Área de desarrollo · Acción concreta · Tipo (Curso/Proyecto/Mentoring/Certificación) · Plazo · % Avance · Responsable</p>
-          <p style="font-size:12px;color:var(--gray-400)">Revisar mínimo 1 vez por quarter. Derivar directamente de gaps de Madurez Técnica y 9-Box.</p>
+          <p style="font-size:12px;color:var(--gray-400)">Revisar mínimo 1 vez por quarter. El IDP sin revisión periódica pierde validez como herramienta de desarrollo.</p>
         </div>
       </div>
-      <div class="card">
+
+      <!-- COMPLETITUD -->
+      <div class="card" style="margin-bottom:1rem">
         <div class="card-header"><div class="card-header-dot" style="background:var(--amber)"></div><span class="card-title">% Completitud del perfil</span></div>
         <div class="card-body">
-          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Porcentaje de campos requeridos completados para considerar una evaluación válida.</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Porcentaje de campos requeridos completados. Un perfil incompleto no debe usarse para tomar decisiones de promoción o PIP.</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-            <span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">🔴 &lt;50% Crítico</span>
+            <span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">🔴 &lt;50% Crítico — no usar</span>
             <span style="background:var(--amber-light);color:var(--amber);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">🟡 50–79% En progreso</span>
-            <span style="background:var(--green-light);color:var(--green);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">🟢 ≥80% Completo</span>
+            <span style="background:var(--green-light);color:var(--green);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">🟢 ≥80% Válido para decisiones</span>
           </div>
-          <p style="font-size:12px;color:var(--gray-400)">Ponderación: Datos generales 20% · Performance 20% · Potencial 10% · Skills 10% · Madurez 10% · 9-Box 10% · Risk 10% · Resumen/Decisión 10%</p>
+          <p style="font-size:12px;color:var(--gray-400)">Ponderación: Datos generales 20% · Performance 20% · Potencial 10% · Skills 10% · Madurez 10% · 9-Box (calculado + validado) 10% · Risk 10% · Resumen/Decisión 10%</p>
         </div>
       </div>
+
+      <!-- BENCHMARKS -->
       <div class="card">
         <div class="card-header">
           <div class="card-header-dot" style="background:var(--navy)"></div>
@@ -989,10 +1143,11 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
           </span>
         </div>
         <div class="card-body">
-          <p style="font-size:13px;margin-bottom:12px">Scores esperados por nivel y dimensión. Usados para calcular el <strong>gap</strong> en las evaluaciones de Performance y Potencial. Un gap negativo indica que el colaborador supera las expectativas del nivel; positivo indica brecha a desarrollar.</p>
+          <p style="font-size:13px;margin-bottom:12px">Scores esperados por nivel y dimensión. Usados para calcular el <strong>gap vs rol</strong> en Performance y Potencial. Un gap negativo indica que el colaborador supera las expectativas del nivel; positivo indica brecha a desarrollar. Los benchmarks son editables por el admin para reflejar el criterio real del equipo.</p>
           <div id="methodologyBenchmarkTable"></div>
         </div>
       </div>
+
     </div><!-- end methodologyView -->
 
   </div><!-- end main -->
@@ -1294,7 +1449,7 @@ let POT_DIMS = [
   "Liderazgo / influencia sin autoridad",
   "Gestión de ambigüedad y complejidad",
   "Iniciativa y proactividad estratégica",
-  "Aspiraciones de crecimiento declaradas",
+  "Velocidad de incorporación de feedback",
 ];
 const SENIORITY_LEVELS = ['Junior', 'Engineer / Analyst', 'Lead', 'Expert'];
 
@@ -1392,7 +1547,7 @@ let MAT_DIMS = [
 ];
 const RISK_ITEMS = [
   "Nivel de motivación percibida",
-  "Señales de búsqueda de empleo",
+  "Indicadores de desenganche (motivación, participación, iniciativa)",
   "Satisfacción con su rol actual",
   "Relación con el equipo",
   "Alineación con la estrategia del área",
@@ -1453,8 +1608,8 @@ function newProfileData(id, nombre, rol, color) {
     pot: { scores: potScores, evidence: potEvidence },
     skills: skillData,
     madurez: { dims: matData, final:"", gap:"", justif:"" },
-    ninebox: { comment:"" },
-    risk: { items: riskData, global:"", accion:"" },
+    ninebox: { comment:"", validated:"", aspiraciones:"", justifValid:"" },
+    risk: { items: riskData, global:"", nextrev:"", accion:"" },
     idp: [],
     resumen: { fortalezas:"", mejoras:"", decision:"", justif:"", hito:"", notas:"" },
   };
@@ -1492,6 +1647,7 @@ function calcCompleteness(p) {
     // 9-Box (10%)
     !!p.ninebox?.perf,
     !!p.ninebox?.pot,
+    !!p.ninebox?.validated,
     // Risk (10%)
     !!p.risk?.global,
     p.riskItems?.some(r => r.estado),
@@ -1600,7 +1756,8 @@ function loadProfileToUI() {
     if(!p.performance?.scores?.some(s=>s>0)) missing.push('Performance');
     if(!p.potencial?.scores?.some(s=>s>0)) missing.push('Potencial');
     if(!p.madurez?.final) missing.push('Madurez profesional');
-    if(!p.ninebox?.perf || !p.ninebox?.pot) missing.push('9-Box');
+    if(!p.ninebox?.perf || !p.ninebox?.pot) missing.push('9-Box scores');
+    if(!p.ninebox?.validated) missing.push('9-Box validado');
     if(!p.risk?.global) missing.push('Flight risk');
     if(!p.resumen?.decision) missing.push('Decisión');
     alertDiv.textContent = missing.length
@@ -1629,7 +1786,8 @@ function loadProfileToUI() {
   document.getElementById('mat-justif').value = p.madurez.justif || '';
   // Risk
   buildRiskTable();
-  document.getElementById('risk-global').value = p.risk.global || '';
+  document.getElementById('risk-global').value  = p.risk.global || '';
+  document.getElementById('risk-nextrev') && (document.getElementById('risk-nextrev').value = p.risk.nextrev || '');
   document.getElementById('risk-accion').value  = p.risk.accion || '';
   // IDP
   renderIDPTable();
@@ -1639,7 +1797,11 @@ function loadProfileToUI() {
     if(el) el.value = p.resumen[f] || '';
   });
   // Ninebox
-  document.getElementById('ninebox-comment').value = p.ninebox.comment || '';
+  document.getElementById('ninebox-comment').value      = p.ninebox.comment      || '';
+  document.getElementById('ninebox-validated').value    = p.ninebox.validated    || '';
+  document.getElementById('ninebox-aspiraciones').value = p.ninebox.aspiraciones || '';
+  document.getElementById('ninebox-justif-valid').value = p.ninebox.justifValid  || '';
+  updateResumenGapSummary();
   updateNinebox();
   updateSummaryMetrics();
 }
@@ -2002,10 +2164,14 @@ function autoSave() {
   p.madurez.gap    = document.getElementById('mat-gap')?.value || '';
   p.madurez.justif = document.getElementById('mat-justif')?.value || '';
   // Risk
-  p.risk.global = document.getElementById('risk-global')?.value || '';
-  p.risk.accion = document.getElementById('risk-accion')?.value || '';
+  p.risk.global  = document.getElementById('risk-global')?.value || '';
+  p.risk.nextrev = document.getElementById('risk-nextrev')?.value || '';
+  p.risk.accion  = document.getElementById('risk-accion')?.value || '';
   // Ninebox
-  p.ninebox.comment = document.getElementById('ninebox-comment')?.value || '';
+  p.ninebox.comment      = document.getElementById('ninebox-comment')?.value || '';
+  p.ninebox.validated    = document.getElementById('ninebox-validated')?.value || '';
+  p.ninebox.aspiraciones = document.getElementById('ninebox-aspiraciones')?.value || '';
+  p.ninebox.justifValid  = document.getElementById('ninebox-justif-valid')?.value || '';
   // Resumen
   ['fortalezas','mejoras','decision','justif','hito','notas'].forEach(f => {
     const el = document.getElementById('res-'+f);
@@ -2062,8 +2228,78 @@ function skillMatuLabel(p) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// BENCHMARK EDITOR
+// IDP GAP SUGGESTION
 // ═══════════════════════════════════════════════════════════════
+function updateResumenGapSummary() {
+  if(!currentId) return;
+  const p = profiles[currentId];
+  const el = document.getElementById('idp-gaps-summary');
+  if(!el) return;
+  const gaps = [];
+  Object.entries(SKILL_GROUPS).forEach(([group, skills]) => {
+    skills.forEach(skill => {
+      const key = group + '|' + skill;
+      const s = p.skills[key];
+      if(s && s.target > 0 && s.actual >= 0) {
+        const gap = s.target - s.actual;
+        if(gap >= 1) gaps.push({ skill, gap, group });
+      }
+    });
+  });
+  gaps.sort((a,b) => b.gap - a.gap);
+  if(!gaps.length) {
+    el.textContent = 'Sin gaps detectados — completa Madurez Técnica con niveles objetivo.';
+    return;
+  }
+  el.innerHTML = gaps.slice(0,5).map(g =>
+    `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span style="font-size:10px;padding:2px 6px;background:${g.gap>=2?'var(--red-light)':'var(--amber-light)'};color:${g.gap>=2?'var(--red)':'var(--amber)'};border-radius:4px;font-weight:600">gap ${g.gap>0?'+':''}${g.gap}</span>
+      <span style="font-size:12px">${g.skill}</span>
+      <span style="font-size:10px;color:var(--gray-400)">${g.group}</span>
+    </div>`
+  ).join('');
+}
+
+function suggestIDPFromGaps() {
+  if(!currentId) return;
+  const p = profiles[currentId];
+  const gaps = [];
+  Object.entries(SKILL_GROUPS).forEach(([group, skills]) => {
+    skills.forEach(skill => {
+      const key = group + '|' + skill;
+      const s = p.skills[key];
+      if(s && s.target > 0 && s.actual >= 0) {
+        const gap = s.target - s.actual;
+        if(gap >= 1) gaps.push({ skill, gap, group });
+      }
+    });
+  });
+  gaps.sort((a,b) => b.gap - a.gap);
+  if(!gaps.length) { alert('No hay gaps detectados. Completa Madurez Técnica con niveles objetivo.'); return; }
+  const topGaps = gaps.slice(0,3);
+  topGaps.forEach(g => {
+    const tipo = g.group.includes('AI') ? 'Curso / Certificación' : g.group.includes('SOFT') ? 'Mentoring / Práctica' : 'Proyecto / Autoestudio';
+    p.idp.push({
+      area: g.skill,
+      accion: `Desarrollar competencia en ${g.skill} — gap actual: ${g.gap} niveles`,
+      tipo,
+      plazo: '',
+      avance: 0,
+      resp: '',
+      nivel: ''
+    });
+  });
+  saveLocalState();
+  pushToSupabase(currentId, p);
+  // Switch to IDP tab
+  const idpTab = document.querySelector('.section-tab:nth-child(8)');
+  switchTab('idp', idpTab || document.querySelector('.section-tab'));
+  buildIDPTable();
+  showSaveIndicator();
+  alert(`✓ Se agregaron ${topGaps.length} acciones al IDP basadas en los mayores gaps técnicos.`);
+}
+
+
 function openBenchmarkModal() {
   renderBenchmarkEditor();
   document.getElementById('benchmarkModal').classList.add('open');
