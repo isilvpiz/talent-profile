@@ -439,14 +439,24 @@ textarea { resize: vertical; min-height: 60px; }
   <!-- SIDEBAR -->
   <div class="sidebar" id="sidebar">
     <div class="sidebar-section">
-      <div class="sidebar-label">Perfiles</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div class="sidebar-label" style="margin-bottom:0">Perfiles</div>
+        <div style="display:flex;gap:2px;background:var(--gray-200);border-radius:6px;padding:2px">
+          <div id="filter-mine" onclick="setProfileFilter('mine')" style="font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;cursor:pointer;background:var(--navy);color:white;transition:all 0.12s">Míos</div>
+          <div id="filter-all" onclick="setProfileFilter('all')" style="font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;cursor:pointer;color:var(--gray-600);transition:all 0.12s">Todos</div>
+        </div>
+      </div>
       <div class="person-list" id="personList"></div>
     </div>
     <div class="separator"></div>
     <div class="sidebar-section" style="padding-top:0.75rem">
-      <div class="sidebar-nav-item" onclick="showOverview()" id="nav-overview">
+      <div class="sidebar-nav-item" onclick="showOverview('mine')" id="nav-overview-mine">
         <div class="sidebar-dot"></div>
-        Vista consolidada
+        Vista mis perfiles
+      </div>
+      <div class="sidebar-nav-item" onclick="showOverview('all')" id="nav-overview-all" style="margin-top:4px">
+        <div class="sidebar-dot"></div>
+        Vista todos
       </div>
     </div>
   </div>
@@ -773,8 +783,12 @@ textarea { resize: vertical; min-height: 60px; }
     <div id="overviewView" style="display:none">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
         <div>
-          <div style="font-size:18px;font-weight:600">Vista consolidada del equipo</div>
-          <div style="font-size:12px;color:var(--gray-400)">Todos los perfiles cargados</div>
+          <div style="font-size:18px;font-weight:600" id="overviewTitle">Vista consolidada</div>
+          <div style="font-size:12px;color:var(--gray-400)" id="overviewSubtitle">Todos los perfiles</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" id="ov-btn-mine" onclick="showOverview('mine')" style="font-size:12px">Mis perfiles</button>
+          <button class="btn btn-ghost btn-sm" id="ov-btn-all" onclick="showOverview('all')" style="font-size:12px">Todos</button>
         </div>
       </div>
       <div class="card">
@@ -1011,6 +1025,7 @@ let profiles = {};
 let currentId = null;
 let selectedColor = "#2563eb";
 let saveTimer = null;
+let profileFilter = 'mine'; // 'mine' | 'all'
 
 function loadState() {
   try {
@@ -1103,12 +1118,31 @@ function completenessColor(pct) {
 }
 
 
+function setProfileFilter(f) {
+  profileFilter = f;
+  document.getElementById('filter-mine').style.background = f==='mine' ? 'var(--navy)' : 'transparent';
+  document.getElementById('filter-mine').style.color = f==='mine' ? 'white' : 'var(--gray-600)';
+  document.getElementById('filter-all').style.background = f==='all' ? 'var(--navy)' : 'transparent';
+  document.getElementById('filter-all').style.color = f==='all' ? 'white' : 'var(--gray-600)';
+  renderSidebar();
+}
+
+function getFilteredIds() {
+  const all = Object.keys(profiles);
+  if(profileFilter === 'all' || !currentUser) return all;
+  const uname = currentUser.user_metadata?.full_name || currentUser.email;
+  return all.filter(id => {
+    const p = profiles[id];
+    return p._createdByName === uname || p._updatedByName === uname;
+  });
+}
+
 function renderSidebar() {
   const list = document.getElementById('personList');
   list.innerHTML = '';
-  const ids = Object.keys(profiles);
+  const ids = getFilteredIds();
   if(!ids.length) {
-    list.innerHTML = '<div style="padding:8px 1rem;font-size:12px;color:var(--gray-400)">Sin perfiles</div>';
+    list.innerHTML = '<div style="padding:8px 1rem;font-size:12px;color:var(--gray-400)">' + (profileFilter==='mine' ? 'Sin perfiles propios' : 'Sin perfiles') + '</div>';
     return;
   }
   ids.forEach(id => {
@@ -1583,12 +1617,26 @@ function showSaveIndicator(force) {
 // ═══════════════════════════════════════════════════════════════
 // TEAM OVERVIEW
 // ═══════════════════════════════════════════════════════════════
-function showOverview() {
+let overviewFilter = 'all';
+
+function showOverview(filter) {
+  overviewFilter = filter || 'all';
   currentId = null;
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('profileView').style.display = 'none';
   document.getElementById('overviewView').style.display = 'block';
-  document.getElementById('nav-overview').classList.add('active');
+  // Update nav active state
+  document.getElementById('nav-overview-mine').classList.toggle('active', overviewFilter==='mine');
+  document.getElementById('nav-overview-all').classList.toggle('active', overviewFilter==='all');
+  // Update header buttons
+  document.getElementById('ov-btn-mine').style.background = overviewFilter==='mine' ? 'var(--navy)' : '';
+  document.getElementById('ov-btn-mine').style.color = overviewFilter==='mine' ? 'white' : '';
+  document.getElementById('ov-btn-all').style.background = overviewFilter==='all' ? 'var(--navy)' : '';
+  document.getElementById('ov-btn-all').style.color = overviewFilter==='all' ? 'white' : '';
+  // Update title
+  const uname = currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'mis';
+  document.getElementById('overviewTitle').textContent = overviewFilter==='mine' ? `Perfiles de ${uname}` : 'Vista consolidada — Todos';
+  document.getElementById('overviewSubtitle').textContent = overviewFilter==='mine' ? 'Solo tus perfiles' : 'Todos los evaluadores';
   renderSidebar();
   renderOverview();
 }
@@ -1596,9 +1644,16 @@ function showOverview() {
 function renderOverview() {
   const tbody = document.getElementById('overviewBody');
   tbody.innerHTML = '';
-  const ids = Object.keys(profiles);
+  let ids = Object.keys(profiles);
+  if(overviewFilter === 'mine' && currentUser) {
+    const uname = currentUser.user_metadata?.full_name || currentUser.email;
+    ids = ids.filter(id => {
+      const p = profiles[id];
+      return p._createdByName === uname || p._updatedByName === uname;
+    });
+  }
   if(!ids.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--gray-400)">Sin perfiles aún</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--gray-400)">${overviewFilter==='mine' ? 'No tienes perfiles asignados' : 'Sin perfiles aún'}</td></tr>`;
     return;
   }
   ids.forEach(id => {
