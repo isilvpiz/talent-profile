@@ -1887,7 +1887,8 @@ function updateNinebox() {
   else if(techAvg >= 2) { techIcon='🟡'; techLabel='Básico';      techColor='var(--amber)';  techBg='#fffbeb'; techBorder='#fcd34d'; techDesc='Nivel técnico en desarrollo. Requiere plan de formación activo.'; }
   else if(techAvg > 0)  { techIcon='🔴'; techLabel='Inicial';     techColor='var(--red)';    techBg='#fef2f2'; techBorder='#fca5a5'; techDesc='Brecha técnica significativa. Priorizar upskilling antes de nuevas responsabilidades.'; }
 
-  el.innerHTML = ` style="background:${matched?matched.bg:'var(--gray-100)'};border:1px solid ${matched?matched.bc:'var(--gray-200)'};border-radius:10px">
+  el.innerHTML = `
+    <div class="ninebox-display" style="background:${matched?matched.bg:'var(--gray-100)'};border:1px solid ${matched?matched.bc:'var(--gray-200)'};border-radius:10px">
       <div>
         <div class="ninebox-tag" style="background:${matched?matched.bg:'var(--gray-100)'};color:${matched?matched.tc:'var(--gray-600)'};border:1px solid ${matched?matched.bc:'var(--gray-200)'}">${matched?matched.label:'—'}</div>
         <div style="font-size:11px;color:var(--gray-500);margin-top:4px">${matched?matched.desc:''}</div>
