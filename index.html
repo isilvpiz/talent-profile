@@ -1117,6 +1117,7 @@ async function doResetPassword() {
 }
 
 async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
   const pass  = document.getElementById('login-pass').value;
   const errEl = document.getElementById('login-error');
   errEl.textContent = '';
