@@ -1057,16 +1057,17 @@ async function pullFromSupabase() {
   saveLocalState();
   setSyncStatus('ok', `${data.length} perfiles`);
   renderSidebar();
-  const inProfile = document.getElementById('profileView').style.display !== 'none';
-  if(currentId && profiles[currentId] && inProfile) loadProfileToUI();
-  const ids2 = Object.keys(profiles);
-  const inOverview = document.getElementById('overviewView').style.display !== 'none';
-  const inMethodology = document.getElementById('methodologyView').style.display !== 'none';
-  if(ids2.length && !currentId && !inOverview && !inMethodology) openProfile(ids2[0]);
-  else if(inOverview) renderOverview();
-  else if(!ids2.length) {
-    document.getElementById('profileView').style.display = 'none';
-    document.getElementById('emptyState').style.display = 'block';
+  // Never change the active view during a sync — only update data in place
+  if(activeView === 'profile' && currentId && profiles[currentId]) {
+    loadProfileToUI();
+  } else if(activeView === 'overview') {
+    renderOverview();
+  } else if(activeView === 'empty' || activeView === 'methodology') {
+    // Don't navigate away from methodology; only auto-open if truly empty state
+    if(activeView === 'empty') {
+      const ids2 = Object.keys(profiles);
+      if(ids2.length) openProfile(ids2[0]);
+    }
   }
 }
 
@@ -1130,6 +1131,7 @@ let profiles = {};
 let currentId = null;
 let selectedColor = "#2563eb";
 let saveTimer = null;
+let activeView = 'empty'; // 'empty' | 'profile' | 'overview' | 'methodology'
 let profileFilter = 'mine'; // 'mine' | 'all'
 
 function loadState() {
@@ -1273,6 +1275,7 @@ function renderSidebar() {
 // ═══════════════════════════════════════════════════════════════
 function openProfile(id) {
   currentId = id;
+  activeView = 'profile';
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('overviewView').style.display = 'none';
   document.getElementById('methodologyView')&&(document.getElementById('methodologyView').style.display = 'none');
@@ -1731,6 +1734,7 @@ function skillMatuLabel(p) {
 
 function showMethodology() {
   currentId = null;
+  activeView = 'methodology';
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('profileView').style.display = 'none';
   document.getElementById('overviewView').style.display = 'none';
@@ -1746,6 +1750,7 @@ let overviewFilter = 'all';
 function showOverview(filter) {
   overviewFilter = filter || 'all';
   currentId = null;
+  activeView = 'overview';
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('profileView').style.display = 'none';
   document.getElementById('overviewView').style.display = 'block';
