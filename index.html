@@ -441,10 +441,6 @@ textarea { resize: vertical; min-height: 60px; }
     <div class="sidebar-section">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
         <div class="sidebar-label" style="margin-bottom:0">Perfiles</div>
-        <div style="display:flex;gap:2px;background:var(--gray-200);border-radius:6px;padding:2px">
-          <div id="filter-mine" onclick="setProfileFilter('mine')" style="font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;cursor:pointer;background:var(--navy);color:white;transition:all 0.12s">Míos</div>
-          <div id="filter-all" onclick="setProfileFilter('all')" style="font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;cursor:pointer;color:var(--gray-600);transition:all 0.12s">Todos</div>
-        </div>
       </div>
       <div class="person-list" id="personList"></div>
     </div>
@@ -457,6 +453,10 @@ textarea { resize: vertical; min-height: 60px; }
       <div class="sidebar-nav-item" onclick="showOverview('all')" id="nav-overview-all" style="margin-top:4px">
         <div class="sidebar-dot"></div>
         Vista todos
+      </div>
+      <div class="sidebar-nav-item" onclick="showMethodology()" id="nav-methodology" style="margin-top:4px">
+        <div class="sidebar-dot"></div>
+        Guía metodológica
       </div>
     </div>
   </div>
@@ -797,13 +797,115 @@ textarea { resize: vertical; min-height: 60px; }
             <thead><tr>
               <th>Nombre</th><th>Rol</th><th>Seniority</th>
               <th>Perf.</th><th>Potencial</th><th>9-Box</th>
-              <th>Madurez</th><th>Risk</th><th>Decisión</th><th>Evaluador</th>
+              <th>Mad. Técnica</th><th>Mad. Profesional</th><th>Risk</th><th>Decisión</th><th>Evaluador</th>
             </tr></thead>
             <tbody id="overviewBody"></tbody>
           </table>
         </div>
       </div>
     </div>
+
+    <!-- METHODOLOGY VIEW -->
+    <div id="methodologyView" style="display:none">
+      <div style="margin-bottom:1.5rem">
+        <div style="font-size:18px;font-weight:600">Guía metodológica</div>
+        <div style="font-size:12px;color:var(--gray-400)">Cómo se calculan y qué significa cada dimensión</div>
+      </div>
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-header"><div class="card-header-dot" style="background:var(--green)"></div><span class="card-title">Performance</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> El desempeño actual observable en el rol, basado en comportamientos y resultados concretos.</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>Escala:</strong> 1 (Muy por debajo) → 2 (Por debajo) → 3 (Cumple) → 4 (Supera) → 5 (Excepcional)</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>Cálculo:</strong> Promedio simple de 6 dimensiones — Calidad técnica, Cumplimiento OKRs, Autonomía/ownership, Velocidad de entrega, Colaboración, Comunicación con stakeholders.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">1.0–2.4 Bajo</span>
+            <span style="background:var(--amber-light);color:var(--amber);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">2.5–3.4 Medio</span>
+            <span style="background:var(--green-light);color:var(--green);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">3.5–5.0 Alto</span>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-header"><div class="card-header-dot" style="background:var(--purple)"></div><span class="card-title">Potencial</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Capacidad de crecer, asumir mayor complejidad y responsabilidad futura. No es performance actual — es proyección.</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>Escala:</strong> 1 (Muy limitado) → 5 (Excepcional)</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>Cálculo:</strong> Promedio de 6 dimensiones — Learning Agility, Pensamiento sistémico, Liderazgo/influencia, Gestión de ambigüedad, Proactividad estratégica, Aspiraciones declaradas.</p>
+          <p style="font-size:12px;color:var(--gray-400)">⚠ Triangular con evidencias concretas. Evitar sesgos de afinidad.</p>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-header"><div class="card-header-dot" style="background:var(--teal)"></div><span class="card-title">Matriz 9-Box</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;margin-bottom:10px"><strong>¿Qué es?</strong> Combina Performance (eje X) y Potencial (eje Y) en 9 cuadrantes para orientar decisiones de talento.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
+            <div style="background:#ede9fe;border:1px solid #c4b5fd;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#5b21b6">💡 Alto potencial</strong><br><span style="color:#7c3aed">Invertir en desarrollo</span></div>
+            <div style="background:#fef9c3;border:1px solid #fde047;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#854d0e">⭐ Top talent</strong><br><span style="color:#92400e">Retener y promover</span></div>
+            <div style="background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#166534">🚀 High performer</strong><br><span style="color:#166534">Reconocer y estabilizar</span></div>
+            <div style="background:#dbeafe;border:1px solid #93c5fd;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#1e40af">📈 En desarrollo</strong><br><span style="color:#1e40af">Acompañar y acelerar</span></div>
+            <div style="background:#e0f2fe;border:1px solid #7dd3fc;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#0c4a6e">✅ Core contributor</strong><br><span style="color:#0c4a6e">Mantener y motivar</span></div>
+            <div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#064e3b">🏅 Performer sólido</strong><br><span style="color:#064e3b">Valorar contribución</span></div>
+            <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#991b1b">⚠️ Under review</strong><br><span style="color:#991b1b">Plan mejora urgente</span></div>
+            <div style="background:#ffedd5;border:1px solid #fdba74;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#9a3412">🔄 En transición</strong><br><span style="color:#9a3412">Diagnóstico y soporte</span></div>
+            <div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#475569">📋 Performer estable</strong><br><span style="color:#475569">Reconocer estabilidad</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-header"><div class="card-header-dot" style="background:var(--blue)"></div><span class="card-title">Madurez Técnica</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Nivel de dominio actual y objetivo en habilidades técnicas Data & AI.</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>Escala por skill:</strong> 0 (Sin conocimiento) → 1 (Básico) → 2 (Funcional) → 3 (Avanzado) → 4 (Experto) → 5 (Referente)</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>Gap:</strong> Nivel objetivo − Nivel actual. Gap positivo = área de desarrollo prioritaria.</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>Grupos:</strong> DATA & ANALYTICS · AI / ML · SOFT / LEADERSHIP</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">Avg &lt;2 Inicial</span>
+            <span style="background:var(--amber-light);color:var(--amber);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">Avg 2–3 Intermedio</span>
+            <span style="background:var(--green-light);color:var(--green);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">Avg ≥4 Avanzado</span>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-header"><div class="card-header-dot" style="background:var(--orange)"></div><span class="card-title">Madurez Profesional</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Nivel de autonomía y madurez organizacional, independiente del rol técnico.</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>Escala:</strong> 1 (Ejecutor guiado) → 2 (Ejecutor independiente) → 3 (Contribuidor de equipo) → 4 (Referente de área) → 5 (Líder estratégico)</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>Dimensiones:</strong> Impacto del trabajo, Supervisión requerida (inverso), Alcance de decisiones, Gestión de stakeholders, Tolerancia a la ambigüedad, Mentoría.</p>
+          <p style="font-size:12px;color:var(--gray-400)">El nivel final es asignado por el evaluador integrando promedio + juicio cualitativo + gap con nivel esperado del rol.</p>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-header"><div class="card-header-dot" style="background:var(--red)"></div><span class="card-title">Flight Risk</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Probabilidad de abandono voluntario en los próximos 6–12 meses.</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>Factores:</strong> Satisfacción con el rol · Relación con el equipo · Alineación estratégica · Equidad percibida (salario/reconocimiento)</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span style="background:var(--green-light);color:var(--green);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">Bajo — Retención estable</span>
+            <span style="background:var(--amber-light);color:var(--amber);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">Medio — Monitorear</span>
+            <span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">Alto — Acción inmediata</span>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-header"><div class="card-header-dot" style="background:var(--teal)"></div><span class="card-title">IDP — Plan de Desarrollo Individual</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué es?</strong> Plan estructurado de acciones concretas para cerrar gaps y acelerar el crecimiento.</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>Componentes:</strong> Área de desarrollo · Acción concreta · Tipo (Curso/Proyecto/Mentoring/Certificación) · Plazo · % Avance · Responsable</p>
+          <p style="font-size:12px;color:var(--gray-400)">Revisar mínimo 1 vez por quarter. Derivar directamente de gaps de Madurez Técnica y 9-Box.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-header-dot" style="background:var(--amber)"></div><span class="card-title">% Completitud del perfil</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Porcentaje de campos requeridos completados para considerar una evaluación válida.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+            <span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">🔴 &lt;50% Crítico</span>
+            <span style="background:var(--amber-light);color:var(--amber);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">🟡 50–79% En progreso</span>
+            <span style="background:var(--green-light);color:var(--green);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">🟢 ≥80% Completo</span>
+          </div>
+          <p style="font-size:12px;color:var(--gray-400)">Ponderación: Datos generales 20% · Performance 20% · Potencial 10% · Skills 10% · Madurez 10% · 9-Box 10% · Risk 10% · Resumen/Decisión 10%</p>
+        </div>
+      </div>
+    </div><!-- end methodologyView -->
 
   </div><!-- end main -->
 </div>
@@ -1128,13 +1230,7 @@ function setProfileFilter(f) {
 }
 
 function getFilteredIds() {
-  const all = Object.keys(profiles);
-  if(profileFilter === 'all' || !currentUser) return all;
-  const uname = currentUser.user_metadata?.full_name || currentUser.email;
-  return all.filter(id => {
-    const p = profiles[id];
-    return p._createdByName === uname || p._updatedByName === uname;
-  });
+  return Object.keys(profiles);
 }
 
 function renderSidebar() {
@@ -1617,6 +1713,28 @@ function showSaveIndicator(force) {
 // ═══════════════════════════════════════════════════════════════
 // TEAM OVERVIEW
 // ═══════════════════════════════════════════════════════════════
+function skillMatuLabel(p) {
+  const vals = Object.values(p.skills || {}).map(s => s.actual).filter(v => v > 0);
+  if(!vals.length) return '—';
+  const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
+  if(avg >= 4) return '🟢 Avanzado';
+  if(avg >= 3) return '🟡 Intermedio';
+  if(avg >= 2) return '🟠 Básico';
+  return '🔴 Inicial';
+}
+
+function showMethodology() {
+  currentId = null;
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('profileView').style.display = 'none';
+  document.getElementById('overviewView').style.display = 'none';
+  document.getElementById('methodologyView').style.display = 'block';
+  document.getElementById('nav-overview-mine').classList.remove('active');
+  document.getElementById('nav-overview-all').classList.remove('active');
+  document.getElementById('nav-methodology').classList.add('active');
+  renderSidebar();
+}
+
 let overviewFilter = 'all';
 
 function showOverview(filter) {
@@ -1625,6 +1743,8 @@ function showOverview(filter) {
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('profileView').style.display = 'none';
   document.getElementById('overviewView').style.display = 'block';
+  document.getElementById('methodologyView').style.display = 'none';
+  document.getElementById('nav-methodology').classList.remove('active');
   // Update nav active state
   document.getElementById('nav-overview-mine').classList.toggle('active', overviewFilter==='mine');
   document.getElementById('nav-overview-all').classList.toggle('active', overviewFilter==='all');
@@ -1685,6 +1805,7 @@ function renderOverview() {
       <td><span style="font-weight:600;font-family:'DM Mono',monospace;color:${perf>=4?'var(--green)':perf>=3?'var(--amber)':perf>0?'var(--red)':'var(--gray-400)'}">${perf>0?perf.toFixed(1):'—'}</span></td>
       <td><span style="font-weight:600;font-family:'DM Mono',monospace;color:${pot>=4?'var(--purple)':pot>=3?'var(--blue)':pot>0?'var(--amber)':'var(--gray-400)'}">${pot>0?pot.toFixed(1):'—'}</span></td>
       <td style="font-size:12px">${nb}</td>
+      <td style="font-size:12px">${skillMatuLabel(p)}</td>
       <td style="font-size:12px">${p.madurez.final||'—'}</td>
       <td><span style="color:${riskColor};font-size:12px">${p.risk.global||'—'}</span></td>
       <td style="font-size:12px">${p.resumen.decision||'—'}</td>
