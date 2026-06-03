@@ -556,6 +556,12 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
             <div class="form-grid">
               <div class="form-group"><label>Nombre completo</label><input type="text" id="g-nombre" oninput="autoSave()"></div>
               <div class="form-group"><label>Rol / Cargo actual</label><input type="text" id="g-rol" oninput="autoSave()"></div>
+              <div class="form-group"><label>Nivel jerárquico</label>
+                <select id="g-nivel" onchange="autoSave()">
+                  <option value="">— Seleccionar —</option>
+                  <option>Staff</option><option>Líder</option><option>Manager</option>
+                </select>
+              </div>
               <div class="form-group"><label>Fecha de ingreso</label><input type="date" id="g-ingreso" onchange="autoSave()"></div>
               <div class="form-group"><label>Seniority declarado</label>
                 <select id="g-seniority" onchange="autoSave()">
@@ -845,7 +851,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
         <div class="card-body" style="padding:0;overflow-x:auto">
           <table class="team-table" id="overviewTable">
             <thead><tr>
-              <th>Nombre</th><th>Rol</th><th>Seniority</th>
+              <th>Nombre</th><th>Rol</th><th>Nivel</th><th>Seniority</th>
               <th>Perf.</th><th>Potencial</th><th>9-Box</th>
               <th>Mad. Técnica</th><th>Mad. Profesional</th><th>Risk</th><th>Decisión</th><th>Evaluador</th>
             </tr></thead>
@@ -1176,16 +1182,31 @@ function onAuthSuccess(user) {
   document.getElementById('userName').textContent = name;
   document.getElementById('userAvatar').textContent = initials;
   document.getElementById('userChip').style.display = 'flex';
-  if(isAdmin()) {
-    document.body.classList.add('is-admin');
-    document.getElementById('userAvatar').style.background = 'var(--blue)';
-    document.getElementById('userChip').title = 'Admin — Clic para cerrar sesión';
-  }
+  const role = getUserRole();
+  const roleColors = { admin:'var(--blue)', director:'var(--purple)', manager:'var(--teal)', lider:'var(--green)' };
+  document.getElementById('userAvatar').style.background = roleColors[role] || 'var(--gray-400)';
+  document.getElementById('userChip').title = `${name} · ${role} — Clic para cerrar sesión`;
+  if(isAdmin()) document.body.classList.add('is-admin');
   loadBenchmarks().then(() => loadDimensions()).then(() => pullFromSupabase());
 }
 
 function isAdmin() {
   return currentUser?.user_metadata?.is_admin === true;
+}
+
+function getUserRole() {
+  if(isAdmin()) return 'admin';
+  return currentUser?.user_metadata?.role || 'lider';
+}
+
+// Visibility: admin/director=all, manager=staff+lider, lider=staff only
+function canSeeProfile(p) {
+  const role = getUserRole();
+  if(role === 'admin' || role === 'director') return true;
+  const nivel = (p.general?.nivel || '').toLowerCase().trim();
+  if(role === 'manager') return nivel === 'staff' || nivel === 'líder' || nivel === 'lider' || nivel === '';
+  if(role === 'lider')   return nivel === 'staff' || nivel === '';
+  return false;
 }
 
 // ─── SUPABASE DATA ───
@@ -1422,7 +1443,7 @@ function newProfileData(id, nombre, rol, color) {
   RISK_ITEMS.forEach((_, i) => { riskData[i] = {estado:"", obs:"", accion:""}; });
   return {
     id, nombre, rol, color, created: new Date().toISOString(),
-    general: { nombre, rol, ingreso:"", seniority:"", tiempo:"", lasteval:"", proyectos:"", entrevistador:"", notas:"" },
+    general: { nombre, rol, nivel:"", ingreso:"", seniority:"", tiempo:"", lasteval:"", proyectos:"", entrevistador:"", notas:"" },
     perf: { scores: perfScores, evidence: perfEvidence },
     pot: { scores: potScores, evidence: potEvidence },
     skills: skillData,
@@ -1495,7 +1516,7 @@ function setProfileFilter(f) {
 }
 
 function getFilteredIds() {
-  return Object.keys(profiles);
+  return Object.keys(profiles).filter(id => canSeeProfile(profiles[id]));
 }
 
 function renderSidebar() {
@@ -1581,7 +1602,7 @@ function loadProfileToUI() {
   }
 
   // General
-  ['nombre','rol','ingreso','seniority','tiempo','lasteval','proyectos','entrevistador','notas'].forEach(f => {
+  ['nombre','rol','nivel','ingreso','seniority','tiempo','lasteval','proyectos','entrevistador','notas'].forEach(f => {
     const el = document.getElementById('g-'+f);
     if(el) el.value = p.general[f] || '';
   });
@@ -1961,7 +1982,7 @@ function autoSave() {
   if(!currentId) return;
   const p = profiles[currentId];
   // Read all general fields
-  ['nombre','rol','ingreso','seniority','tiempo','lasteval','proyectos','entrevistador','notas'].forEach(f => {
+  ['nombre','rol','nivel','ingreso','seniority','tiempo','lasteval','proyectos','entrevistador','notas'].forEach(f => {
     const el = document.getElementById('g-'+f);
     if(el) p.general[f] = el.value;
   });
@@ -2339,7 +2360,7 @@ function showOverview(filter) {
 function renderOverview() {
   const tbody = document.getElementById('overviewBody');
   tbody.innerHTML = '';
-  let ids = Object.keys(profiles);
+  let ids = Object.keys(profiles).filter(id => canSeeProfile(profiles[id]));
   if(overviewFilter === 'mine' && currentUser) {
     const uname = currentUser.user_metadata?.full_name || currentUser.email;
     ids = ids.filter(id => {
@@ -2376,6 +2397,7 @@ function renderOverview() {
         </div>
       </td>
       <td style="color:var(--gray-600)">${p.rol||'—'}</td>
+      <td><span style="font-size:11px;padding:2px 7px;border-radius:4px;font-weight:500;background:${p.general.nivel==='Manager'?'#ede9fe':p.general.nivel==='Líder'?'#dbeafe':'#f1f5f9'};color:${p.general.nivel==='Manager'?'#5b21b6':p.general.nivel==='Líder'?'#1e40af':'#475569'}">${p.general.nivel||'—'}</span></td>
       <td>${p.general.seniority||'—'}</td>
       <td><span style="font-weight:600;font-family:'DM Mono',monospace;color:${perf>=4?'var(--green)':perf>=3?'var(--amber)':perf>0?'var(--red)':'var(--gray-400)'}">${perf>0?perf.toFixed(1):'—'}</span></td>
       <td><span style="font-weight:600;font-family:'DM Mono',monospace;color:${pot>=4?'var(--purple)':pot>=3?'var(--blue)':pot>0?'var(--amber)':'var(--gray-400)'}">${pot>0?pot.toFixed(1):'—'}</span></td>
