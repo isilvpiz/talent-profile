@@ -406,16 +406,38 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
         <div class="brand-sub">Data & AI — NTT DATA</div>
       </div>
     </div>
-    <div class="form-group" style="margin-bottom:12px">
-      <label>Email</label>
-      <input type="text" id="login-email" placeholder="tu@nttdata.com" onkeydown="if(event.key==='Enter')doLogin()">
+    <!-- LOGIN FORM -->
+    <div id="auth-login-form">
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Email</label>
+        <input type="text" id="login-email" placeholder="tu@nttdata.com" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label>Contraseña</label>
+        <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="auth-error" id="login-error"></div>
+      <div class="auth-success" id="login-success"></div>
+      <button class="btn btn-blue" style="width:100%;margin-bottom:12px" id="loginBtn" onclick="loginClick()">Entrar</button>
+      <div style="text-align:center">
+        <span onclick="doForgotPassword()" style="font-size:12px;color:var(--blue);cursor:pointer;text-decoration:underline">¿Olvidaste tu contraseña?</span>
+      </div>
     </div>
-    <div class="form-group" style="margin-bottom:16px">
-      <label>Contraseña</label>
-      <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <!-- RESET PASSWORD FORM -->
+    <div id="auth-reset-form" style="display:none">
+      <p style="font-size:13px;color:var(--gray-600);margin-bottom:16px">Elige tu nueva contraseña.</p>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Nueva contraseña</label>
+        <input type="password" id="reset-pass" placeholder="mínimo 6 caracteres">
+      </div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label>Confirmar contraseña</label>
+        <input type="password" id="reset-pass2" placeholder="repite la contraseña">
+      </div>
+      <div class="auth-error" id="reset-error"></div>
+      <div class="auth-success" id="reset-success"></div>
+      <button class="btn btn-blue" style="width:100%" id="resetBtn" onclick="doResetPassword()">Guardar nueva contraseña</button>
     </div>
-    <div class="auth-error" id="login-error"></div>
-    <button class="btn btn-blue" style="width:100%" id="loginBtn" onclick="loginClick()">Entrar</button>
   </div>
 </div>
 
@@ -1031,8 +1053,40 @@ async function loginClick() {
   btn.textContent = 'Entrar'; btn.disabled = false;
 }
 
-async function doLogin() {
+async function doForgotPassword() {
   const email = document.getElementById('login-email').value.trim();
+  const errEl = document.getElementById('login-error');
+  const okEl  = document.getElementById('login-success');
+  errEl.textContent = ''; okEl.textContent = '';
+  if(!email) { errEl.textContent = 'Ingresa tu email primero.'; return; }
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.href
+  });
+  if(error) { errEl.textContent = error.message; return; }
+  okEl.textContent = '✓ Email enviado. Revisa tu bandeja de entrada.';
+}
+
+async function doResetPassword() {
+  const pass  = document.getElementById('reset-pass').value;
+  const pass2 = document.getElementById('reset-pass2').value;
+  const errEl = document.getElementById('reset-error');
+  const okEl  = document.getElementById('reset-success');
+  errEl.textContent = ''; okEl.textContent = '';
+  if(!pass || pass.length < 6) { errEl.textContent = 'Mínimo 6 caracteres.'; return; }
+  if(pass !== pass2) { errEl.textContent = 'Las contraseñas no coinciden.'; return; }
+  const btn = document.getElementById('resetBtn');
+  btn.textContent = 'Guardando...'; btn.disabled = true;
+  const { error } = await supabaseClient.auth.updateUser({ password: pass });
+  btn.textContent = 'Guardar nueva contraseña'; btn.disabled = false;
+  if(error) { errEl.textContent = error.message; return; }
+  okEl.textContent = '✓ Contraseña actualizada. Entrando...';
+  setTimeout(() => {
+    document.getElementById('auth-reset-form').style.display = 'none';
+    document.getElementById('auth-login-form').style.display = 'block';
+  }, 1500);
+}
+
+async function doLogin() {
   const pass  = document.getElementById('login-pass').value;
   const errEl = document.getElementById('login-error');
   errEl.textContent = '';
@@ -2348,6 +2402,13 @@ renderSidebar();
     }
     // Listen for auth state changes
     supabaseClient.auth.onAuthStateChange((event, session) => {
+      if(event === 'PASSWORD_RECOVERY') {
+        // Show reset password form instead of logging in
+        document.getElementById('authScreen').classList.remove('hidden');
+        document.getElementById('auth-login-form').style.display = 'none';
+        document.getElementById('auth-reset-form').style.display = 'block';
+        document.getElementById('reset-pass').focus();
+      }
       if(event === 'SIGNED_IN' && session) onAuthSuccess(session.user);
       if(event === 'SIGNED_OUT') {
         currentUser = null;
