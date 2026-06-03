@@ -1128,7 +1128,14 @@ async function doLogin() {
   try {
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
     if(error) { errEl.textContent = error.message; return; }
-    onAuthSuccess(data.user);
+    const mustChange = data.user.user_metadata?.must_change_password !== false;
+    if(mustChange) {
+      currentUser = data.user;
+      document.getElementById('auth-login-form').style.display = 'none';
+      document.getElementById('auth-firstlogin-form').style.display = 'block';
+    } else {
+      onAuthSuccess(data.user);
+    }
   } catch(e) {
     errEl.textContent = 'Error de conexión: ' + e.message;
   }
@@ -2441,16 +2448,9 @@ renderSidebar();
         document.getElementById('reset-pass').focus();
       }
       if(event === 'SIGNED_IN' && session) {
-        const mustChange = session.user.user_metadata?.must_change_password !== false;
-        if(mustChange) {
-          // Show first login change password screen
-          document.getElementById('auth-login-form').style.display = 'none';
-          document.getElementById('auth-reset-form').style.display = 'none';
-          document.getElementById('auth-firstlogin-form').style.display = 'block';
-          document.getElementById('authScreen').classList.remove('hidden');
-          // Store user temporarily for the update call
-          currentUser = session.user;
-        } else {
+        // Only auto-login if must_change_password is already false (returning user)
+        // First-time users are handled directly in doLogin
+        if(session.user.user_metadata?.must_change_password === false) {
           onAuthSuccess(session.user);
         }
       }
