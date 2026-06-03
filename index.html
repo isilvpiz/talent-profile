@@ -419,11 +419,22 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
       <div class="auth-error" id="login-error"></div>
       <div class="auth-success" id="login-success"></div>
       <button class="btn btn-blue" style="width:100%;margin-bottom:12px" id="loginBtn" onclick="loginClick()">Entrar</button>
-      <div style="text-align:center">
-        <span onclick="doForgotPassword()" style="font-size:12px;color:var(--blue);cursor:pointer;text-decoration:underline">¿Olvidaste tu contraseña?</span>
-      </div>
     </div>
-    <!-- RESET PASSWORD FORM -->
+    <!-- FIRST LOGIN - CHANGE PASSWORD FORM -->
+    <div id="auth-firstlogin-form" style="display:none">
+      <p style="font-size:13px;color:var(--gray-600);margin-bottom:4px"><strong>Bienvenido/a 👋</strong></p>
+      <p style="font-size:12px;color:var(--gray-400);margin-bottom:16px">Por seguridad, elige una contraseña personal antes de continuar.</p>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Nueva contraseña</label>
+        <input type="password" id="firstlogin-pass" placeholder="mínimo 6 caracteres">
+      </div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label>Confirmar contraseña</label>
+        <input type="password" id="firstlogin-pass2" placeholder="repite la contraseña">
+      </div>
+      <div class="auth-error" id="firstlogin-error"></div>
+      <button class="btn btn-blue" style="width:100%" id="firstloginBtn" onclick="doFirstLoginChange()">Establecer contraseña y entrar</button>
+    </div>
     <div id="auth-reset-form" style="display:none">
       <p style="font-size:13px;color:var(--gray-600);margin-bottom:16px">Elige tu nueva contraseña.</p>
       <div class="form-group" style="margin-bottom:12px">
@@ -1051,6 +1062,25 @@ async function loginClick() {
   btn.textContent = 'Entrando...'; btn.disabled = true;
   await doLogin();
   btn.textContent = 'Entrar'; btn.disabled = false;
+}
+
+async function doFirstLoginChange() {
+  const pass  = document.getElementById('firstlogin-pass').value;
+  const pass2 = document.getElementById('firstlogin-pass2').value;
+  const errEl = document.getElementById('firstlogin-error');
+  errEl.textContent = '';
+  if(!pass || pass.length < 6) { errEl.textContent = 'Mínimo 6 caracteres.'; return; }
+  if(pass !== pass2) { errEl.textContent = 'Las contraseñas no coinciden.'; return; }
+  const btn = document.getElementById('firstloginBtn');
+  btn.textContent = 'Guardando...'; btn.disabled = true;
+  const { data, error } = await supabaseClient.auth.updateUser({
+    password: pass,
+    data: { must_change_password: false }
+  });
+  btn.textContent = 'Establecer contraseña y entrar'; btn.disabled = false;
+  if(error) { errEl.textContent = error.message; return; }
+  document.getElementById('auth-firstlogin-form').style.display = 'none';
+  onAuthSuccess(data.user);
 }
 
 async function doForgotPassword() {
@@ -2409,7 +2439,20 @@ renderSidebar();
         document.getElementById('auth-reset-form').style.display = 'block';
         document.getElementById('reset-pass').focus();
       }
-      if(event === 'SIGNED_IN' && session) onAuthSuccess(session.user);
+      if(event === 'SIGNED_IN' && session) {
+        const mustChange = session.user.user_metadata?.must_change_password !== false;
+        if(mustChange) {
+          // Show first login change password screen
+          document.getElementById('auth-login-form').style.display = 'none';
+          document.getElementById('auth-reset-form').style.display = 'none';
+          document.getElementById('auth-firstlogin-form').style.display = 'block';
+          document.getElementById('authScreen').classList.remove('hidden');
+          // Store user temporarily for the update call
+          currentUser = session.user;
+        } else {
+          onAuthSuccess(session.user);
+        }
+      }
       if(event === 'SIGNED_OUT') {
         currentUser = null;
         document.getElementById('userChip').style.display = 'none';
