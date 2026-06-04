@@ -1009,8 +1009,20 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
           </div>
           <div class="card-body">
             <div class="form-grid">
-              <div class="form-group"><label>Fortalezas clave (top 3)</label><textarea id="res-fortalezas" rows="3" oninput="autoSave()"></textarea></div>
-              <div class="form-group"><label>Áreas de mejora prioritarias (top 3)</label><textarea id="res-mejoras" rows="3" oninput="autoSave()"></textarea></div>
+              <div class="form-group">
+                <label style="display:flex;align-items:center;justify-content:space-between">
+                  Fortalezas clave (top 3)
+                  <button onclick="generateFortalezas()" class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 7px;color:var(--teal);border:1px solid var(--teal);background:var(--teal-light)" title="Generar desde scores">✨ Desde datos</button>
+                </label>
+                <textarea id="res-fortalezas" rows="3" oninput="autoSave()" placeholder="Ej: Alta autonomía técnica, fuerte ownership…"></textarea>
+              </div>
+              <div class="form-group">
+                <label style="display:flex;align-items:center;justify-content:space-between">
+                  Áreas de mejora prioritarias (top 3)
+                  <button onclick="generateMejoras()" class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 7px;color:var(--orange);border:1px solid var(--orange);background:var(--orange-light)" title="Generar desde gaps">✨ Desde datos</button>
+                </label>
+                <textarea id="res-mejoras" rows="3" oninput="autoSave()" placeholder="Ej: Comunicación con stakeholders, visión sistémica…"></textarea>
+              </div>
               <div class="form-group full">
                 <label>Decisión recomendada</label>
                 <select id="res-decision" onchange="autoSave()">
@@ -2443,39 +2455,9 @@ function loadProfileToUI() {
   document.getElementById('complBar').style.background = col;
   document.getElementById('complPct').textContent = pct + '%';
   document.getElementById('complPct').style.color = col;
+  // Hide the old grouped alert — section alerts handle this now
   const alertDiv = document.getElementById('profileAlert');
-  if(pct < 100) {
-    alertDiv.style.display = 'block';
-    const missing = [];
-    const g = p.general || {};
-    if(!g.nombre) missing.push('Nombre');
-    if(!g.rol) missing.push('Rol');
-    if(!g.nivel) missing.push('Nivel jerárquico');
-    if(!g.ingreso) missing.push('Ingreso');
-    if(!g.seniority) missing.push('Seniority');
-    if(!g.tiempo) missing.push('Tiempo en rol');
-    if(!g.lasteval) missing.push('Última evaluación');
-    if(!g.proyectos) missing.push('Proyectos');
-    if(!g.entrevistador) missing.push('Entrevistador');
-    const perfScores = Object.values(p.perf?.scores || {});
-    if(perfScores.some(s => !s)) missing.push('Performance (scores incompletos)');
-    const potScores = Object.values(p.pot?.scores || {});
-    if(potScores.some(s => !s)) missing.push('Potencial (scores incompletos)');
-    if(!p.madurez?.final) missing.push('Madurez final');
-    if(!p.risk?.global) missing.push('Flight risk global');
-    if(!p.resumen?.decision) missing.push('Decisión');
-    // Skills con plan activo sin descripción
-    const skillsPendientes = Object.entries(p.skills || {}).filter(([,d]) => d.planActivo==='Sí' && !d.plan?.trim()).length;
-    if(skillsPendientes > 0) missing.push(`${skillsPendientes} plan(es) de skill sin descripción`);
-    // Risk items Alto sin obs/acción
-    const riskPendientes = Object.values(p.risk?.items || {}).filter(d => d.estado==='Alto' && (!d.obs?.trim() || !d.accion?.trim())).length;
-    if(riskPendientes > 0) missing.push(`${riskPendientes} indicador(es) Alto sin obs/acción`);
-    alertDiv.textContent = missing.length
-      ? `⚠ Pendiente: ${missing.join(', ')}`
-      : `⚠ Perfil incompleto — ${100-pct}% restante`;
-  } else {
-    alertDiv.style.display = 'none';
-  }
+  if(alertDiv) alertDiv.style.display = 'none';
 
   // General
   ['nombre','rol','nivel','ingreso','seniority','tiempo','lasteval','proyectos','entrevistador','notas'].forEach(f => {
@@ -2863,7 +2845,26 @@ function updateNinebox() {
         <div style="font-size:12px;font-weight:600;color:${techColor}">${techLabel} — Madurez Técnica</div>
         <div style="font-size:11px;color:var(--gray-500);margin-top:2px">${techDesc}</div>
       </div>
-    </div>` : ''}`;
+    </div>` : ''}
+    ${(() => {
+      // Potencial vs Madurez profesional insight
+      const matFinal = parseInt(p.madurez?.final) || 0;
+      if(pot > 0 && matFinal > 0) {
+        // pot es 1-5, matFinal es 1-5 — comparar cuadrante de potencial vs nivel de madurez
+        const potBucket = pot >= 4 ? 3 : pot >= 3 ? 2 : 1; // alto/medio/bajo
+        const gap = potBucket - matFinal;
+        if(potBucket >= 3 && matFinal <= 2) {
+          return `<div style="margin-top:8px;padding:10px 14px;border-radius:8px;background:#f0f9ff;border:1px solid #7dd3fc;display:flex;align-items:flex-start;gap:10px">
+            <span style="font-size:16px;flex-shrink:0">💡</span>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:#0369a1">Alto potencial, madurez en desarrollo (Nivel ${matFinal})</div>
+              <div style="font-size:11px;color:var(--gray-500);margin-top:2px">Es coherente y frecuente: el potencial refleja capacidades y proyección; la madurez profesional refleja el seniority demostrado en contexto. Este perfil requiere exposición progresiva y acompañamiento para acelerar la madurez.</div>
+            </div>
+          </div>`;
+        }
+      }
+      return '';
+    })()}`;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -3760,7 +3761,123 @@ function getMissingFields(p) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// SECTION ALERTS (inline por sección)
+// GENERATE FORTALEZAS & MEJORAS FROM DATA
+// ═══════════════════════════════════════════════════════════════
+function generateFortalezas() {
+  if(!currentId) return;
+  const p = profiles[currentId];
+  const seniority = p.general?.seniority || '';
+  const fortalezas = [];
+
+  // Top 3 performance dims con score más alto
+  const perfEntries = Object.entries(p.perf?.scores || {})
+    .filter(([,v]) => v >= 4)
+    .sort(([,a],[,b]) => b - a)
+    .slice(0, 3);
+  perfEntries.forEach(([i]) => {
+    const dim = PERF_DIMS[i];
+    if(dim) fortalezas.push(`${dim} (score ${p.perf.scores[i]}/5)`);
+  });
+
+  // Top 2 potencial dims
+  const potEntries = Object.entries(p.pot?.scores || {})
+    .filter(([,v]) => v >= 4)
+    .sort(([,a],[,b]) => b - a)
+    .slice(0, 2);
+  potEntries.forEach(([i]) => {
+    const dim = POT_DIMS[i];
+    if(dim && fortalezas.length < 4) fortalezas.push(`${dim} (potencial alto)`);
+  });
+
+  // Top skills técnicos
+  const topSkills = Object.entries(p.skills || {})
+    .filter(([,d]) => d.actual >= 4)
+    .sort(([,a],[,b]) => b.actual - a.actual)
+    .slice(0, 2);
+  topSkills.forEach(([skill, d]) => {
+    if(fortalezas.length < 5) fortalezas.push(`${skill} (nivel ${d.actual}/5)`);
+  });
+
+  // 9-Box label como fortaleza
+  const perf = getAvg(p.perf.scores);
+  const pot  = getAvg(p.pot.scores);
+  if(perf >= 4 && pot >= 4) fortalezas.unshift('Perfil Top talent: alta performance y alto potencial');
+  else if(pot >= 4)         fortalezas.unshift('Alto potencial demostrado en múltiples dimensiones');
+  else if(perf >= 4)        fortalezas.unshift('Alta performance consistente en el rol actual');
+
+  const top3 = [...new Set(fortalezas)].slice(0, 3);
+  if(!top3.length) {
+    alert('No hay suficientes scores ≥ 4 para generar fortalezas. Completa Performance, Potencial y Skills primero.');
+    return;
+  }
+  const el = document.getElementById('res-fortalezas');
+  if(el.value.trim()) {
+    if(!confirm('Reemplazar el texto actual con las fortalezas generadas?')) return;
+  }
+  el.value = top3.join('\n');
+  profiles[currentId].resumen.fortalezas = el.value;
+  autoSave();
+}
+
+function generateMejoras() {
+  if(!currentId) return;
+  const p = profiles[currentId];
+  const mejoras = [];
+
+  // Performance dims con score < 3
+  const perfGaps = Object.entries(p.perf?.scores || {})
+    .filter(([,v]) => v > 0 && v <= 2)
+    .sort(([,a],[,b]) => a - b)
+    .slice(0, 3);
+  perfGaps.forEach(([i]) => {
+    const dim = PERF_DIMS[i];
+    if(dim) mejoras.push(`Mejorar: ${dim} (score actual ${p.perf.scores[i]}/5)`);
+  });
+
+  // Potencial dims con score bajo
+  const potGaps = Object.entries(p.pot?.scores || {})
+    .filter(([,v]) => v > 0 && v <= 2)
+    .sort(([,a],[,b]) => a - b)
+    .slice(0, 2);
+  potGaps.forEach(([i]) => {
+    const dim = POT_DIMS[i];
+    if(dim && mejoras.length < 4) mejoras.push(`Desarrollar: ${dim}`);
+  });
+
+  // Skill gaps (positivos = por debajo del target)
+  const skillGaps = Object.entries(p.skills || {})
+    .filter(([,d]) => d.actual > 0 && d.target > 0 && (d.target - d.actual) >= 2)
+    .sort(([,a],[,b]) => (b.target - b.actual) - (a.target - a.actual))
+    .slice(0, 2);
+  skillGaps.forEach(([skill, d]) => {
+    if(mejoras.length < 5) mejoras.push(`Upskilling en ${skill} (gap: ${d.target - d.actual} niveles)`);
+  });
+
+  // Gap de madurez profesional
+  const matFinal = parseInt(p.madurez?.final) || 0;
+  const seniority = p.general?.seniority;
+  if(matFinal && seniority && ROLE_MATURITY_EXPECTED[seniority]) {
+    const expected = ROLE_MATURITY_EXPECTED[seniority];
+    if(expected - matFinal > 0 && mejoras.length < 5) {
+      mejoras.push(`Acelerar madurez profesional al nivel esperado del rol (${expected - matFinal} nivel(es) de gap)`);
+    }
+  }
+
+  const top3 = [...new Set(mejoras)].slice(0, 3);
+  if(!top3.length) {
+    alert('No se detectaron gaps claros. Asegúrate de tener scores en Performance, Potencial y Skills.');
+    return;
+  }
+  const el = document.getElementById('res-mejoras');
+  if(el.value.trim()) {
+    if(!confirm('Reemplazar el texto actual con las áreas de mejora generadas?')) return;
+  }
+  el.value = top3.join('\n');
+  profiles[currentId].resumen.mejoras = el.value;
+  autoSave();
+}
+
+
 // ═══════════════════════════════════════════════════════════════
 function updateSectionAlerts() {
   if(!currentId) return;
