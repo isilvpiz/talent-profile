@@ -609,7 +609,11 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
       </div>
       <div class="sidebar-nav-item" onclick="showMethodology()" id="nav-methodology" style="margin-top:4px">
         <div class="sidebar-dot"></div>
-        Guía metodológica
+        📖 Guía metodológica
+      </div>
+      <div class="sidebar-nav-item" onclick="showManual()" id="nav-manual" style="margin-top:4px">
+        <div class="sidebar-dot"></div>
+        📘 Manual de usuario
       </div>
       <div class="sidebar-nav-item" onclick="showRoleCompetencies()" id="nav-role-comp" style="margin-top:4px">
         <div class="sidebar-dot"></div>
@@ -669,7 +673,11 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
         </div>
         <div class="home-action-card" onclick="showMethodology()">
           <div class="ha-icon">📖</div>
-          <div><div class="ha-title">Guía metodológica</div><div class="ha-desc">Criterios, benchmarks y frameworks</div></div>
+          <div><div class="ha-title">Guía metodológica</div><div class="ha-desc">Modelo, dimensiones y criterios</div></div>
+        </div>
+        <div class="home-action-card" onclick="showManual()">
+          <div class="ha-icon">📘</div>
+          <div><div class="ha-title">Manual de usuario</div><div class="ha-desc">Cómo usar la app según tu rol</div></div>
         </div>
         <div class="home-action-card" onclick="showRoleCompetencies()">
           <div class="ha-icon">🎯</div>
@@ -1143,20 +1151,14 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
 
     <!-- METHODOLOGY VIEW -->
     <div id="methodologyView" style="display:none">
-      <div style="margin-bottom:1.5rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px">
-        <div>
-          <div style="font-size:18px;font-weight:600">Guía metodológica &amp; Manual de usuario</div>
-          <div style="font-size:12px;color:var(--gray-400)">Modelo de evaluación de talento Data &amp; AI — NTT DATA · v2.0</div>
-        </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap" id="guideTabBtns">
-          <button onclick="switchGuideTab('modelo',this)" class="guide-tab-btn" style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--navy);background:var(--navy);color:white;cursor:pointer">📐 Modelo</button>
-          <button onclick="switchGuideTab('flujo',this)" class="guide-tab-btn" style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--gray-300);background:white;color:var(--gray-700);cursor:pointer">🔄 Flujo &amp; Ciclos</button>
-          <button onclick="switchGuideTab('admin',this)" class="guide-tab-btn" style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--gray-300);background:white;color:var(--gray-700);cursor:pointer">🔑 Admin</button>
-          <button onclick="switchGuideTab('director',this)" class="guide-tab-btn" style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--gray-300);background:white;color:var(--gray-700);cursor:pointer">🏢 Director</button>
-          <button onclick="switchGuideTab('manager',this)" class="guide-tab-btn" style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--gray-300);background:white;color:var(--gray-700);cursor:pointer">👤 Manager</button>
-          <button onclick="switchGuideTab('lider',this)" class="guide-tab-btn" style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--gray-300);background:white;color:var(--gray-700);cursor:pointer">🧑‍💼 Líder</button>
-          <button onclick="switchGuideTab('benchmarks',this)" class="guide-tab-btn" style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--gray-300);background:white;color:var(--gray-700);cursor:pointer">📊 Benchmarks</button>
-        </div>
+      <div style="margin-bottom:1.5rem">
+        <div style="font-size:18px;font-weight:600">Guía metodológica</div>
+        <div style="font-size:12px;color:var(--gray-400)">Modelo de evaluación de talento Data &amp; AI — NTT DATA · v2.0</div>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:1.25rem" id="guideTabBtns">
+        <button onclick="switchGuideTab('modelo',this)" class="guide-tab-btn" style="font-size:11px;padding:5px 14px;border-radius:6px;border:1px solid var(--navy);background:var(--navy);color:white;cursor:pointer">📐 Modelo</button>
+        <button onclick="switchGuideTab('flujo',this)" class="guide-tab-btn" style="font-size:11px;padding:5px 14px;border-radius:6px;border:1px solid var(--gray-300);background:white;color:var(--gray-700);cursor:pointer">🔄 Flujo &amp; Ciclos</button>
+        <button onclick="switchGuideTab('benchmarks',this)" class="guide-tab-btn" style="font-size:11px;padding:5px 14px;border-radius:6px;border:1px solid var(--gray-300);background:white;color:var(--gray-700);cursor:pointer">📊 Benchmarks</button>
       </div>
 
       <!-- TAB MODELO -->
@@ -1250,7 +1252,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
               <div style="flex-shrink:0;text-align:center;padding:0 10px"><div style="width:42px;height:42px;border-radius:50%;background:#f5f3ff;border:2px solid var(--purple);display:flex;align-items:center;justify-content:center;font-size:16px;margin:0 auto 4px">🔄</div><div style="font-size:11px;font-weight:600">Nuevo ciclo</div><div style="font-size:10px;color:var(--gray-400);max-width:80px">Archiva historial</div></div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <div style="padding:10px;background:var(--amber-light);border:1px solid #fcd34d;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:5px">💾 Guardar</div><ul style="font-size:11px;color:var(--gray-700);margin:0;padding-left:14px;line-height:1.8"><li>Guarda en Supabase</li><li>Solo visible en Mis perfiles</li><li>No aparece en Vista Todos</li><li>Modal con % completado</li></ul></div>
+              <div style="padding:10px;background:var(--amber-light);border:1px solid #fcd34d;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:5px">💾 Guardar</div><ul style="font-size:11px;color:var(--gray-700);margin:0;padding-left:14px;line-height:1.8"><li>Solo visible en Mis perfiles</li><li>No aparece en Vista Todos</li><li>Modal con % completado</li></ul></div>
               <div style="padding:10px;background:var(--green-light);border:1px solid #86efac;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:5px">✓ Cerrar perfil</div><ul style="font-size:11px;color:var(--gray-700);margin:0;padding-left:14px;line-height:1.8"><li>Requiere 100% obligatorios</li><li>Aparece en Vista Todos</li><li>Registra quién cerró y cuándo</li><li>Habilita Reabrir y Nuevo Ciclo</li></ul></div>
               <div style="padding:10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--orange);margin-bottom:5px">↩ Reabrir</div><ul style="font-size:11px;color:var(--gray-700);margin:0;padding-left:14px;line-height:1.8"><li>Motivo obligatorio (auditoría)</li><li>Sale de Vista Todos</li><li>Ideal para correcciones</li></ul></div>
               <div style="padding:10px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:5px">🔄 Nuevo ciclo</div><ul style="font-size:11px;color:var(--gray-700);margin:0;padding-left:14px;line-height:1.8"><li>Archiva ciclo actual como snapshot</li><li>Resetea evaluación</li><li>Conserva datos generales + skills</li><li>Historial en modal 📋</li></ul></div>
@@ -1340,12 +1342,6 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
               <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--teal);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">9</div><div><div style="font-size:12px;font-weight:600">Resumen y decisión</div><div style="font-size:11px;color:var(--gray-600)">"✨ Desde datos" propone fortalezas y mejoras desde scores. Decisión obligatoria para cerrar.</div></div></div>
               <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--green);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">✓</div><div><div style="font-size:12px;font-weight:600">Cerrar perfil</div><div style="font-size:11px;color:var(--gray-600)">Solo al 100%. Aparece en Vista Todos. Registra autor y fecha. Habilita Reabrir y Nuevo Ciclo.</div></div></div>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
-              <div style="text-align:center;padding:10px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px"><div style="font-size:16px;font-weight:700;color:var(--teal)">45–90'</div><div style="font-size:10px;font-weight:600">Primera vez</div><div style="font-size:9px;color:var(--gray-400)">Con evidencia</div></div>
-              <div style="text-align:center;padding:10px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px"><div style="font-size:16px;font-weight:700;color:var(--teal)">20–30'</div><div style="font-size:10px;font-weight:600">Actualización</div><div style="font-size:9px;color:var(--gray-400)">Ciclos posteriores</div></div>
-              <div style="text-align:center;padding:10px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px"><div style="font-size:16px;font-weight:700;color:var(--teal)">10–15'</div><div style="font-size:10px;font-weight:600">Revisión rápida</div><div style="font-size:9px;color:var(--gray-400)">Solo scores</div></div>
-              <div style="text-align:center;padding:10px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px"><div style="font-size:16px;font-weight:700;color:var(--teal)">+15–20'</div><div style="font-size:10px;font-weight:600">Con IDP detallado</div><div style="font-size:9px;color:var(--gray-400)">Acciones y plazos</div></div>
-            </div>
             <div style="padding:10px 14px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;font-size:12px;color:#166534">💡 <strong>Buenas prácticas:</strong> Completa perfiles en los primeros 5 días del período. Usa "Guardar" frecuentemente. Revisa el historial antes de iniciar un nuevo ciclo para no perder contexto.</div>
           </div>
         </div>
@@ -1386,6 +1382,23 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
       </div><!-- end guide-tab-benchmarks -->
 
     </div><!-- end methodologyView -->
+
+    <!-- MANUAL DE USUARIO VIEW -->
+    <div id="manualView" style="display:none">
+      <div style="margin-bottom:1.5rem">
+        <div style="font-size:18px;font-weight:600">Manual de usuario</div>
+        <div style="font-size:12px;color:var(--gray-400)" id="manualSubtitle">—</div>
+      </div>
+      <!-- Tabs solo para admin (ve todos los roles) -->
+      <div id="manualTabBtns" style="display:none;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap">
+        <button onclick="switchManualTab('admin',this)" class="manual-tab-btn" style="font-size:11px;padding:5px 14px;border-radius:6px;border:1px solid var(--navy);background:var(--navy);color:white;cursor:pointer">🔑 Admin</button>
+        <button onclick="switchManualTab('director',this)" class="manual-tab-btn" style="font-size:11px;padding:5px 14px;border-radius:6px;border:1px solid var(--gray-300);background:white;color:var(--gray-700);cursor:pointer">🏢 Director</button>
+        <button onclick="switchManualTab('manager',this)" class="manual-tab-btn" style="font-size:11px;padding:5px 14px;border-radius:6px;border:1px solid var(--gray-300);background:white;color:var(--gray-700);cursor:pointer">👤 Manager</button>
+        <button onclick="switchManualTab('lider',this)" class="manual-tab-btn" style="font-size:11px;padding:5px 14px;border-radius:6px;border:1px solid var(--gray-300);background:white;color:var(--gray-700);cursor:pointer">🧑‍💼 Líder</button>
+      </div>
+      <!-- Content injected by showManual() -->
+      <div id="manualBody"></div>
+    </div><!-- end manualView -->
 
     <!-- ROLE COMPETENCIES VIEW -->
     <div id="roleCompView" style="display:none">
@@ -1778,8 +1791,7 @@ async function pullFromSupabase() {
   setSyncStatus('ok', `${ownCount} perfil${ownCount !== 1 ? 'es' : ''}`);
   renderSidebar();
   // Never change the active view during a sync — only update data in place
-  if(activeView === 'profile' && currentId && profiles[currentId]) {
-    loadProfileToUI();
+  if(activeView === 'profile' && currentId && profiles[currentId]) {    loadProfileToUI();
   } else if(activeView === 'overview') {
     renderOverview();
   } else if(activeView === 'empty') {
@@ -2492,7 +2504,7 @@ function renderSidebar() {
 function openProfile(id) {
   currentId = id;
   activeView = 'profile';
-  ['emptyState','overviewView','methodologyView','roleCompView','homeView'].forEach(vid => {
+  ['emptyState','overviewView','methodologyView','roleCompView','homeView','manualView'].forEach(vid => {
     const el = document.getElementById(vid);
     if(el) el.style.display = 'none';
   });
@@ -3399,7 +3411,7 @@ function rebuildBenchmarksForDim(prefix, newLen) {
 function showMethodology() {
   currentId = null;
   activeView = 'methodology';
-  ['emptyState','profileView','overviewView','roleCompView','homeView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  ['emptyState','profileView','overviewView','roleCompView','homeView','manualView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   document.getElementById('methodologyView').style.display = 'block';
   document.getElementById('nav-overview-mine').classList.remove('active');
   document.getElementById('nav-overview-all').classList.remove('active');
@@ -3539,7 +3551,7 @@ function showOverview(filter) {
   overviewFilter = filter || 'all';
   currentId = null;
   activeView = 'overview';
-  ['emptyState','profileView','methodologyView','roleCompView','homeView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  ['emptyState','profileView','methodologyView','roleCompView','homeView','manualView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   document.getElementById('overviewView').style.display = 'block';
   document.getElementById('nav-methodology').classList.remove('active');
   document.getElementById('nav-role-comp').classList.remove('active');
@@ -3951,6 +3963,134 @@ function confirmNewCycle() {
 
 
 // ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// MANUAL DE USUARIO VIEW
+// ═══════════════════════════════════════════════════════════════
+function showManual() {
+  currentId = null;
+  activeView = 'manual';
+  ['emptyState','profileView','overviewView','methodologyView','roleCompView','homeView','manualView'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.style.display = 'none';
+  });
+  document.getElementById('manualView').style.display = 'block';
+  ['nav-overview-mine','nav-overview-all','nav-methodology','nav-role-comp','nav-home'].forEach(id => {
+    document.getElementById(id)?.classList.remove('active');
+  });
+  document.getElementById('nav-manual')?.classList.add('active');
+  renderSidebar();
+
+  const role = getUserRole();
+  const isAdm = role === 'admin';
+
+  // Subtitle
+  const labels = { admin:'Administrador', director:'Director', manager:'Manager', lider:'Líder técnico' };
+  document.getElementById('manualSubtitle').textContent = isAdm
+    ? 'Vista completa — todos los roles (solo Admin)'
+    : `Manual para: ${labels[role] || role}`;
+
+  // Show/hide tab row (only admin sees all tabs)
+  const tabRow = document.getElementById('manualTabBtns');
+  tabRow.style.display = isAdm ? 'flex' : 'none';
+
+  if(isAdm) {
+    // Admin: show first tab (admin) by default
+    switchManualTab('admin', document.querySelector('.manual-tab-btn'));
+  } else {
+    // Other roles: inject their manual directly, no tabs
+    document.getElementById('manualBody').innerHTML = getManualHtml(role);
+  }
+}
+
+function switchManualTab(role, btn) {
+  document.querySelectorAll('.manual-tab-btn').forEach(b => {
+    b.style.background = 'white'; b.style.color = 'var(--gray-700)'; b.style.borderColor = 'var(--gray-300)';
+  });
+  if(btn) { btn.style.background = 'var(--navy)'; btn.style.color = 'white'; btn.style.borderColor = 'var(--navy)'; }
+  document.getElementById('manualBody').innerHTML = getManualHtml(role);
+}
+
+function getManualHtml(role) {
+  const manuals = {
+    admin: `<div class="card" style="border-left:4px solid var(--blue)">
+      <div class="card-header"><div class="card-header-dot" style="background:var(--blue)"></div><span class="card-title">Manual — Administrador</span><span style="margin-left:auto;font-size:11px;padding:2px 8px;background:#dbeafe;color:var(--blue);border-radius:4px;font-weight:600">Acceso total</span></div>
+      <div class="card-body">
+        <p style="font-size:13px;color:var(--gray-600);margin-bottom:14px">Acceso completo: todos los perfiles, configuración del modelo, benchmarks y dimensiones. Responsable de People del área o gerente con visibilidad total.</p>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--blue)">🔑 Capacidades exclusivas</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+          <div style="padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:3px">✏️ Editar dimensiones</div><div style="font-size:11px;color:var(--gray-700)">Botón "✏" en Performance y Potencial. Agrega, elimina o renombra dimensiones. Impacta perfiles nuevos.</div></div>
+          <div style="padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:3px">📊 Editar benchmarks</div><div style="font-size:11px;color:var(--gray-700)">Botón "📊 Benchmarks" en topbar. Define scores esperados por seniority. Base del cálculo de gap vs rol.</div></div>
+          <div style="padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:3px">👁 Ver todos los perfiles</div><div style="font-size:11px;color:var(--gray-700)">Vista Todos: acceso completo a todos los perfiles cerrados, sin filtros de jerarquía.</div></div>
+          <div style="padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:3px">🔄 Configurar roles</div><div style="font-size:11px;color:var(--gray-700)">Desde Supabase: asignar role en user_metadata (admin/director/manager/lider).</div></div>
+        </div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--blue)">📋 Flujo recomendado</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+          <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--blue);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div><div style="font-size:12px;font-weight:600">Configuración inicial</div><div style="font-size:11px;color:var(--gray-600)">Ajustar benchmarks (Topbar → 📊). Validar que las dimensiones sean relevantes para el contexto actual.</div></div></div>
+          <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--blue);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div><div><div style="font-size:12px;font-weight:600">Durante el ciclo</div><div style="font-size:11px;color:var(--gray-600)">Monitorear completitud en Mis perfiles. Hacer seguimiento a managers con perfiles incompletos.</div></div></div>
+          <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--blue);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div><div><div style="font-size:12px;font-weight:600">Al cierre</div><div style="font-size:11px;color:var(--gray-600)">Vista Todos: identificar Top Talent con riesgo Alto, concentración en Under Review, tendencias ▲▼.</div></div></div>
+          <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--blue);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div><div><div style="font-size:12px;font-weight:600">Nuevo ciclo</div><div style="font-size:11px;color:var(--gray-600)">Coordinar fecha con managers. El nuevo ciclo se activa por perfil individual — no es un reset global.</div></div></div>
+        </div>
+        <div style="padding:10px 14px;background:#fef9c3;border:1px solid #fde047;border-radius:8px;font-size:12px;color:#854d0e">⚠ Editar dimensiones o benchmarks no retroafecta perfiles cerrados. Solo impacta perfiles nuevos o en edición.</div>
+      </div>
+    </div>`,
+
+    director: `<div class="card" style="border-left:4px solid var(--purple)">
+      <div class="card-header"><div class="card-header-dot" style="background:var(--purple)"></div><span class="card-title">Manual — Director</span><span style="margin-left:auto;font-size:11px;padding:2px 8px;background:#ede9fe;color:var(--purple);border-radius:4px;font-weight:600">Lectura total · Sin configuración</span></div>
+      <div class="card-body">
+        <p style="font-size:13px;color:var(--gray-600);margin-bottom:14px">Visibilidad completa de todos los perfiles cerrados. Función principal: lectura estratégica del talento del área para decisiones de negocio (estructura, promociones, retención clave, gaps organizacionales).</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+          <div style="padding:10px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:3px">Vista Todos</div><div style="font-size:11px;color:var(--gray-700)">Todos los perfiles cerrados. Ordenables por cualquier columna. Ideal para barrido pre-comité.</div></div>
+          <div style="padding:10px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:3px">Modal Historial 📋</div><div style="font-size:11px;color:var(--gray-700)">Evolución entre ciclos. Los indicadores ▲▼ muestran si el equipo crece o se estanca.</div></div>
+          <div style="padding:10px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:3px">Apertura de perfiles</div><div style="font-size:11px;color:var(--gray-700)">Lectura en detalle. No puede editar ni cerrar perfiles de otros managers.</div></div>
+          <div style="padding:10px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:3px">Mis perfiles</div><div style="font-size:11px;color:var(--gray-700)">Solo si también actúa como manager y tiene perfiles propios asignados.</div></div>
+        </div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--purple)">🎯 Uso estratégico recomendado</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--purple);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div><div style="font-size:12px;font-weight:600">Pre-comité de talento</div><div style="font-size:11px;color:var(--gray-600)">Filtrar Vista Todos por Risk = Alto. Identificar Top Talent en riesgo. Preparar agenda de retención.</div></div></div>
+          <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--purple);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div><div><div style="font-size:12px;font-weight:600">Análisis de distribución</div><div style="font-size:11px;color:var(--gray-600)">Regla orientativa: ≤15% Top Talent, ≤10% Under Review. ¿Es saludable para el tamaño del equipo?</div></div></div>
+          <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--purple);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div><div><div style="font-size:12px;font-weight:600">Revisión de decisiones</div><div style="font-size:11px;color:var(--gray-600)">¿PIPs sin seguimiento? ¿Decisiones contradictorias entre managers para el mismo nivel?</div></div></div>
+          <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--purple);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div><div><div style="font-size:12px;font-weight:600">Evolución del equipo</div><div style="font-size:11px;color:var(--gray-600)">Modal Historial en perfiles con ciclos. ¿Los ▲ superan a los ▼ en aggregate?</div></div></div>
+        </div>
+      </div>
+    </div>`,
+
+    manager: `<div class="card" style="border-left:4px solid var(--teal)">
+      <div class="card-header"><div class="card-header-dot" style="background:var(--teal)"></div><span class="card-title">Manual — Manager</span><span style="margin-left:auto;font-size:11px;padding:2px 8px;background:#f0fdfa;color:var(--teal);border-radius:4px;font-weight:600">Creación y edición · Perfiles propios</span></div>
+      <div class="card-body">
+        <p style="font-size:13px;color:var(--gray-600);margin-bottom:14px">Evaluador principal. Crea, completa y cierra los perfiles de su equipo directo. Visibilidad: sus perfiles en cualquier estado + perfiles cerrados de Staff en Vista Todos.</p>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--teal)">📋 Completar un perfil — paso a paso</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+          ${[['Crear perfil','"+ Nuevo perfil" desde home o sidebar. Solo Nombre + Seniority. El resto se completa dentro del perfil.'],['Datos generales','Todos los campos * son obligatorios. Completarlos primero sube el % rápidamente.'],['Performance y Potencial','Score 1–5 por dimensión. Gap vs benchmark calculado automáticamente. Evidencia opcional pero recomendada.'],['Madurez técnica','Nivel actual + objetivo por skill. Si activas ¿Plan?=Sí, la descripción del plan se vuelve obligatoria.'],['Madurez profesional','6 dimensiones. El nivel final es la señal más importante para decisiones de promoción.'],['9-Box','Calculado automáticamente. Ajusta en "Cuadrante validado" si el contexto lo requiere.'],['Flight Risk','Si marcas Alto en algún indicador, observación y acción se vuelven obligatorios.'],['IDP','Acciones derivadas de los gaps técnicos. "⚡ Sugerir desde gaps" genera un punto de partida.'],['Resumen','"✨ Desde datos" propone fortalezas y mejoras desde los scores. La Decisión es obligatoria para cerrar.'],['Cerrar perfil','Solo disponible al 100%. Aparece en Vista Todos. Registra quién cerró y cuándo.']].map(([t,d],i)=>`
+          <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--teal);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div><div><div style="font-size:12px;font-weight:600">${t}</div><div style="font-size:11px;color:var(--gray-600)">${d}</div></div></div>`).join('')}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+          <div style="padding:10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--orange);margin-bottom:4px">↩ Reabrir — cuándo usarlo</div><ul style="font-size:11px;color:var(--gray-700);margin:0;padding-left:14px;line-height:1.8"><li>Error en un score o dato general</li><li>Cambio relevante de rol o proyecto</li><li>Requiere motivo documentado</li></ul></div>
+          <div style="padding:10px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:4px">🔄 Nuevo ciclo — cuándo usarlo</div><ul style="font-size:11px;color:var(--gray-700);margin:0;padding-left:14px;line-height:1.8"><li>Revisión trimestral o semestral</li><li>Tras promoción o cambio de rol</li><li>Conserva historial completo</li></ul></div>
+        </div>
+        <div style="padding:10px 14px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;font-size:12px;color:#166534">💡 <strong>Buenas prácticas:</strong> Completa perfiles en los primeros 5 días del período. Usa "Guardar" frecuentemente. Revisa el historial antes de iniciar un nuevo ciclo.</div>
+      </div>
+    </div>`,
+
+    lider: `<div class="card" style="border-left:4px solid var(--green)">
+      <div class="card-header"><div class="card-header-dot" style="background:var(--green)"></div><span class="card-title">Manual — Líder técnico</span><span style="margin-left:auto;font-size:11px;padding:2px 8px;background:#f0fdf4;color:var(--green);border-radius:4px;font-weight:600">Evaluación Staff · Vista limitada</span></div>
+      <div class="card-body">
+        <p style="font-size:13px;color:var(--gray-600);margin-bottom:14px">Evalúa colaboradores de nivel Staff de tu squad. Mismas capacidades de creación que el manager, pero visibilidad acotada: solo perfiles de nivel Staff en Vista Todos.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+          <div style="padding:10px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:3px">✅ Puedes hacer</div><ul style="font-size:11px;color:var(--gray-700);margin:0;padding-left:14px;line-height:1.8"><li>Crear y cerrar perfiles de Staff</li><li>Ver tus propios perfiles (Mis perfiles)</li><li>Vista Todos: solo Staff cerrados</li><li>Modal Historial 📋 en ciclos previos</li><li>Competencias por Rol como referencia</li></ul></div>
+          <div style="padding:10px;background:var(--red-light);border:1px solid #fca5a5;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--red);margin-bottom:3px">✗ No puedes hacer</div><ul style="font-size:11px;color:var(--gray-700);margin:0;padding-left:14px;line-height:1.8"><li>Ver perfiles de nivel Líder o Manager</li><li>Editar benchmarks o dimensiones</li><li>Ver perfiles de otros líderes</li><li>Reabrir perfiles de otros managers</li></ul></div>
+        </div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--green)">💡 Tips para la evaluación</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--green);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div><div style="font-size:12px;font-weight:600">Documenta evidencia</div><div style="font-size:11px;color:var(--gray-600)">No obligatorio pero clave. En conversaciones difíciles (PIP), la evidencia documentada es tu respaldo.</div></div></div>
+          <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--green);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div><div><div style="font-size:12px;font-weight:600">Madurez Técnica primero</div><div style="font-size:11px;color:var(--gray-600)">Como líder técnico tienes la mejor perspectiva del gap técnico real. Es tu input más valioso en el modelo.</div></div></div>
+          <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--green);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div><div><div style="font-size:12px;font-weight:600">Alinea con tu manager</div><div style="font-size:11px;color:var(--gray-600)">Antes de cerrar perfiles con decisión de promoción o PIP, alinea con tu manager. El perfil cerrado llega a su Vista Todos.</div></div></div>
+          <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--green);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div><div><div style="font-size:12px;font-weight:600">Usa Competencias por Rol</div><div style="font-size:11px;color:var(--gray-600)">La sección muestra qué espera el Career Ladder para cada nivel. Úsala para calibrar tus scores.</div></div></div>
+        </div>
+      </div>
+    </div>`
+  };
+  return manuals[role] || `<div style="text-align:center;padding:2rem;color:var(--gray-400)">Manual no disponible para el rol: ${role}</div>`;
+}
+
 // ═══════════════════════════════════════════════════════════════
 // GUIDE TABS
 // ═══════════════════════════════════════════════════════════════
