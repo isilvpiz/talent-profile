@@ -319,7 +319,69 @@ textarea { resize: vertical; min-height: 60px; }
   transition: all 0.2s; z-index: 999; pointer-events: none;
 }
 .save-indicator.show { opacity: 1; transform: translateY(0); }
-/* ─── PRINT / EXPORT ─── */
+/* ─── HOME VIEW ─── */
+.home-hero {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 60%, #1e4080 100%);
+  border-radius: 14px; padding: 2.5rem 2rem; margin-bottom: 1.5rem;
+  color: white; position: relative; overflow: hidden;
+}
+.home-hero::before {
+  content: ''; position: absolute; top: -40px; right: -40px;
+  width: 200px; height: 200px; border-radius: 50%;
+  background: rgba(13,148,136,0.15);
+}
+.home-hero::after {
+  content: ''; position: absolute; bottom: -60px; right: 80px;
+  width: 140px; height: 140px; border-radius: 50%;
+  background: rgba(37,99,235,0.12);
+}
+.home-hero h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+.home-hero p  { font-size: 13px; color: rgba(255,255,255,0.65); max-width: 500px; line-height: 1.6; }
+.home-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+.home-stat {
+  background: var(--white); border-radius: 10px; padding: 14px 16px;
+  border: 1px solid var(--gray-200); box-shadow: var(--shadow);
+}
+.home-stat .hs-val { font-size: 26px; font-weight: 600; font-family: 'DM Mono', monospace; }
+.home-stat .hs-lbl { font-size: 11px; color: var(--gray-400); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+.home-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1.5rem; }
+.home-action-card {
+  background: var(--white); border-radius: 10px; padding: 16px 18px;
+  border: 1px solid var(--gray-200); cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: var(--shadow);
+}
+.home-action-card:hover { border-color: var(--blue); box-shadow: 0 4px 12px rgba(37,99,235,0.1); transform: translateY(-1px); }
+.home-action-card .ha-icon { font-size: 24px; flex-shrink: 0; }
+.home-action-card .ha-title { font-size: 13px; font-weight: 600; color: var(--gray-800); }
+.home-action-card .ha-desc  { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+.home-recent { background: var(--white); border-radius: 10px; border: 1px solid var(--gray-200); box-shadow: var(--shadow); overflow: hidden; }
+.home-recent-header { padding: 12px 16px; border-bottom: 1px solid var(--gray-100); display: flex; align-items: center; justify-content: space-between; }
+.home-recent-header span { font-size: 12px; font-weight: 600; color: var(--gray-600); }
+/* ─── INLINE ALERTS ─── */
+.field-alert {
+  font-size: 11px; color: var(--red); margin-top: 3px; display: none;
+}
+.field-alert.show { display: block; }
+.section-alert {
+  background: var(--red-light); border: 1px solid #fca5a5;
+  border-radius: 7px; padding: 8px 12px; font-size: 12px; color: var(--red);
+  margin-bottom: 10px; display: none;
+}
+.section-alert.show { display: block; }
+/* ─── SAVE MODAL ─── */
+.save-modal-overlay {
+  position: fixed; inset: 0; background: rgba(15,30,60,0.5);
+  z-index: 300; display: none; align-items: center; justify-content: center;
+}
+.save-modal-overlay.open { display: flex; }
+.save-modal {
+  background: white; border-radius: 14px; width: 420px;
+  padding: 28px; box-shadow: var(--shadow-md);
+}
+.save-modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+.save-modal p  { font-size: 13px; color: var(--gray-600); margin-bottom: 20px; line-height: 1.6; }
+
 .separator { height: 1px; background: var(--gray-200); margin: 0.5rem 0; }
 @media print {
   .topbar, .sidebar, .section-tabs, .topbar-actions, .add-row-btn { display: none !important; }
@@ -488,7 +550,11 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
     </div>
     <div class="separator"></div>
     <div class="sidebar-section" style="padding-top:0.75rem">
-      <div class="sidebar-nav-item" onclick="showOverview('mine')" id="nav-overview-mine">
+      <div class="sidebar-nav-item" onclick="showHome()" id="nav-home">
+        <div class="sidebar-dot"></div>
+        🏠 Inicio
+      </div>
+      <div class="sidebar-nav-item" onclick="showOverview('mine')" id="nav-overview-mine" style="margin-top:4px">
         <div class="sidebar-dot"></div>
         Vista mis perfiles
       </div>
@@ -509,12 +575,70 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
 
   <!-- MAIN -->
   <div class="main" id="mainContent">
-    <div class="empty-state" id="emptyState">
+    <div class="empty-state" id="emptyState" style="display:none">
       <div class="icon">◎</div>
       <h3>Sin perfiles aún</h3>
       <p>Crea el primer perfil para comenzar el levantamiento de talento.</p>
       <br>
       <button class="btn btn-blue" onclick="openAddModal()">+ Agregar primer perfil</button>
+    </div>
+
+    <!-- HOME VIEW -->
+    <div id="homeView" style="display:none">
+      <div class="home-hero">
+        <h1>👋 Bienvenido/a, <span id="home-username">—</span></h1>
+        <p>Panel de gestión de talento Data & AI · NTT DATA. Evalúa performance, potencial y madurez de tu equipo con un modelo estructurado y basado en datos.</p>
+        <div style="margin-top:1.25rem;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-teal" onclick="openAddModal()">+ Nuevo perfil</button>
+          <button class="btn" style="background:rgba(255,255,255,0.12);color:white" onclick="showOverview('mine')">Ver mis perfiles</button>
+        </div>
+      </div>
+
+      <div class="home-stats" id="home-stats">
+        <div class="home-stat">
+          <div class="hs-val" id="hs-total" style="color:var(--navy)">—</div>
+          <div class="hs-lbl">Perfiles totales</div>
+        </div>
+        <div class="home-stat">
+          <div class="hs-val" id="hs-complete" style="color:var(--green)">—</div>
+          <div class="hs-lbl">Completos (100%)</div>
+        </div>
+        <div class="home-stat">
+          <div class="hs-val" id="hs-risk" style="color:var(--red)">—</div>
+          <div class="hs-lbl">Riesgo Alto</div>
+        </div>
+        <div class="home-stat">
+          <div class="hs-val" id="hs-pending" style="color:var(--amber)">—</div>
+          <div class="hs-lbl">Pendientes cierre</div>
+        </div>
+      </div>
+
+      <div class="home-actions">
+        <div class="home-action-card" onclick="openAddModal()">
+          <div class="ha-icon">➕</div>
+          <div><div class="ha-title">Nuevo perfil</div><div class="ha-desc">Iniciar evaluación de un colaborador</div></div>
+        </div>
+        <div class="home-action-card" onclick="showOverview('all')">
+          <div class="ha-icon">📊</div>
+          <div><div class="ha-title">Vista consolidada</div><div class="ha-desc">Comparar todos los perfiles del equipo</div></div>
+        </div>
+        <div class="home-action-card" onclick="showMethodology()">
+          <div class="ha-icon">📖</div>
+          <div><div class="ha-title">Guía metodológica</div><div class="ha-desc">Criterios, benchmarks y frameworks</div></div>
+        </div>
+        <div class="home-action-card" onclick="showRoleCompetencies()">
+          <div class="ha-icon">🎯</div>
+          <div><div class="ha-title">Competencias por Rol</div><div class="ha-desc">12 roles del Career Ladder NTT DATA</div></div>
+        </div>
+      </div>
+
+      <div class="home-recent">
+        <div class="home-recent-header">
+          <span>Perfiles recientes</span>
+          <button class="btn btn-ghost btn-sm" style="font-size:11px;color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="showOverview('mine')">Ver todos →</button>
+        </div>
+        <div id="home-recent-list" style="padding:0"></div>
+      </div>
     </div>
     <div id="profileView" style="display:none">
       <div id="profileHeader" style="margin-bottom:1.25rem; display:flex; align-items:center; justify-content:space-between;">
@@ -534,7 +658,8 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="deleteCurrent()">Eliminar perfil</button>
-          <button class="btn btn-teal btn-sm" onclick="saveAll()">Guardar</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="saveAndContinue()">💾 Guardar</button>
+          <button class="btn btn-teal btn-sm" onclick="closeProfile()">✓ Cerrar perfil</button>
         </div>
       </div>
       <!-- SECTION TABS -->
@@ -552,6 +677,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
 
       <!-- ═══ SECCIÓN GENERAL ═══ -->
       <div class="section-content active" id="sec-general">
+        <div id="alert-general" class="section-alert"></div>
         <div class="card">
           <div class="card-header">
             <div class="card-header-dot" style="background:var(--navy)"></div>
@@ -605,6 +731,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
 
       <!-- ═══ PERFORMANCE ═══ -->
       <div class="section-content" id="sec-performance">
+        <div id="alert-performance" class="section-alert"></div>
         <div class="card">
           <div class="card-header">
             <div class="card-header-dot" style="background:var(--blue)"></div>
@@ -629,6 +756,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
 
       <!-- ═══ POTENCIAL ═══ -->
       <div class="section-content" id="sec-potencial">
+        <div id="alert-potencial" class="section-alert"></div>
         <div class="card">
           <div class="card-header">
             <div class="card-header-dot" style="background:var(--teal)"></div>
@@ -653,6 +781,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
 
       <!-- ═══ SKILLS ═══ -->
       <div class="section-content" id="sec-skills">
+        <div id="alert-skills" class="section-alert"></div>
         <div class="card">
           <div class="card-header">
             <div class="card-header-dot" style="background:var(--orange)"></div>
@@ -682,6 +811,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
 
       <!-- ═══ MADUREZ PROFESIONAL ═══ -->
       <div class="section-content" id="sec-madurez">
+        <div id="alert-madurez" class="section-alert"></div>
         <div class="card">
           <div class="card-header">
             <div class="card-header-dot" style="background:var(--purple)"></div>
@@ -798,6 +928,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
 
       <!-- ═══ RISK ═══ -->
       <div class="section-content" id="sec-risk">
+        <div id="alert-risk" class="section-alert"></div>
         <div class="card">
           <div class="card-header">
             <div class="card-header-dot" style="background:var(--red)"></div>
@@ -1331,6 +1462,33 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
 
 <div class="save-indicator" id="saveIndicator">Guardado ✓</div>
 
+<!-- SAVE & CONTINUE MODAL -->
+<div class="save-modal-overlay" id="saveModal">
+  <div class="save-modal">
+    <h3>💾 Perfil guardado</h3>
+    <p>Los datos han sido guardados correctamente. Puedes continuar completando el perfil cuando quieras.<br><br>
+    <strong>Recuerda:</strong> El perfil aparecerá en la vista consolidada solo cuando lo cierres como completado.</p>
+    <div style="background:var(--gray-50);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--gray-600);margin-bottom:16px" id="saveModalPct"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('saveModal').classList.remove('open')">Continuar editando</button>
+      <button class="btn btn-teal btn-sm" onclick="closeSaveModalAndClose()">✓ Cerrar perfil ahora</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLOSE PROFILE MODAL -->
+<div class="save-modal-overlay" id="closeProfileModal">
+  <div class="save-modal">
+    <h3>✓ Cerrar perfil</h3>
+    <p>Al cerrar el perfil, quedará disponible en la <strong>vista consolidada del equipo</strong>. Asegúrate de haber completado todos los campos obligatorios.</p>
+    <div id="closeProfileSummary" style="margin-bottom:16px;font-size:12px"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('closeProfileModal').classList.remove('open')">Volver al perfil</button>
+      <button class="btn btn-blue btn-sm" onclick="confirmCloseProfile()">Confirmar y cerrar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════════════════
 // SUPABASE CLIENT + AUTH
@@ -1461,7 +1619,10 @@ function onAuthSuccess(user) {
     document.body.classList.add('is-admin');
     document.getElementById('benchmarkBtn').style.display = '';
   }
-  loadBenchmarks().then(() => loadDimensions()).then(() => pullFromSupabase());
+  loadBenchmarks().then(() => loadDimensions()).then(() => pullFromSupabase().then(() => {
+    // After data loads, show home if no view is active
+    if(activeView === 'empty' || activeView === 'home') showHome();
+  }));
 }
 
 function isAdmin() {
@@ -1537,12 +1698,7 @@ async function pullFromSupabase() {
   } else if(activeView === 'overview') {
     renderOverview();
   } else if(activeView === 'empty') {
-    const ownIds = getFilteredIds();
-    if(ownIds.length) openProfile(ownIds[0]);
-    else {
-      document.getElementById('profileView').style.display = 'none';
-      document.getElementById('emptyState').style.display = 'block';
-    }
+    showHome();
   }
 }
 
@@ -2251,15 +2407,14 @@ function renderSidebar() {
 function openProfile(id) {
   currentId = id;
   activeView = 'profile';
-  document.getElementById('emptyState').style.display = 'none';
-  document.getElementById('overviewView').style.display = 'none';
-  document.getElementById('methodologyView')&&(document.getElementById('methodologyView').style.display = 'none');
-  document.getElementById('roleCompView')&&(document.getElementById('roleCompView').style.display = 'none');
+  ['emptyState','overviewView','methodologyView','roleCompView','homeView'].forEach(vid => {
+    const el = document.getElementById(vid);
+    if(el) el.style.display = 'none';
+  });
   document.getElementById('profileView').style.display = 'block';
-  document.getElementById('nav-overview-mine')?.classList.remove('active');
-  document.getElementById('nav-overview-all')?.classList.remove('active');
-  document.getElementById('nav-methodology')?.classList.remove('active');
-  document.getElementById('nav-role-comp')?.classList.remove('active');
+  ['nav-overview-mine','nav-overview-all','nav-methodology','nav-role-comp','nav-home'].forEach(id => {
+    document.getElementById(id)?.classList.remove('active');
+  });
   renderSidebar();
   loadProfileToUI();
   switchTab('general', document.querySelector('.section-tab'));
@@ -2360,6 +2515,7 @@ function loadProfileToUI() {
   updateResumenGapSummary();
   updateNinebox();
   updateSummaryMetrics();
+  updateSectionAlerts();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2397,12 +2553,9 @@ function setScore(prefix, idx, val, avgId) {
   const p = profiles[currentId];
   const section = p[prefix];
   section.scores[idx] = section.scores[idx] === val ? 0 : val;
-  const stars = document.querySelectorAll(`#${prefix==='perf'?'perf':'pot'}-tbody tr:nth-child(${idx+1}) .star`);
-  stars.forEach((s,n) => {
-    s.className = 'star';
-    if(section.scores[idx] >= n+1) s.classList.add('active-'+(n+1));
-  });
-  updateAvgDisplay(prefix, avgId);
+  // Rebuild the full table so gap column updates immediately
+  if(prefix === 'perf') buildScoreTable('perf-tbody', PERF_DIMS, p.perf.scores, p.perf.evidence, 'perf', 'avg-perf');
+  else                   buildScoreTable('pot-tbody',  POT_DIMS,  p.pot.scores,  p.pot.evidence,  'pot',  'avg-pot');
   updateNinebox();
   updateSummaryMetrics();
   autoSave();
@@ -2784,6 +2937,7 @@ function autoSave() {
   saveLocalState();
   renderSidebar();
   showSaveIndicator();
+  updateSectionAlerts();
   // Update completeness bar
   const pct2 = calcCompleteness(p);
   const col2 = completenessColor(pct2);
@@ -3148,11 +3302,8 @@ function rebuildBenchmarksForDim(prefix, newLen) {
 function showMethodology() {
   currentId = null;
   activeView = 'methodology';
-  document.getElementById('emptyState').style.display = 'none';
-  document.getElementById('profileView').style.display = 'none';
-  document.getElementById('overviewView').style.display = 'none';
+  ['emptyState','profileView','overviewView','roleCompView','homeView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   document.getElementById('methodologyView').style.display = 'block';
-  document.getElementById('roleCompView').style.display = 'none';
   document.getElementById('nav-overview-mine').classList.remove('active');
   document.getElementById('nav-overview-all').classList.remove('active');
   document.getElementById('nav-methodology').classList.add('active');
@@ -3173,10 +3324,7 @@ const RC_PILLAR_CONFIG = {
 function showRoleCompetencies() {
   currentId = null;
   activeView = 'rolecomp';
-  document.getElementById('emptyState').style.display = 'none';
-  document.getElementById('profileView').style.display = 'none';
-  document.getElementById('overviewView').style.display = 'none';
-  document.getElementById('methodologyView').style.display = 'none';
+  ['emptyState','profileView','overviewView','methodologyView','homeView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   document.getElementById('roleCompView').style.display = 'block';
   document.getElementById('nav-overview-mine').classList.remove('active');
   document.getElementById('nav-overview-all').classList.remove('active');
@@ -3294,13 +3442,11 @@ function showOverview(filter) {
   overviewFilter = filter || 'all';
   currentId = null;
   activeView = 'overview';
-  document.getElementById('emptyState').style.display = 'none';
-  document.getElementById('profileView').style.display = 'none';
+  ['emptyState','profileView','methodologyView','roleCompView','homeView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   document.getElementById('overviewView').style.display = 'block';
-  document.getElementById('methodologyView').style.display = 'none';
-  document.getElementById('roleCompView').style.display = 'none';
   document.getElementById('nav-methodology').classList.remove('active');
   document.getElementById('nav-role-comp').classList.remove('active');
+  document.getElementById('nav-home')?.classList.remove('active');
   // Update nav active state
   document.getElementById('nav-overview-mine').classList.toggle('active', overviewFilter==='mine');
   document.getElementById('nav-overview-all').classList.toggle('active', overviewFilter==='all');
@@ -3356,7 +3502,10 @@ function renderOverview() {
       <td>
         <div style="display:flex;align-items:center;gap:8px">
           <div style="width:26px;height:26px;border-radius:50%;background:${p.color}22;color:${p.color};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${initials}</div>
-          <span style="font-weight:500">${p.nombre||'—'}</span>
+          <div>
+            <span style="font-weight:500">${p.nombre||'—'}</span>
+            ${p._closed ? '<span style="font-size:10px;padding:1px 5px;background:var(--green-light);color:var(--green);border-radius:4px;font-weight:600;margin-left:4px">✓ Cerrado</span>' : ''}
+          </div>
         </div>
       </td>
       <td style="color:var(--gray-600)">${p.rol||'—'}</td>
@@ -3455,6 +3604,234 @@ function exportJSON() {
   a.href = URL.createObjectURL(blob);
   a.download = 'talent_profiles_' + new Date().toISOString().slice(0,10) + '.json';
   a.click();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HOME VIEW
+// ═══════════════════════════════════════════════════════════════
+function showHome() {
+  currentId = null;
+  activeView = 'home';
+  ['emptyState','profileView','overviewView','methodologyView','roleCompView'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = 'none';
+  });
+  document.getElementById('homeView').style.display = 'block';
+  ['nav-overview-mine','nav-overview-all','nav-methodology','nav-role-comp'].forEach(id => {
+    document.getElementById(id)?.classList.remove('active');
+  });
+  renderSidebar();
+  renderHomeView();
+}
+
+function renderHomeView() {
+  const name = currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'usuario';
+  const homeUser = document.getElementById('home-username');
+  if(homeUser) homeUser.textContent = name;
+
+  const ids = Object.keys(profiles);
+  const myIds = getFilteredIds ? getFilteredIds() : ids;
+
+  const total = myIds.length;
+  const complete = myIds.filter(id => calcCompleteness(profiles[id]) >= 100).length;
+  const risk = myIds.filter(id => (profiles[id].risk?.global || '').includes('Alto')).length;
+  const pending = myIds.filter(id => !profiles[id]._closed).length;
+
+  document.getElementById('hs-total').textContent   = total;
+  document.getElementById('hs-complete').textContent = complete;
+  document.getElementById('hs-risk').textContent    = risk;
+  document.getElementById('hs-pending').textContent  = pending;
+
+  // Recent profiles (last 5)
+  const recentIds = myIds
+    .sort((a,b) => new Date(profiles[b]._updatedAt||0) - new Date(profiles[a]._updatedAt||0))
+    .slice(0, 6);
+
+  const list = document.getElementById('home-recent-list');
+  if(!recentIds.length) {
+    list.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--gray-400);font-size:13px">No hay perfiles todavía</div>';
+    return;
+  }
+  list.innerHTML = recentIds.map(id => {
+    const p = profiles[id];
+    const pct = calcCompleteness(p);
+    const col = completenessColor(pct);
+    const initials = (p.nombre||'??').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+    const closed = p._closed ? '<span style="font-size:10px;padding:1px 6px;background:var(--green-light);color:var(--green);border-radius:4px;font-weight:600">Cerrado</span>' : '';
+    return `<div onclick="openProfile('${id}')" style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--gray-100);cursor:pointer;transition:background 0.1s" onmouseover="this.style.background='var(--gray-50)'" onmouseout="this.style.background=''">
+      <div style="width:32px;height:32px;border-radius:50%;background:${p.color}22;color:${p.color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${initials}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px">${p.nombre||'—'} ${closed}</div>
+        <div style="font-size:11px;color:var(--gray-400)">${p.rol||'—'} · ${p.general?.seniority||'—'}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:12px;font-weight:600;font-family:'DM Mono',monospace;color:${col}">${pct}%</div>
+        <div style="width:60px;height:4px;background:var(--gray-200);border-radius:2px;margin-top:3px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:${col};border-radius:2px"></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SAVE & CLOSE PROFILE
+// ═══════════════════════════════════════════════════════════════
+function saveAndContinue() {
+  autoSave();
+  clearTimeout(autoSaveTimer);
+  if(currentId) pushToSupabase(currentId, profiles[currentId]);
+  const pct = calcCompleteness(profiles[currentId]);
+  const col = completenessColor(pct);
+  const pctEl = document.getElementById('saveModalPct');
+  if(pctEl) pctEl.innerHTML = `Completado: <strong style="color:${col}">${pct}%</strong> de los campos obligatorios${pct < 100 ? ` · Faltan ${100-pct}% para cerrar el perfil` : ' — ¡Perfil listo para cerrar!'}`;
+  document.getElementById('saveModal').classList.add('open');
+}
+
+function closeSaveModalAndClose() {
+  document.getElementById('saveModal').classList.remove('open');
+  closeProfile();
+}
+
+function closeProfile() {
+  if(!currentId) return;
+  autoSave();
+  const p = profiles[currentId];
+  const pct = calcCompleteness(p);
+
+  // Build summary
+  const missing = getMissingFields(p);
+  let summaryHtml = '';
+  if(pct < 100) {
+    summaryHtml = `<div style="background:var(--amber-light);border:1px solid #fcd34d;border-radius:8px;padding:10px 12px">
+      <div style="font-weight:600;color:var(--amber);margin-bottom:4px">⚠ Perfil incompleto (${pct}%)</div>
+      <div style="font-size:11px;color:var(--gray-700)">Faltan: ${missing.join(', ')}</div>
+      <div style="font-size:11px;color:var(--gray-500);margin-top:4px">Puedes cerrar igualmente, pero los campos vacíos quedarán en blanco en la vista consolidada.</div>
+    </div>`;
+  } else {
+    summaryHtml = `<div style="background:var(--green-light);border:1px solid #86efac;border-radius:8px;padding:10px 12px;color:var(--green);font-weight:600">✅ Perfil completo al 100% — listo para cerrar</div>`;
+  }
+  document.getElementById('closeProfileSummary').innerHTML = summaryHtml;
+  document.getElementById('closeProfileModal').classList.add('open');
+}
+
+function confirmCloseProfile() {
+  if(!currentId) return;
+  profiles[currentId]._closed = true;
+  profiles[currentId]._closedAt = new Date().toISOString();
+  autoSave();
+  clearTimeout(autoSaveTimer);
+  pushToSupabase(currentId, profiles[currentId]);
+  document.getElementById('closeProfileModal').classList.remove('open');
+  const name = profiles[currentId].nombre || 'el perfil';
+  currentId = null;
+  showOverview('mine');
+  // Brief toast
+  const ind = document.getElementById('saveIndicator');
+  ind.textContent = `✓ ${name} cerrado`;
+  ind.classList.add('show');
+  setTimeout(() => { ind.classList.remove('show'); ind.textContent = 'Guardado ✓'; }, 2500);
+}
+
+function getMissingFields(p) {
+  const missing = [];
+  const g = p.general || {};
+  if(!g.nombre) missing.push('Nombre');
+  if(!g.rol) missing.push('Rol');
+  if(!g.nivel) missing.push('Nivel jerárquico');
+  if(!g.ingreso) missing.push('Ingreso');
+  if(!g.seniority) missing.push('Seniority');
+  if(!g.tiempo) missing.push('Tiempo en rol');
+  if(!g.lasteval) missing.push('Última evaluación');
+  if(!g.proyectos) missing.push('Proyectos');
+  if(!g.entrevistador) missing.push('Entrevistador');
+  const perfScores = Object.values(p.perf?.scores || {});
+  if(perfScores.some(s => !s)) missing.push('Performance incompleto');
+  const potScores = Object.values(p.pot?.scores || {});
+  if(potScores.some(s => !s)) missing.push('Potencial incompleto');
+  if(!p.madurez?.final) missing.push('Madurez final');
+  if(!p.risk?.global) missing.push('Risk global');
+  if(!p.resumen?.decision) missing.push('Decisión');
+  const sp = Object.entries(p.skills||{}).filter(([,d])=>d.planActivo==='Sí'&&!d.plan?.trim()).length;
+  if(sp) missing.push(`${sp} plan(es) skill vacío`);
+  const rp = Object.values(p.risk?.items||{}).filter(d=>d.estado==='Alto'&&(!d.obs?.trim()||!d.accion?.trim())).length;
+  if(rp) missing.push(`${rp} indicador Alto sin obs/acción`);
+  return missing;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION ALERTS (inline por sección)
+// ═══════════════════════════════════════════════════════════════
+function updateSectionAlerts() {
+  if(!currentId) return;
+  const p = profiles[currentId];
+  const g = p.general || {};
+
+  // General
+  const genMissing = [];
+  if(!g.nombre) genMissing.push('Nombre');
+  if(!g.rol) genMissing.push('Rol / Cargo');
+  if(!g.nivel) genMissing.push('Nivel jerárquico');
+  if(!g.ingreso) genMissing.push('Fecha de ingreso');
+  if(!g.seniority) genMissing.push('Seniority');
+  if(!g.tiempo) genMissing.push('Tiempo en el rol');
+  if(!g.lasteval) genMissing.push('Última evaluación');
+  if(!g.proyectos) genMissing.push('Proyectos');
+  if(!g.entrevistador) genMissing.push('Entrevistador');
+  showSectionAlert('alert-general', genMissing);
+
+  // Performance
+  const perfScores = Object.values(p.perf?.scores || {});
+  const perfMissing = PERF_DIMS
+    .map((dim, i) => (!p.perf?.scores[i] ? dim : null))
+    .filter(Boolean);
+  showSectionAlert('alert-performance', perfMissing.length ? [`Scores pendientes: ${perfMissing.join(', ')}`] : []);
+
+  // Potencial
+  const potMissing = POT_DIMS
+    .map((dim, i) => (!p.pot?.scores[i] ? dim : null))
+    .filter(Boolean);
+  showSectionAlert('alert-potencial', potMissing.length ? [`Scores pendientes: ${potMissing.join(', ')}`] : []);
+
+  // Skills
+  const skillsMissing = Object.entries(p.skills||{})
+    .filter(([,d]) => d.planActivo==='Sí' && !d.plan?.trim())
+    .map(([skill]) => skill);
+  showSectionAlert('alert-skills', skillsMissing.length ? [`Plan obligatorio sin completar: ${skillsMissing.join(', ')}`] : []);
+
+  // Madurez
+  const matMissing = [];
+  if(!p.madurez?.final) matMissing.push('Nivel final asignado');
+  showSectionAlert('alert-madurez', matMissing);
+
+  // Risk
+  const riskMissing = [];
+  Object.entries(p.risk?.items||{}).forEach(([i, d]) => {
+    if(!d.estado) riskMissing.push(`${RISK_ITEMS[i]}: falta estado`);
+    else if(d.estado==='Alto') {
+      if(!d.obs?.trim())    riskMissing.push(`${RISK_ITEMS[i]}: falta observación (Alto)`);
+      if(!d.accion?.trim()) riskMissing.push(`${RISK_ITEMS[i]}: falta acción (Alto)`);
+    }
+  });
+  if(!p.risk?.global) riskMissing.push('Nivel de riesgo global');
+  showSectionAlert('alert-risk', riskMissing);
+
+  // Resumen
+  const resMissing = [];
+  if(!p.resumen?.decision) resMissing.push('Decisión recomendada');
+  showSectionAlert('alert-resumen', resMissing);
+}
+
+function showSectionAlert(alertId, missingArr) {
+  const el = document.getElementById(alertId);
+  if(!el) return;
+  if(missingArr.length === 0) {
+    el.classList.remove('show');
+    el.textContent = '';
+  } else {
+    el.innerHTML = `⚠ Pendiente: ${missingArr.map(m=>`<strong>${m}</strong>`).join(', ')}`;
+    el.classList.add('show');
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
