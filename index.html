@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Talent Profile — Data & AI (vBeta)</title>
+<title>Talent Profile — Data & AI</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -384,6 +384,39 @@ textarea { resize: vertical; min-height: 60px; }
 
 .separator { height: 1px; background: var(--gray-200); margin: 0.5rem 0; }
 
+/* ─── HISTORY MODAL ─── */
+.history-modal-overlay {
+  position: fixed; inset: 0; background: rgba(15,30,60,0.55);
+  z-index: 400; display: none; align-items: flex-start; justify-content: center;
+  padding: 40px 16px; overflow-y: auto;
+}
+.history-modal-overlay.open { display: flex; }
+.history-modal {
+  background: white; border-radius: 14px; width: 100%; max-width: 780px;
+  padding: 28px; box-shadow: var(--shadow-md); flex-shrink: 0;
+}
+.history-modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.history-modal .hm-sub { font-size: 12px; color: var(--gray-400); margin-bottom: 20px; }
+.cycle-card {
+  border: 1px solid var(--gray-200); border-radius: 10px; padding: 16px;
+  margin-bottom: 12px; position: relative;
+}
+.cycle-card.current { border-color: var(--teal); background: #f0fdfa; }
+.cycle-card .cc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.cycle-card .cc-title { font-size: 13px; font-weight: 600; }
+.cycle-card .cc-date  { font-size: 11px; color: var(--gray-400); }
+.cycle-scores { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.cycle-score-pill {
+  font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 600;
+  font-family: 'DM Mono', monospace; display: flex; align-items: center; gap: 4px;
+}
+/* ─── TREND BADGES ─── */
+.trend-up   { color: var(--green); font-size: 10px; font-weight: 700; }
+.trend-down { color: var(--red);   font-size: 10px; font-weight: 700; }
+.trend-flat { color: var(--gray-400); font-size: 10px; }
+
+.guide-tab-content { }
+
 /* ─── CLOSED PROFILE BANNER ─── */
 .closed-banner {
   background: linear-gradient(135deg, #f0fdf4, #dcfce7);
@@ -669,6 +702,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
           <div id="profileAlert" style="display:none;margin-top:6px;font-size:12px;color:var(--amber);background:var(--amber-light);padding:4px 10px;border-radius:6px;border:1px solid #fcd34d"></div>
         </div>
         <div style="display:flex;gap:8px" id="profileActionButtons">
+          <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" id="profileHistoryBtn" onclick="openHistoryModal(currentId)" style="display:none">📋 Historial</button>
           <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="deleteCurrent()">Eliminar perfil</button>
           <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="saveAndContinue()">💾 Guardar</button>
           <button class="btn btn-teal btn-sm" onclick="closeProfile()">✓ Cerrar perfil</button>
@@ -681,6 +715,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
           <div class="cb-sub" id="closedBannerMeta">—</div>
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0">
+          <button class="btn btn-ghost btn-sm" style="border:1px solid var(--gray-300);color:var(--gray-600)" onclick="openHistoryModal(currentId)">📋 Historial</button>
           <button class="btn btn-ghost btn-sm" style="border:1px solid var(--amber);color:var(--amber)" onclick="reopenProfile()">↩ Reabrir y editar</button>
           <button class="btn btn-teal btn-sm" onclick="newCycleProfile()">🔄 Nuevo ciclo</button>
         </div>
@@ -1097,7 +1132,8 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
             <thead><tr>
               <th>Nombre</th><th>Rol</th><th>Nivel</th><th>Seniority</th>
               <th>Perf.</th><th>Potencial</th><th>9-Box</th>
-              <th>Mad. Técnica</th><th>Mad. Profesional</th><th>Risk</th><th>Decisión</th><th>Evaluador</th>
+              <th>Mad. Técnica</th><th>Mad. Profesional</th><th>Risk</th><th>Decisión</th>
+              <th>Última eval.</th><th>Evaluador</th>
             </tr></thead>
             <tbody id="overviewBody"></tbody>
           </table>
@@ -1107,284 +1143,247 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
 
     <!-- METHODOLOGY VIEW -->
     <div id="methodologyView" style="display:none">
-      <div style="margin-bottom:1.5rem">
-        <div style="font-size:18px;font-weight:600">Guía metodológica</div>
-        <div style="font-size:12px;color:var(--gray-400)">Modelo de evaluación de talento Data & AI — NTT DATA</div>
+      <div style="margin-bottom:1.5rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-size:18px;font-weight:600">Guía metodológica &amp; Manual de usuario</div>
+          <div style="font-size:12px;color:var(--gray-400)">Modelo de evaluación de talento Data &amp; AI — NTT DATA · v2.0</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap" id="guideTabBtns">
+          <button onclick="switchGuideTab('modelo',this)" class="guide-tab-btn" style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--navy);background:var(--navy);color:white;cursor:pointer">📐 Modelo</button>
+          <button onclick="switchGuideTab('flujo',this)" class="guide-tab-btn" style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--gray-300);background:white;color:var(--gray-700);cursor:pointer">🔄 Flujo &amp; Ciclos</button>
+          <button onclick="switchGuideTab('admin',this)" class="guide-tab-btn" style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--gray-300);background:white;color:var(--gray-700);cursor:pointer">🔑 Admin</button>
+          <button onclick="switchGuideTab('director',this)" class="guide-tab-btn" style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--gray-300);background:white;color:var(--gray-700);cursor:pointer">🏢 Director</button>
+          <button onclick="switchGuideTab('manager',this)" class="guide-tab-btn" style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--gray-300);background:white;color:var(--gray-700);cursor:pointer">👤 Manager</button>
+          <button onclick="switchGuideTab('lider',this)" class="guide-tab-btn" style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--gray-300);background:white;color:var(--gray-700);cursor:pointer">🧑‍💼 Líder</button>
+          <button onclick="switchGuideTab('benchmarks',this)" class="guide-tab-btn" style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--gray-300);background:white;color:var(--gray-700);cursor:pointer">📊 Benchmarks</button>
+        </div>
       </div>
 
-      <!-- NARRATIVE CONNECTOR -->
-      <div class="card" style="margin-bottom:1rem;border-left:4px solid var(--navy)">
-        <div class="card-header"><div class="card-header-dot" style="background:var(--navy)"></div><span class="card-title">Modelo integrado — Cómo se conectan todas las dimensiones</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;line-height:1.8;margin-bottom:14px">El modelo de Talent Profile no es una suma de evaluaciones independientes — es un sistema de diagnóstico integrado donde cada dimensión alimenta a la siguiente. El orden importa: comenzamos con lo observable (performance), avanzamos hacia lo proyectable (potencial y técnico), identificamos el riesgo de perder ese talento (flight risk), y terminamos con el plan de acción (IDP y decisión).</p>
-
-          <div style="position:relative;padding-left:20px">
-
-            <div style="display:flex;gap:14px;margin-bottom:16px;align-items:flex-start">
-              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;flex-shrink:0">1</div>
-              <div>
-                <div style="font-size:13px;font-weight:600;margin-bottom:3px">Performance → ¿Qué está entregando hoy?</div>
-                <div style="font-size:12px;color:var(--gray-600)">Es el punto de partida y el único dato completamente observable. Mide resultados concretos en el rol actual. Un score bajo aquí no significa que la persona no tenga valor — puede estar mal ubicada o en período de rampa.</div>
+      <!-- TAB MODELO -->
+      <div id="guide-tab-modelo" class="guide-tab-content">
+        <div class="card" style="margin-bottom:0.75rem;border-left:4px solid var(--navy)">
+          <div class="card-header"><div class="card-header-dot" style="background:var(--navy)"></div><span class="card-title">Modelo integrado — Cómo se conectan las 8 dimensiones</span></div>
+          <div class="card-body">
+            <p style="font-size:13px;line-height:1.7;margin-bottom:14px"><strong>Pilar People</strong> es un sistema de diagnóstico integrado. No es una suma de evaluaciones — cada dimensión alimenta a la siguiente. Ninguna decide sola: <strong>Performance × Potencial × Técnico × Madurez × Riesgo = Decisión estratégica de talento.</strong></p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--gray-50);border-radius:8px;border:1px solid var(--gray-200)"><div style="min-width:26px;height:26px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px;flex-shrink:0">1</div><div><div style="font-size:12px;font-weight:600">Performance — ¿Qué entrega hoy?</div><div style="font-size:11px;color:var(--gray-600);line-height:1.5;margin-top:2px">Único dato completamente observable. Un score bajo puede indicar rol incorrecto o rampa, no necesariamente falta de valor.</div></div></div>
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--gray-50);border-radius:8px;border:1px solid var(--gray-200)"><div style="min-width:26px;height:26px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px;flex-shrink:0">2</div><div><div style="font-size:12px;font-weight:600">Potencial — ¿Qué puede ser?</div><div style="font-size:11px;color:var(--gray-600);line-height:1.5;margin-top:2px">Perf media + pot alto = inversión. Perf alta + pot bajo = retener, no promover. Velocidad de feedback es el mejor predictor.</div></div></div>
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--gray-50);border-radius:8px;border:1px solid var(--gray-200)"><div style="min-width:26px;height:26px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px;flex-shrink:0">3</div><div><div style="font-size:12px;font-weight:600">Madurez Técnica — ¿Stack real?</div><div style="font-size:11px;color:var(--gray-600);line-height:1.5;margin-top:2px">Mismo cuadrante 9-Box, valor de mercado completamente distinto. Gap técnico alimenta IDP. Sin esto el plan de desarrollo es genérico.</div></div></div>
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--gray-50);border-radius:8px;border:1px solid var(--gray-200)"><div style="min-width:26px;height:26px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px;flex-shrink:0">4</div><div><div style="font-size:12px;font-weight:600">Madurez Profesional — ¿Opera a su nivel?</div><div style="font-size:11px;color:var(--gray-600);line-height:1.5;margin-top:2px">Termómetro organizacional. Brillante técnicamente pero requiere supervisión constante = no está listo para Lead. Señal más clara de promoción prematura.</div></div></div>
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--gray-50);border-radius:8px;border:1px solid var(--gray-200)"><div style="min-width:26px;height:26px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px;flex-shrink:0">5</div><div><div style="font-size:12px;font-weight:600">9-Box — ¿Dónde clasifica?</div><div style="font-size:11px;color:var(--gray-600);line-height:1.5;margin-top:2px">Calculado automático; validado = decisión del manager. Aspiraciones separadas del potencial (voluntad ≠ capacidad).</div></div></div>
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--gray-50);border-radius:8px;border:1px solid var(--gray-200)"><div style="min-width:26px;height:26px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px;flex-shrink:0">6</div><div><div style="font-size:12px;font-weight:600">Flight Risk — ¿Cuánto tiempo?</div><div style="font-size:11px;color:var(--gray-600);line-height:1.5;margin-top:2px">Top Talent + riesgo Alto = retención prioritaria sobre desarrollo. Indicadores de desenganche más objetivos que señales de búsqueda.</div></div></div>
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--gray-50);border-radius:8px;border:1px solid var(--gray-200)"><div style="min-width:26px;height:26px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px;flex-shrink:0">7</div><div><div style="font-size:12px;font-weight:600">IDP — ¿Qué haremos?</div><div style="font-size:11px;color:var(--gray-600);line-height:1.5;margin-top:2px">Derivado de gaps técnicos, no listado genérico. "⚡ Sugerir desde gaps" automatiza la conexión. Sin IDP = diagnóstico sin prescripción.</div></div></div>
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--gray-50);border-radius:8px;border:1px solid var(--gray-200)"><div style="min-width:26px;height:26px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px;flex-shrink:0">8</div><div><div style="font-size:12px;font-weight:600">Resumen &amp; Decisión — ¿Acción?</div><div style="font-size:11px;color:var(--gray-600);line-height:1.5;margin-top:2px">Mismo 9-Box con madurez baja + riesgo alto lleva a decisión muy distinta que con madurez alta + riesgo bajo.</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
+          <div class="card">
+            <div class="card-header"><div class="card-header-dot" style="background:var(--blue)"></div><span class="card-title">Escala 1–5</span></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;gap:8px;align-items:center"><div style="min-width:22px;height:22px;border-radius:4px;background:var(--red);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px;flex-shrink:0">1</div><div style="font-size:11px">Muy por debajo — no cumple expectativas mínimas</div></div>
+                <div style="display:flex;gap:8px;align-items:center"><div style="min-width:22px;height:22px;border-radius:4px;background:var(--orange);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px;flex-shrink:0">2</div><div style="font-size:11px">Por debajo — cumple parcialmente, requiere mejora</div></div>
+                <div style="display:flex;gap:8px;align-items:center"><div style="min-width:22px;height:22px;border-radius:4px;background:var(--amber);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px;flex-shrink:0">3</div><div style="font-size:11px">Cumple — desempeño esperado para el seniority</div></div>
+                <div style="display:flex;gap:8px;align-items:center"><div style="min-width:22px;height:22px;border-radius:4px;background:var(--teal);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px;flex-shrink:0">4</div><div style="font-size:11px">Supera — consistentemente por encima del nivel esperado</div></div>
+                <div style="display:flex;gap:8px;align-items:center"><div style="min-width:22px;height:22px;border-radius:4px;background:var(--green);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px;flex-shrink:0">5</div><div style="font-size:11px">Excepcional — referente en el equipo/organización</div></div>
               </div>
             </div>
-
-            <div style="display:flex;gap:14px;margin-bottom:16px;align-items:flex-start">
-              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;flex-shrink:0">2</div>
-              <div>
-                <div style="font-size:13px;font-weight:600;margin-bottom:3px">Potencial → ¿Qué puede ser mañana?</div>
-                <div style="font-size:12px;color:var(--gray-600)">Complementa a la performance. Un perfil con performance media pero potencial alto es una inversión — alguien con performance alta pero potencial bajo es un activo a retener, no necesariamente a promover. Las dimensiones miden capacidad de adaptación, no resultados pasados. <strong>La velocidad de incorporación de feedback</strong> es el predictor más confiable de crecimiento sostenido.</div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-header-dot" style="background:var(--teal)"></div><span class="card-title">9-Box — Cuadrantes</span></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="padding:7px 10px;background:#f0fdf420;border:1px solid var(--green);border-radius:6px;font-size:11px"><strong>⭐ Top Talent</strong> (Perf≥4, Pot≥4) — Plan acelerado, exposición estratégica</div>
+                <div style="padding:7px 10px;background:#dbeafe20;border:1px solid var(--blue);border-radius:6px;font-size:11px"><strong>🚀 High Performer</strong> (Perf≥4, Pot2-3) — Retener, gestionar riesgo de plateau</div>
+                <div style="padding:7px 10px;background:#ede9fe20;border:1px solid var(--purple);border-radius:6px;font-size:11px"><strong>💡 Alto Potencial</strong> (Perf2-3, Pot≥4) — Invertir con paciencia, mentoring</div>
+                <div style="padding:7px 10px;background:#f0fdfa20;border:1px solid var(--teal);border-radius:6px;font-size:11px"><strong>✅ Core Contributor</strong> (Perf3, Pot3) — Columna vertebral, reconocer</div>
+                <div style="padding:7px 10px;background:var(--amber-light);border:1px solid var(--amber);border-radius:6px;font-size:11px"><strong>📈 En Desarrollo</strong> — IDP activo, revisión 90 días</div>
+                <div style="padding:7px 10px;background:var(--red-light);border:1px solid var(--red);border-radius:6px;font-size:11px"><strong>⚠️ Under Review</strong> (Perf&lt;3, Pot&lt;3) — PIP con hito y fecha clara</div>
               </div>
             </div>
-
-            <div style="display:flex;gap:14px;margin-bottom:16px;align-items:flex-start">
-              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;flex-shrink:0">3</div>
-              <div>
-                <div style="font-size:13px;font-weight:600;margin-bottom:3px">Madurez Técnica → ¿Cuál es su stack real?</div>
-                <div style="font-size:12px;color:var(--gray-600)">En una consultora tech, dos personas con el mismo cuadrante 9-Box pueden tener valor de mercado completamente distinto si una tiene dominio avanzado en LLMs y la otra no. El gap técnico (objetivo - actual) alimenta directamente el IDP. Sin este diagnóstico, el plan de desarrollo es genérico e ineficiente.</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+          <div class="card">
+            <div class="card-header"><div class="card-header-dot" style="background:var(--orange)"></div><span class="card-title">Madurez Profesional — Niveles</span></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:7px">
+                <div style="display:flex;gap:8px"><div style="min-width:20px;height:20px;border-radius:4px;background:var(--purple);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:10px;flex-shrink:0">1</div><div><div style="font-size:11px;font-weight:600">Ejecutor guiado (Junior)</div><div style="font-size:10px;color:var(--gray-500)">Ejecuta tareas definidas con supervisión</div></div></div>
+                <div style="display:flex;gap:8px"><div style="min-width:20px;height:20px;border-radius:4px;background:var(--purple);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:10px;flex-shrink:0">2</div><div><div style="font-size:11px;font-weight:600">Ejecutor independiente (Engineer/Analyst)</div><div style="font-size:10px;color:var(--gray-500)">Resuelve con autonomía creciente</div></div></div>
+                <div style="display:flex;gap:8px"><div style="min-width:20px;height:20px;border-radius:4px;background:var(--purple);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:10px;flex-shrink:0">3</div><div><div style="font-size:11px;font-weight:600">Contribuidor de equipo (Lead)</div><div style="font-size:10px;color:var(--gray-500)">Referente técnico. Influye en decisiones.</div></div></div>
+                <div style="display:flex;gap:8px"><div style="min-width:20px;height:20px;border-radius:4px;background:var(--purple);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:10px;flex-shrink:0">4</div><div><div style="font-size:11px;font-weight:600">Referente de área (Expert)</div><div style="font-size:10px;color:var(--gray-500)">Impacto cross-equipo. Mentoring activo.</div></div></div>
+                <div style="display:flex;gap:8px"><div style="min-width:20px;height:20px;border-radius:4px;background:var(--purple);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:10px;flex-shrink:0">5</div><div><div style="font-size:11px;font-weight:600">Líder estratégico (Chief/Evangelist)</div><div style="font-size:10px;color:var(--gray-500)">Visión organizacional. Define dirección técnica.</div></div></div>
               </div>
             </div>
-
-            <div style="display:flex;gap:14px;margin-bottom:16px;align-items:flex-start">
-              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;flex-shrink:0">4</div>
-              <div>
-                <div style="font-size:13px;font-weight:600;margin-bottom:3px">Madurez Profesional → ¿Opera a nivel de su rol?</div>
-                <div style="font-size:12px;color:var(--gray-600)">Es el "termómetro organizacional" — mide si la persona se comporta al nivel de complejidad que exige su seniority. Alguien técnicamente brillante que requiere supervisión constante no está listo para un Lead. Este gap es la señal más clara de si una promoción es prematura.</div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-header-dot" style="background:var(--red)"></div><span class="card-title">Flight Risk — Criterios</span></div>
+            <div class="card-body">
+              <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:7px;padding:9px 11px;margin-bottom:10px;font-size:11px;color:#991b1b"><strong>Indicadores de desenganche vs señales de búsqueda:</strong> Los indicadores (motivación, participación, iniciativa, patrones de comunicación) son observables y objetivos. Las señales de búsqueda son percepciones subjetivas difíciles de validar.</div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="padding:6px 10px;background:var(--green-light);border-radius:6px;font-size:11px"><strong>🟢 Bajo</strong> — Retención estable, monitoreo rutinario</div>
+                <div style="padding:6px 10px;background:var(--amber-light);border-radius:6px;font-size:11px"><strong>🟡 Medio</strong> — 1:1 con foco en motivación, definir fecha revisión</div>
+                <div style="padding:6px 10px;background:var(--red-light);border-radius:6px;font-size:11px"><strong>🔴 Alto</strong> — Obs + acción obligatorios. Escalar según jerarquía.</div>
               </div>
             </div>
+          </div>
+        </div>
+      </div><!-- end guide-tab-modelo -->
 
-            <div style="display:flex;gap:14px;margin-bottom:16px;align-items:flex-start">
-              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;flex-shrink:0">5</div>
-              <div>
-                <div style="font-size:13px;font-weight:600;margin-bottom:3px">9-Box → ¿Dónde clasifica en el equipo?</div>
-                <div style="font-size:12px;color:var(--gray-600)">Sintetiza performance + potencial en un cuadrante accionable. El cuadrante calculado es automático — el cuadrante <strong>validado</strong> es la decisión del manager con criterio y contexto. El overlay técnico añade la dimensión diferenciadora de NTT DATA. Las <strong>aspiraciones declaradas</strong> se separan del potencial para evitar confundir voluntad con capacidad.</div>
+      <!-- TAB FLUJO -->
+      <div id="guide-tab-flujo" class="guide-tab-content" style="display:none">
+        <div class="card" style="margin-bottom:0.75rem;border-left:4px solid var(--teal)">
+          <div class="card-header"><div class="card-header-dot" style="background:var(--teal)"></div><span class="card-title">Ciclo de vida de un perfil</span></div>
+          <div class="card-body">
+            <div style="display:flex;align-items:center;gap:0;margin-bottom:18px;overflow-x:auto;padding-bottom:6px">
+              <div style="flex-shrink:0;text-align:center;padding:0 10px"><div style="width:42px;height:42px;border-radius:50%;background:var(--gray-200);border:2px solid var(--gray-400);display:flex;align-items:center;justify-content:center;font-size:16px;margin:0 auto 4px">➕</div><div style="font-size:11px;font-weight:600">Crear</div><div style="font-size:10px;color:var(--gray-400);max-width:80px">Nombre + Seniority</div></div>
+              <div style="font-size:18px;color:var(--gray-300);flex-shrink:0">→</div>
+              <div style="flex-shrink:0;text-align:center;padding:0 10px"><div style="width:42px;height:42px;border-radius:50%;background:#dbeafe;border:2px solid var(--blue);display:flex;align-items:center;justify-content:center;font-size:16px;margin:0 auto 4px">✏️</div><div style="font-size:11px;font-weight:600">Completar</div><div style="font-size:10px;color:var(--gray-400);max-width:80px">Solo en Mis perfiles</div></div>
+              <div style="font-size:18px;color:var(--gray-300);flex-shrink:0">→</div>
+              <div style="flex-shrink:0;text-align:center;padding:0 10px"><div style="width:42px;height:42px;border-radius:50%;background:#f0fdf4;border:2px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:16px;margin:0 auto 4px">✅</div><div style="font-size:11px;font-weight:600">Cerrar</div><div style="font-size:10px;color:var(--gray-400);max-width:80px">Requiere 100%</div></div>
+              <div style="font-size:18px;color:var(--gray-300);flex-shrink:0">→</div>
+              <div style="flex-shrink:0;text-align:center;padding:0 10px"><div style="width:42px;height:42px;border-radius:50%;background:#f0fdfa;border:2px solid var(--teal);display:flex;align-items:center;justify-content:center;font-size:16px;margin:0 auto 4px">👁</div><div style="font-size:11px;font-weight:600">Vista Todos</div><div style="font-size:10px;color:var(--gray-400);max-width:80px">Visible al equipo</div></div>
+              <div style="font-size:18px;color:var(--gray-300);flex-shrink:0">→</div>
+              <div style="flex-shrink:0;text-align:center;padding:0 10px"><div style="width:42px;height:42px;border-radius:50%;background:#fff7ed;border:2px solid var(--amber);display:flex;align-items:center;justify-content:center;font-size:16px;margin:0 auto 4px">↩</div><div style="font-size:11px;font-weight:600">Reabrir</div><div style="font-size:10px;color:var(--gray-400);max-width:80px">Con justificación</div></div>
+              <div style="font-size:18px;color:var(--gray-300);flex-shrink:0">→</div>
+              <div style="flex-shrink:0;text-align:center;padding:0 10px"><div style="width:42px;height:42px;border-radius:50%;background:#f5f3ff;border:2px solid var(--purple);display:flex;align-items:center;justify-content:center;font-size:16px;margin:0 auto 4px">🔄</div><div style="font-size:11px;font-weight:600">Nuevo ciclo</div><div style="font-size:10px;color:var(--gray-400);max-width:80px">Archiva historial</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div style="padding:10px;background:var(--amber-light);border:1px solid #fcd34d;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:5px">💾 Guardar</div><ul style="font-size:11px;color:var(--gray-700);margin:0;padding-left:14px;line-height:1.8"><li>Guarda en Supabase</li><li>Solo visible en Mis perfiles</li><li>No aparece en Vista Todos</li><li>Modal con % completado</li></ul></div>
+              <div style="padding:10px;background:var(--green-light);border:1px solid #86efac;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:5px">✓ Cerrar perfil</div><ul style="font-size:11px;color:var(--gray-700);margin:0;padding-left:14px;line-height:1.8"><li>Requiere 100% obligatorios</li><li>Aparece en Vista Todos</li><li>Registra quién cerró y cuándo</li><li>Habilita Reabrir y Nuevo Ciclo</li></ul></div>
+              <div style="padding:10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--orange);margin-bottom:5px">↩ Reabrir</div><ul style="font-size:11px;color:var(--gray-700);margin:0;padding-left:14px;line-height:1.8"><li>Motivo obligatorio (auditoría)</li><li>Sale de Vista Todos</li><li>Ideal para correcciones</li></ul></div>
+              <div style="padding:10px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:5px">🔄 Nuevo ciclo</div><ul style="font-size:11px;color:var(--gray-700);margin:0;padding-left:14px;line-height:1.8"><li>Archiva ciclo actual como snapshot</li><li>Resetea evaluación</li><li>Conserva datos generales + skills</li><li>Historial en modal 📋</li></ul></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-header-dot" style="background:var(--navy)"></div><span class="card-title">Alineación Career Ladder NTT DATA</span></div>
+          <div class="card-body">
+            <p style="font-size:13px;margin-bottom:10px">Las dimensiones de competencias de cada rol se derivan del Career Ladder oficial de NTT DATA, permitiendo coherencia entre evaluación interna y criterios corporativos de progresión.</p>
+            <div style="padding:10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;font-size:12px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div>🩷 <strong>Track Técnico:</strong> Junior Engineer → Engineer → Lead Engineer → Expert Engineer → Chief Architect</div>
+                <div>🩵 <strong>Track Analítico:</strong> Junior Analyst → Analyst → Lead Analyst → Expert Analyst</div>
+                <div>🔵 <strong>Track Gestión:</strong> Project Leader → Sr. Technical PL</div>
+                <div>🟤 <strong>Transversal:</strong> Evangelist</div>
               </div>
             </div>
-
-            <div style="display:flex;gap:14px;margin-bottom:16px;align-items:flex-start">
-              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;flex-shrink:0">6</div>
-              <div>
-                <div style="font-size:13px;font-weight:600;margin-bottom:3px">Flight Risk → ¿Cuánto tiempo tenemos para actuar?</div>
-                <div style="font-size:12px;color:var(--gray-600)">El diagnóstico previo pierde valor si la persona se va antes de que podamos actuar. El flight risk calibra la urgencia. Un Top Talent con riesgo Alto requiere acción inmediata — sus gaps de desarrollo son secundarios frente a la retención. Los <strong>indicadores de desenganche</strong> (motivación, participación, iniciativa) son más objetivos y observables que "señales de búsqueda de empleo".</div>
-              </div>
-            </div>
-
-            <div style="display:flex;gap:14px;margin-bottom:16px;align-items:flex-start">
-              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;flex-shrink:0">7</div>
-              <div>
-                <div style="font-size:13px;font-weight:600;margin-bottom:3px">IDP → ¿Qué haremos concretamente?</div>
-                <div style="font-size:12px;color:var(--gray-600)">El IDP cierra el ciclo. Debe derivarse <strong>directamente de los gaps técnicos</strong> identificados en Madurez Técnica — no ser un listado genérico de cursos. La función "Sugerir desde gaps" automatiza esta conexión. Sin IDP, el perfil es diagnóstico sin prescripción.</div>
-              </div>
-            </div>
-
-            <div style="display:flex;gap:14px;align-items:flex-start">
-              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;flex-shrink:0">8</div>
-              <div>
-                <div style="font-size:13px;font-weight:600;margin-bottom:3px">Resumen & Decisión → ¿Cuál es la acción de negocio?</div>
-                <div style="font-size:12px;color:var(--gray-600)">La decisión (promoción, retención, PIP, movimiento lateral) debe estar justificada por la combinación de todos los inputs anteriores. Un perfil con 9-Box "Top Talent" pero madurez profesional baja y riesgo Alto puede tener una decisión muy diferente a otro con el mismo cuadrante pero estable y técnicamente avanzado.</div>
-              </div>
-            </div>
-
-          </div>
-
-          <div style="margin-top:16px;padding:12px 16px;background:var(--gray-50);border-radius:8px;border:1px solid var(--gray-200);font-size:12px;color:var(--gray-600)">
-            <strong>Principio rector:</strong> Ninguna dimensión decide sola. La decisión correcta emerge de leer el perfil como un sistema — Performance × Potencial × Técnico × Madurez × Riesgo = Decisión estratégica de talento.
           </div>
         </div>
-      </div>
+      </div><!-- end guide-tab-flujo -->
 
-      <!-- PERFORMANCE -->
-      <div class="card" style="margin-bottom:1rem">
-        <div class="card-header"><div class="card-header-dot" style="background:var(--green)"></div><span class="card-title">Performance</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> El desempeño actual observable en el rol — comportamientos y resultados concretos alineados con las responsabilidades del cargo según el Career Ladder de NTT DATA.</p>
-          <p style="font-size:13px;margin-bottom:8px"><strong>Escala:</strong> 1 (Muy por debajo) → 2 (Por debajo) → 3 (Cumple) → 4 (Supera) → 5 (Excepcional)</p>
-          <div style="background:var(--blue-light);border-radius:8px;padding:12px;margin-bottom:10px;font-size:12px">
-            <strong style="color:var(--navy)">🔄 Dimensiones dinámicas por rol</strong><br>
-            Las 6 dimensiones de Performance cambian automáticamente según el seniority declarado. Cada rol tiene dimensiones derivadas directamente de sus responsabilidades documentadas en el Career Ladder de NTT DATA. Evaluar a un Engineer con las dimensiones de un Lead no tiene sentido — la comparación siempre es dentro del mismo rol.
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;font-size:11px">
-            <div style="padding:8px;background:var(--gray-50);border-radius:6px;border:1px solid var(--gray-200)">
-              <strong style="color:var(--navy)">Track Técnico (Eng)</strong><br>
-              Junior: calidad de código, tests, metodología<br>
-              Engineer: diseño, pruebas, resolución de problemas<br>
-              Lead: liderazgo técnico, equipo, cliente<br>
-              Expert: referencia, notoriedad, innovación<br>
-              Chief Architect: arquitectura e2e, estrategia, riesgos
+      <!-- TAB ADMIN -->
+      <div id="guide-tab-admin" class="guide-tab-content" style="display:none">
+        <div class="card" style="margin-bottom:0.75rem;border-left:4px solid var(--blue)">
+          <div class="card-header"><div class="card-header-dot" style="background:var(--blue)"></div><span class="card-title">Manual — Administrador</span><span style="margin-left:auto;font-size:11px;padding:2px 8px;background:#dbeafe;color:var(--blue);border-radius:4px;font-weight:600">Acceso total</span></div>
+          <div class="card-body">
+            <p style="font-size:13px;color:var(--gray-600);margin-bottom:14px">Acceso completo: todos los perfiles, configuración del modelo, benchmarks y dimensiones. Típicamente es el responsable de People del área o gerente con visibilidad total.</p>
+            <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--blue)">🔑 Capacidades exclusivas</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+              <div style="padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:3px">✏️ Editar dimensiones</div><div style="font-size:11px;color:var(--gray-700)">Botón "✏" en Performance y Potencial. Agrega, elimina o renombra dimensiones. Impacta perfiles nuevos.</div></div>
+              <div style="padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:3px">📊 Editar benchmarks</div><div style="font-size:11px;color:var(--gray-700)">Botón "📊 Benchmarks" en topbar. Define scores esperados por seniority. Base del cálculo de gap vs rol.</div></div>
+              <div style="padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:3px">👁 Ver todos los perfiles</div><div style="font-size:11px;color:var(--gray-700)">Vista Todos: todos los perfiles cerrados de todos los managers. Sin filtros de jerarquía.</div></div>
+              <div style="padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:3px">🔄 Configurar roles</div><div style="font-size:11px;color:var(--gray-700)">Desde Supabase dashboard: asignar role en user_metadata (admin/director/manager/lider).</div></div>
             </div>
-            <div style="padding:8px;background:var(--gray-50);border-radius:6px;border:1px solid var(--gray-200)">
-              <strong style="color:var(--navy)">Track Analítico / Gestión</strong><br>
-              Junior/Analyst: análisis, informes, configuración<br>
-              Lead Analyst: marco analítico, equipo, cliente<br>
-              Expert Analyst: referencia, notoriedad, innovación<br>
-              Project Leader: proyecto e2e, equipo, cliente<br>
-              Sr. Technical PL: complejidad, gestión económica
+            <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--blue)">📋 Flujo recomendado</div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--blue);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div><div style="font-size:12px;font-weight:600">Configuración inicial</div><div style="font-size:11px;color:var(--gray-600)">Ajustar benchmarks por seniority (Topbar → 📊). Validar dimensiones relevantes para el contexto.</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--blue);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div><div><div style="font-size:12px;font-weight:600">Durante el ciclo</div><div style="font-size:11px;color:var(--gray-600)">Monitorear completitud en Mis perfiles. Hacer seguimiento a managers con perfiles incompletos.</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--blue);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div><div><div style="font-size:12px;font-weight:600">Al cierre</div><div style="font-size:11px;color:var(--gray-600)">Revisar Vista Todos. Identificar Top Talent con riesgo Alto, concentración en Under Review, tendencias ▲▼.</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--blue);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div><div><div style="font-size:12px;font-weight:600">Nuevo ciclo</div><div style="font-size:11px;color:var(--gray-600)">Coordinar fecha con managers. El nuevo ciclo se activa por perfil individual — no es reset global.</div></div></div>
             </div>
-          </div>
-          <p style="font-size:12px;color:var(--gray-400);margin-bottom:8px">⚠ Evaluar con evidencias concretas. El score debe justificarse con comportamientos observables, no percepciones.</p>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">1.0–2.4 Bajo</span>
-            <span style="background:var(--amber-light);color:var(--amber);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">2.5–3.4 Medio</span>
-            <span style="background:var(--green-light);color:var(--green);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">3.5–5.0 Alto</span>
+            <div style="padding:10px 14px;background:#fef9c3;border:1px solid #fde047;border-radius:8px;font-size:12px;color:#854d0e">⚠ Editar dimensiones o benchmarks no retroafecta perfiles cerrados. Solo impacta perfiles nuevos o en edición.</div>
           </div>
         </div>
-      </div>
+      </div><!-- end guide-tab-admin -->
 
-      <!-- POTENCIAL -->
-      <div class="card" style="margin-bottom:1rem">
-        <div class="card-header"><div class="card-header-dot" style="background:var(--purple)"></div><span class="card-title">Potencial</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Capacidad de crecer, asumir mayor complejidad y responsabilidad futura. No es performance actual — es proyección de crecimiento.</p>
-          <p style="font-size:13px;margin-bottom:8px"><strong>Escala:</strong> 1 (Muy limitado) → 5 (Excepcional)</p>
-          <div style="background:var(--blue-light);border-radius:8px;padding:12px;margin-bottom:10px;font-size:12px">
-            <strong style="color:var(--navy)">🔄 Dimensiones dinámicas por rol</strong><br>
-            Las 6 dimensiones de Potencial también se adaptan al rol. Para roles Junior, el foco está en aprendizaje y adaptación. Para roles de liderazgo, en influencia y visión estratégica. Para roles estratégicos, en transformación organizacional y anticipación. Esto alinea la evaluación de potencial con las expectativas reales del siguiente nivel en cada track.
-          </div>
-          <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:12px">
-            <strong style="color:#991b1b">¿Por qué "Velocidad de incorporación de feedback" y no "Aspiraciones"?</strong><br>
-            Las aspiraciones son motivación y retención — no capacidad. Se capturan por separado en la sección 9-Box. La velocidad de feedback es el predictor más confiable de crecimiento sostenido.
-          </div>
-          <p style="font-size:12px;color:var(--gray-400)">⚠ Triangular con evidencias concretas. Evitar sesgos de afinidad o similaridad con el evaluador.</p>
-        </div>
-      </div>
-
-      <!-- 9-BOX -->
-      <div class="card" style="margin-bottom:1rem">
-        <div class="card-header"><div class="card-header-dot" style="background:var(--teal)"></div><span class="card-title">Matriz 9-Box + Overlay Técnico + Validación</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;margin-bottom:10px"><strong>¿Qué es?</strong> Combina Performance (eje X) y Potencial (eje Y) en 9 cuadrantes para orientar decisiones de talento. Para NTT DATA se añaden dos capas: el <strong>overlay técnico</strong> y la <strong>validación del manager</strong>.</p>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px">
-            <div style="background:#ede9fe;border:1px solid #c4b5fd;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#5b21b6">💡 Alto potencial</strong><br><span style="color:#7c3aed">Invertir en desarrollo</span></div>
-            <div style="background:#fef9c3;border:1px solid #fde047;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#854d0e">⭐ Top talent</strong><br><span style="color:#92400e">Retener y promover</span></div>
-            <div style="background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#166534">🚀 High performer</strong><br><span style="color:#166534">Reconocer y estabilizar</span></div>
-            <div style="background:#dbeafe;border:1px solid #93c5fd;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#1e40af">📈 En desarrollo</strong><br><span style="color:#1e40af">Acompañar y acelerar</span></div>
-            <div style="background:#e0f2fe;border:1px solid #7dd3fc;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#0c4a6e">✅ Core contributor</strong><br><span style="color:#0c4a6e">Mantener y motivar</span></div>
-            <div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#064e3b">🏅 Performer sólido</strong><br><span style="color:#064e3b">Valorar contribución</span></div>
-            <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#991b1b">⚠️ Under review</strong><br><span style="color:#991b1b">Plan mejora urgente</span></div>
-            <div style="background:#ffedd5;border:1px solid #fdba74;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#9a3412">🔄 En transición</strong><br><span style="color:#9a3412">Diagnóstico y soporte</span></div>
-            <div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;padding:8px;font-size:11px"><strong style="color:#475569">📋 Performer estable</strong><br><span style="color:#475569">Reconocer estabilidad</span></div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:12px;font-size:12px">
-              <strong style="color:var(--navy)">🔬 Overlay Técnico</strong><br>
-              Promedio de skills evaluados en Madurez Técnica. 🟢 Avanzado (≥4) · 🔵 Intermedio (3–4) · 🟡 Básico (2–3) · 🔴 Inicial (&lt;2). Un "Top Talent" con 🔴 requiere upskilling urgente antes de cualquier promoción.
+      <!-- TAB DIRECTOR -->
+      <div id="guide-tab-director" class="guide-tab-content" style="display:none">
+        <div class="card" style="margin-bottom:0.75rem;border-left:4px solid var(--purple)">
+          <div class="card-header"><div class="card-header-dot" style="background:var(--purple)"></div><span class="card-title">Manual — Director</span><span style="margin-left:auto;font-size:11px;padding:2px 8px;background:#ede9fe;color:var(--purple);border-radius:4px;font-weight:600">Lectura total · Sin configuración</span></div>
+          <div class="card-body">
+            <p style="font-size:13px;color:var(--gray-600);margin-bottom:14px">Visibilidad completa de todos los perfiles cerrados. Función principal: lectura estratégica para decisiones de negocio (estructura, promociones, retención clave, gaps organizacionales).</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+              <div style="padding:10px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:3px">Vista Todos</div><div style="font-size:11px;color:var(--gray-700)">Todos los perfiles cerrados. Ordenables. Ideal para barrido pre-comité.</div></div>
+              <div style="padding:10px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:3px">Modal Historial 📋</div><div style="font-size:11px;color:var(--gray-700)">Ver evolución entre ciclos. ▲▼ muestran si el equipo crece.</div></div>
+              <div style="padding:10px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:3px">Apertura de perfiles</div><div style="font-size:11px;color:var(--gray-700)">Lectura en detalle. No puede editar ni cerrar perfiles de otros managers.</div></div>
+              <div style="padding:10px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:3px">Mis perfiles</div><div style="font-size:11px;color:var(--gray-700)">Solo si también actúa como manager con perfiles propios.</div></div>
             </div>
-            <div style="background:var(--blue-light);border:1px solid #bfdbfe;border-radius:8px;padding:12px;font-size:12px">
-              <strong style="color:var(--navy)">✅ Cuadrante validado vs calculado</strong><br>
-              El cuadrante calculado es automático por scores. El cuadrante <strong>validado</strong> es la decisión final del manager — puede diferir si hay contexto que los números no capturan (proyecto especial, período de transición, circunstancias personales). Siempre se documenta la justificación del ajuste.
-            </div>
-            <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:12px;font-size:12px">
-              <strong style="color:#5b21b6">🎯 Aspiraciones declaradas (separadas del potencial)</strong><br>
-              Se registran en la sección 9-Box pero <strong>no afectan el score de potencial</strong>. Orientan la decisión de desarrollo: un perfil con alto potencial que elige el IC track no debería recibir las mismas oportunidades que uno que aspira al liderazgo.
+            <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--purple)">🎯 Uso estratégico</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--purple);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div><div style="font-size:12px;font-weight:600">Pre-comité de talento</div><div style="font-size:11px;color:var(--gray-600)">Filtrar Vista Todos por Risk=Alto. Top Talent en riesgo = agenda de retención.</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--purple);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div><div><div style="font-size:12px;font-weight:600">Análisis de distribución</div><div style="font-size:11px;color:var(--gray-600)">Regla orientativa: ≤15% Top Talent, ≤10% Under Review. ¿Es saludable para el tamaño del equipo?</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--purple);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div><div><div style="font-size:12px;font-weight:600">Revisión de decisiones</div><div style="font-size:11px;color:var(--gray-600)">¿PIPs sin seguimiento? ¿Decisiones contradictorias entre managers para el mismo nivel?</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--purple);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div><div><div style="font-size:12px;font-weight:600">Evolución del equipo</div><div style="font-size:11px;color:var(--gray-600)">Modal Historial para personas con ciclos. ¿Los ▲ superan a los ▼ en aggregate?</div></div></div>
             </div>
           </div>
         </div>
-      </div>
+      </div><!-- end guide-tab-director -->
 
-      <!-- MADUREZ TÉCNICA -->
-      <div class="card" style="margin-bottom:1rem">
-        <div class="card-header"><div class="card-header-dot" style="background:var(--blue)"></div><span class="card-title">Madurez Técnica</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Nivel de dominio actual y objetivo en habilidades técnicas Data & AI. El gap alimenta directamente el IDP.</p>
-          <p style="font-size:13px;margin-bottom:8px"><strong>Escala por skill:</strong> 0 (Sin conocimiento) → 1 (Básico) → 2 (Funcional) → 3 (Avanzado) → 4 (Experto) → 5 (Referente)</p>
-          <p style="font-size:13px;margin-bottom:8px"><strong>Gap:</strong> Nivel objetivo − Nivel actual. Gap ≥ 1 = área prioritaria en IDP. Gap ≥ 2 = brecha crítica que limita el crecimiento.</p>
-          <p style="font-size:13px;margin-bottom:8px"><strong>Grupos:</strong> DATA & ANALYTICS · AI / ML · SOFT / LEADERSHIP</p>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">Avg &lt;2 Inicial</span>
-            <span style="background:var(--amber-light);color:var(--amber);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">Avg 2–3 Intermedio</span>
-            <span style="background:var(--green-light);color:var(--green);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">Avg ≥4 Avanzado</span>
+      <!-- TAB MANAGER -->
+      <div id="guide-tab-manager" class="guide-tab-content" style="display:none">
+        <div class="card" style="margin-bottom:0.75rem;border-left:4px solid var(--teal)">
+          <div class="card-header"><div class="card-header-dot" style="background:var(--teal)"></div><span class="card-title">Manual — Manager</span><span style="margin-left:auto;font-size:11px;padding:2px 8px;background:#f0fdfa;color:var(--teal);border-radius:4px;font-weight:600">Creación y edición · Perfiles propios</span></div>
+          <div class="card-body">
+            <p style="font-size:13px;color:var(--gray-600);margin-bottom:14px">Evaluador principal. Crea, completa y cierra perfiles de su equipo directo. Visibilidad: sus perfiles en cualquier estado + perfiles cerrados de Staff en Vista Todos.</p>
+            <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--teal)">📋 Paso a paso — completar un perfil</div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--teal);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div><div style="font-size:12px;font-weight:600">Crear perfil</div><div style="font-size:11px;color:var(--gray-600)">"+ Nuevo perfil" desde home o sidebar. Solo Nombre + Seniority. El resto se completa en el perfil.</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--teal);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div><div><div style="font-size:12px;font-weight:600">Datos generales</div><div style="font-size:11px;color:var(--gray-600)">Todos los campos * son obligatorios. Completar primero sube el % rápidamente.</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--teal);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div><div><div style="font-size:12px;font-weight:600">Performance y Potencial</div><div style="font-size:11px;color:var(--gray-600)">Score 1–5 por dimensión. Gap vs benchmark automático. Evidencia no obligatoria pero mejora calidad.</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--teal);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div><div><div style="font-size:12px;font-weight:600">Madurez técnica</div><div style="font-size:11px;color:var(--gray-600)">Nivel actual + objetivo por skill. Si activas ¿Plan?=Sí, descripción del plan obligatoria. Gap alimenta IDP.</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--teal);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">5</div><div><div style="font-size:12px;font-weight:600">Madurez profesional</div><div style="font-size:11px;color:var(--gray-600)">6 dimensiones. Nivel final es la señal más importante para decisiones de promoción.</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--teal);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">6</div><div><div style="font-size:12px;font-weight:600">9-Box</div><div style="font-size:11px;color:var(--gray-600)">Automático. Si no refleja el contexto real, ajusta en "Cuadrante validado" con justificación.</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--teal);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">7</div><div><div style="font-size:12px;font-weight:600">Flight Risk</div><div style="font-size:11px;color:var(--gray-600)">Si marcas Alto, obs + acción se vuelven obligatorios. Define fecha de revisión para Medio y Alto.</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--teal);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">8</div><div><div style="font-size:12px;font-weight:600">IDP</div><div style="font-size:11px;color:var(--gray-600)">Acciones concretas desde gaps técnicos. "⚡ Sugerir desde gaps" genera punto de partida.</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--teal);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">9</div><div><div style="font-size:12px;font-weight:600">Resumen y decisión</div><div style="font-size:11px;color:var(--gray-600)">"✨ Desde datos" propone fortalezas y mejoras desde scores. Decisión obligatoria para cerrar.</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--green);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">✓</div><div><div style="font-size:12px;font-weight:600">Cerrar perfil</div><div style="font-size:11px;color:var(--gray-600)">Solo al 100%. Aparece en Vista Todos. Registra autor y fecha. Habilita Reabrir y Nuevo Ciclo.</div></div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+              <div style="text-align:center;padding:10px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px"><div style="font-size:16px;font-weight:700;color:var(--teal)">45–90'</div><div style="font-size:10px;font-weight:600">Primera vez</div><div style="font-size:9px;color:var(--gray-400)">Con evidencia</div></div>
+              <div style="text-align:center;padding:10px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px"><div style="font-size:16px;font-weight:700;color:var(--teal)">20–30'</div><div style="font-size:10px;font-weight:600">Actualización</div><div style="font-size:9px;color:var(--gray-400)">Ciclos posteriores</div></div>
+              <div style="text-align:center;padding:10px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px"><div style="font-size:16px;font-weight:700;color:var(--teal)">10–15'</div><div style="font-size:10px;font-weight:600">Revisión rápida</div><div style="font-size:9px;color:var(--gray-400)">Solo scores</div></div>
+              <div style="text-align:center;padding:10px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px"><div style="font-size:16px;font-weight:700;color:var(--teal)">+15–20'</div><div style="font-size:10px;font-weight:600">Con IDP detallado</div><div style="font-size:9px;color:var(--gray-400)">Acciones y plazos</div></div>
+            </div>
+            <div style="padding:10px 14px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;font-size:12px;color:#166534">💡 <strong>Buenas prácticas:</strong> Completa perfiles en los primeros 5 días del período. Usa "Guardar" frecuentemente. Revisa el historial antes de iniciar un nuevo ciclo para no perder contexto.</div>
           </div>
         </div>
-      </div>
+      </div><!-- end guide-tab-manager -->
 
-      <!-- MADUREZ PROFESIONAL -->
-      <div class="card" style="margin-bottom:1rem">
-        <div class="card-header"><div class="card-header-dot" style="background:var(--orange)"></div><span class="card-title">Madurez Profesional</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Nivel de autonomía y madurez organizacional. Es el termómetro de si la persona opera al nivel de complejidad que exige su seniority — independiente de sus habilidades técnicas.</p>
-          <p style="font-size:13px;margin-bottom:8px"><strong>Escala:</strong> 1 (Ejecutor guiado) → 2 (Ejecutor independiente) → 3 (Contribuidor de equipo) → 4 (Referente de área) → 5 (Líder estratégico)</p>
-          <div style="background:var(--blue-light);border-radius:8px;padding:12px;margin-bottom:10px;font-size:12px">
-            <strong style="color:var(--navy)">🔄 Dimensiones dinámicas por rol</strong><br>
-            Las 6 dimensiones de Madurez Profesional reflejan el grado de madurez esperado para cada rol. Un Junior mide autonomía básica y adherencia a metodología; un Expert mide referencia organizacional y visión de productividad global. El gap con el nivel esperado del rol es la señal más clara de si una promoción es prematura.
-          </div>
-          <p style="font-size:12px;color:var(--gray-400)">El nivel final es asignado por el evaluador integrando promedio + juicio cualitativo. Alguien técnicamente brillante que requiere supervisión constante no está listo para un Lead.</p>
-        </div>
-      </div>
-
-      <!-- FLIGHT RISK -->
-      <div class="card" style="margin-bottom:1rem">
-        <div class="card-header"><div class="card-header-dot" style="background:var(--red)"></div><span class="card-title">Flight Risk & Engagement</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Probabilidad de abandono voluntario y nivel de engagement en los próximos 6–12 meses. Calibra la urgencia de actuar sobre el perfil.</p>
-          <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px">
-            <strong style="color:#991b1b">¿Por qué "Indicadores de desenganche" y no "Señales de búsqueda de empleo"?</strong><br>
-            "Señales de búsqueda de empleo" es una percepción subjetiva del manager, difícil de observar sin invadir la privacidad. Los <strong>indicadores de desenganche</strong> (reducción de participación, menor iniciativa, cambios en patrones de comunicación, motivación percibida) son comportamientos observables en el día a día, más objetivos y defensibles.
-          </div>
-          <p style="font-size:13px;margin-bottom:8px"><strong>Factores evaluados:</strong> Motivación percibida · Indicadores de desenganche · Satisfacción con el rol · Relación con el equipo · Alineación estratégica · Equidad percibida</p>
-          <p style="font-size:13px;margin-bottom:8px"><strong>Fecha de revisión:</strong> Todo riesgo "Alto" o "Medio" debe tener una fecha de próxima revisión. Un riesgo sin fecha de seguimiento es una alerta sin acción.</p>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <span style="background:var(--green-light);color:var(--green);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">Bajo — Retención estable</span>
-            <span style="background:var(--amber-light);color:var(--amber);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">Medio — Monitorear con fecha</span>
-            <span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">Alto — Acción inmediata</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- IDP -->
-      <div class="card" style="margin-bottom:1rem">
-        <div class="card-header"><div class="card-header-dot" style="background:var(--teal)"></div><span class="card-title">IDP — Plan de Desarrollo Individual</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué es?</strong> Plan de acciones concretas para cerrar gaps técnicos y acelerar el crecimiento. Debe derivarse <strong>directamente de los gaps de Madurez Técnica</strong> — no ser un listado genérico.</p>
-          <p style="font-size:13px;margin-bottom:8px"><strong>Conexión con el modelo:</strong> Gap técnico ≥ 1 → acción en IDP. La función "⚡ Sugerir desde gaps" en Resumen automatiza esta conexión tomando los 3 mayores gaps como punto de partida.</p>
-          <p style="font-size:13px;margin-bottom:8px"><strong>Componentes:</strong> Área de desarrollo · Acción concreta · Tipo (Curso/Proyecto/Mentoring/Certificación) · Plazo · % Avance · Responsable</p>
-          <p style="font-size:12px;color:var(--gray-400)">Revisar mínimo 1 vez por quarter. El IDP sin revisión periódica pierde validez como herramienta de desarrollo.</p>
-        </div>
-      </div>
-
-      <!-- COMPLETITUD -->
-      <div class="card" style="margin-bottom:1rem">
-        <div class="card-header"><div class="card-header-dot" style="background:var(--amber)"></div><span class="card-title">% Completitud del perfil</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Porcentaje de campos requeridos completados. Un perfil incompleto no debe usarse para tomar decisiones de promoción o PIP.</p>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-            <span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">🔴 &lt;50% Crítico — no usar</span>
-            <span style="background:var(--amber-light);color:var(--amber);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">🟡 50–79% En progreso</span>
-            <span style="background:var(--green-light);color:var(--green);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">🟢 ≥80% Válido para decisiones</span>
-          </div>
-          <p style="font-size:12px;color:var(--gray-400)">Ponderación: Datos generales 20% · Performance 20% · Potencial 10% · Skills 10% · Madurez 10% · 9-Box (calculado + validado) 10% · Risk 10% · Resumen/Decisión 10%</p>
-        </div>
-      </div>
-
-      <!-- CAREER LADDER ALIGNMENT -->
-      <div class="card" style="margin-bottom:1rem;border-left:4px solid var(--navy)">
-        <div class="card-header"><div class="card-header-dot" style="background:var(--navy)"></div><span class="card-title">Alineación con NTT DATA Career Ladder</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;margin-bottom:12px">Este modelo está diseñado para ser compatible con el Career Ladder oficial de NTT DATA. Las dimensiones de cada rol se derivan directamente de los perfiles del Career Ladder, lo que permite que la evaluación interna del manager hable el mismo idioma que los criterios de progresión corporativos.</p>
-          <div style="padding:10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;font-size:12px">
-            <div style="font-weight:600;margin-bottom:6px;color:var(--navy)">12 Roles del Career Ladder NTT DATA</div>
-            <div style="display:flex;flex-direction:column;gap:3px">
-              <span>🩷 <strong>Track Técnico:</strong> Junior Engineer → Engineer → Lead Engineer → Expert Engineer → Chief Architect</span>
-              <span>🩵 <strong>Track Analítico:</strong> Junior Analyst → Analyst → Lead Analyst → Expert Analyst</span>
-              <span>🔵 <strong>Track Gestión:</strong> Project Leader → Sr. Technical PL</span>
-              <span>🟤 <strong>Transversal:</strong> Evangelist</span>
+      <!-- TAB LÍDER -->
+      <div id="guide-tab-lider" class="guide-tab-content" style="display:none">
+        <div class="card" style="margin-bottom:0.75rem;border-left:4px solid var(--green)">
+          <div class="card-header"><div class="card-header-dot" style="background:var(--green)"></div><span class="card-title">Manual — Líder técnico</span><span style="margin-left:auto;font-size:11px;padding:2px 8px;background:#f0fdf4;color:var(--green);border-radius:4px;font-weight:600">Evaluación Staff · Vista limitada</span></div>
+          <div class="card-body">
+            <p style="font-size:13px;color:var(--gray-600);margin-bottom:14px">Evalúa colaboradores de nivel Staff de su squad. Mismas capacidades de creación que el manager, pero visibilidad acotada: solo perfiles de nivel Staff en Vista Todos.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+              <div style="padding:10px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:3px">✅ Puede hacer</div><ul style="font-size:11px;color:var(--gray-700);margin:0;padding-left:14px;line-height:1.8"><li>Crear y cerrar perfiles de Staff</li><li>Ver sus propios perfiles (Mis perfiles)</li><li>Vista Todos: solo Staff cerrados</li><li>Modal Historial 📋</li><li>Competencias por Rol (referencia)</li></ul></div>
+              <div style="padding:10px;background:var(--red-light);border:1px solid #fca5a5;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--red);margin-bottom:3px">✗ No puede hacer</div><ul style="font-size:11px;color:var(--gray-700);margin:0;padding-left:14px;line-height:1.8"><li>Ver perfiles de nivel Líder o Manager</li><li>Editar benchmarks o dimensiones</li><li>Ver perfiles de otros líderes</li><li>Reabrir perfiles de otros managers</li></ul></div>
+            </div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--green)">💡 Tips para evaluación</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--green);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div><div style="font-size:12px;font-weight:600">Documenta evidencia</div><div style="font-size:11px;color:var(--gray-600)">No obligatorio pero clave. En conversaciones difíciles (PIP, desvinculación), la evidencia documentada es tu respaldo.</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--green);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div><div><div style="font-size:12px;font-weight:600">Madurez Técnica primero</div><div style="font-size:11px;color:var(--gray-600)">Como líder técnico tienes la mejor perspectiva para evaluar el gap técnico real. Es tu input más valioso.</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--green);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div><div><div style="font-size:12px;font-weight:600">Alinea con tu manager</div><div style="font-size:11px;color:var(--gray-600)">Antes de cerrar perfiles con promoción o PIP, alinea con tu manager. El perfil cerrado llega a su Vista Todos.</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--green);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div><div><div style="font-size:12px;font-weight:600">Usa Competencias por Rol</div><div style="font-size:11px;color:var(--gray-600)">Sección "Competencias por Rol" muestra qué espera exactamente el Career Ladder para calibrar tus scores.</div></div></div>
             </div>
           </div>
         </div>
-      </div>
+      </div><!-- end guide-tab-lider -->
 
-      <!-- BENCHMARKS -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-header-dot" style="background:var(--navy)"></div>
-          <span class="card-title">Benchmarks por Seniority</span>
-          <span class="card-subtitle" style="margin-left:auto">
-            <button class="btn btn-ghost btn-sm" onclick="openBenchmarkModal()" style="font-size:11px">✏ Editar</button>
-          </span>
+      <!-- TAB BENCHMARKS -->
+      <div id="guide-tab-benchmarks" class="guide-tab-content" style="display:none">
+        <div class="card">
+          <div class="card-header"><div class="card-header-dot" style="background:var(--navy)"></div><span class="card-title">Benchmarks por Seniority</span>
+            <span class="card-subtitle" style="margin-left:auto"><button class="btn btn-ghost btn-sm admin-edit-btn" onclick="openBenchmarkModal()" style="font-size:11px">✏ Editar (admin)</button></span>
+          </div>
+          <div class="card-body">
+            <p style="font-size:13px;margin-bottom:12px">Scores esperados por seniority y dimensión. Usados para calcular el <strong>gap vs rol</strong> en Performance y Potencial. Gap negativo = supera expectativas. Gap positivo = brecha a desarrollar. Editables por admin.</p>
+            <div id="methodologyBenchmarkTable"></div>
+          </div>
         </div>
-        <div class="card-body">
-          <p style="font-size:13px;margin-bottom:12px">Scores esperados por nivel y dimensión. Usados para calcular el <strong>gap vs rol</strong> en Performance y Potencial. Un gap negativo indica que el colaborador supera las expectativas del nivel; positivo indica brecha a desarrollar. Los benchmarks son editables por el admin para reflejar el criterio real del equipo.</p>
-          <div id="methodologyBenchmarkTable"></div>
-        </div>
-      </div>
+      </div><!-- end guide-tab-benchmarks -->
 
     </div><!-- end methodologyView -->
 
@@ -1557,6 +1556,21 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
       <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('newCycleModal').classList.remove('open')">Cancelar</button>
       <button class="btn btn-teal btn-sm" onclick="confirmNewCycle()">Crear nuevo ciclo</button>
     </div>
+  </div>
+</div>
+
+<!-- HISTORY MODAL -->
+<div class="history-modal-overlay" id="historyModal">
+  <div class="history-modal">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">
+      <div>
+        <h3 id="historyModalTitle">Historial de evaluaciones</h3>
+        <div class="hm-sub" id="historyModalSub">—</div>
+      </div>
+      <button onclick="document.getElementById('historyModal').classList.remove('open')"
+        style="background:var(--gray-100);border:1px solid var(--gray-200);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px;color:var(--gray-600)">✕ Cerrar</button>
+    </div>
+    <div id="historyModalBody"></div>
   </div>
 </div>
 
@@ -2514,6 +2528,10 @@ function loadProfileToUI() {
   }
   // Show/hide action buttons based on closed state
   document.getElementById('profileActionButtons').style.display = isClosed ? 'none' : 'flex';
+  // Show history button in action area if there are past cycles
+  const hasHistory = (p._cycle||1) > 1 || (p._history||[]).some(h => h.event === 'cycle_archived');
+  const histBtn = document.getElementById('profileHistoryBtn');
+  if(histBtn) histBtn.style.display = hasHistory && !isClosed ? '' : 'none';
 
   // Rebuild dims for this profile's seniority
   const sen = p.general?.seniority;
@@ -3582,6 +3600,27 @@ function renderOverview() {
 
     const riskColor = p.risk.global.includes('Alto') ? 'var(--red)' : p.risk.global.includes('Medio') ? 'var(--amber)' : p.risk.global.includes('Bajo') ? 'var(--green)' : 'var(--gray-400)';
     const initials = (p.nombre||'??').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+
+    // Trend deltas vs previous cycle
+    const prevSnap = getPrevCycleSnapshot(p);
+    const perfDelta = prevSnap && perf > 0 && prevSnap.perf > 0 ? perf - prevSnap.perf : null;
+    const potDelta  = prevSnap && pot  > 0 && prevSnap.pot  > 0 ? pot  - prevSnap.pot  : null;
+    const hasCycles = (p._cycle || 1) > 1 || (p._history||[]).some(h => h.event === 'cycle_archived');
+
+    function trendBadge(delta) {
+      if(delta === null) return '';
+      if(Math.abs(delta) < 0.1) return '<span class="trend-flat">→</span>';
+      const sign = delta > 0 ? '▲' : '▼';
+      const cls  = delta > 0 ? 'trend-up' : 'trend-down';
+      return `<span class="${cls}">${sign}${Math.abs(delta).toFixed(1)}</span>`;
+    }
+
+    // Last eval date
+    const lastEvalDate = p._closedAt
+      ? new Date(p._closedAt).toLocaleDateString('es-CL', {day:'2-digit',month:'short',year:'2-digit'})
+      : p.general?.lasteval || '—';
+    const cycleLabel = (p._cycle||1) > 1 ? `<span style="font-size:10px;color:var(--teal);font-weight:600"> C${p._cycle}</span>` : '';
+
     const tr = document.createElement('tr');
     tr.style.cursor = 'pointer';
     tr.onclick = () => openProfile(id);
@@ -3590,7 +3629,7 @@ function renderOverview() {
         <div style="display:flex;align-items:center;gap:8px">
           <div style="width:26px;height:26px;border-radius:50%;background:${p.color}22;color:${p.color};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${initials}</div>
           <div>
-            <span style="font-weight:500">${p.nombre||'—'}</span>
+            <span style="font-weight:500">${p.nombre||'—'}</span>${cycleLabel}
             ${(() => {
               if(p._closed) return '<span style="font-size:10px;padding:1px 5px;background:var(--green-light);color:var(--green);border-radius:4px;font-weight:600;margin-left:4px">✓ Cerrado</span>';
               const pct = calcCompleteness(p);
@@ -3603,13 +3642,30 @@ function renderOverview() {
       <td style="color:var(--gray-600)">${p.rol||'—'}</td>
       <td><span style="font-size:11px;padding:2px 7px;border-radius:4px;font-weight:500;background:${p.general.nivel==='Manager'?'#ede9fe':p.general.nivel==='Líder'?'#dbeafe':'#f1f5f9'};color:${p.general.nivel==='Manager'?'#5b21b6':p.general.nivel==='Líder'?'#1e40af':'#475569'}">${p.general.nivel||'—'}</span></td>
       <td>${p.general.seniority||'—'}</td>
-      <td><span style="font-weight:600;font-family:'DM Mono',monospace;color:${perf>=4?'var(--green)':perf>=3?'var(--amber)':perf>0?'var(--red)':'var(--gray-400)'}">${perf>0?perf.toFixed(1):'—'}</span></td>
-      <td><span style="font-weight:600;font-family:'DM Mono',monospace;color:${pot>=4?'var(--purple)':pot>=3?'var(--blue)':pot>0?'var(--amber)':'var(--gray-400)'}">${pot>0?pot.toFixed(1):'—'}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-weight:600;font-family:'DM Mono',monospace;color:${perf>=4?'var(--green)':perf>=3?'var(--amber)':perf>0?'var(--red)':'var(--gray-400)'}">${perf>0?perf.toFixed(1):'—'}</span>
+          ${trendBadge(perfDelta)}
+        </div>
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-weight:600;font-family:'DM Mono',monospace;color:${pot>=4?'var(--purple)':pot>=3?'var(--blue)':pot>0?'var(--amber)':'var(--gray-400)'}">${pot>0?pot.toFixed(1):'—'}</span>
+          ${trendBadge(potDelta)}
+        </div>
+      </td>
       <td style="font-size:12px">${nb} ${techOverlayBadge(p)}</td>
       <td style="font-size:12px">${skillMatuLabel(p)}</td>
       <td style="font-size:12px">${p.madurez.final||'—'}</td>
       <td><span style="color:${riskColor};font-size:12px">${p.risk.global||'—'}</span></td>
       <td style="font-size:12px">${p.resumen.decision||'—'}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:11px;color:var(--gray-600)">${lastEvalDate}</span>
+          ${hasCycles ? `<button onclick="event.stopPropagation();openHistoryModal('${id}')"
+            style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--gray-100);border:1px solid var(--gray-300);cursor:pointer;color:var(--navy);font-weight:600;white-space:nowrap">📋 Ver</button>` : ''}
+        </div>
+      </td>
       <td style="font-size:11px;color:var(--gray-500)">${p._updatedByName||p._createdByName||'—'}</td>`;
     tbody.appendChild(tr);
   });
@@ -3893,6 +3949,148 @@ function confirmNewCycle() {
   setTimeout(() => { ind.classList.remove('show'); ind.textContent = 'Guardado ✓'; }, 2500);
 }
 
+
+// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// GUIDE TABS
+// ═══════════════════════════════════════════════════════════════
+function switchGuideTab(tab, btn) {
+  document.querySelectorAll('.guide-tab-content').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.guide-tab-btn').forEach(b => {
+    b.style.background = 'white'; b.style.color = 'var(--gray-700)'; b.style.borderColor = 'var(--gray-300)';
+  });
+  const el = document.getElementById('guide-tab-' + tab);
+  if(el) el.style.display = '';
+  if(btn) { btn.style.background = 'var(--navy)'; btn.style.color = 'white'; btn.style.borderColor = 'var(--navy)'; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HISTORY & CYCLE COMPARISON
+// ═══════════════════════════════════════════════════════════════
+function getPrevCycleSnapshot(p) {
+  const archived = (p._history||[]).filter(h => h.event === 'cycle_archived');
+  if(!archived.length) return null;
+  const last = archived[archived.length - 1];
+  return {
+    perf: getAvg(last.snapshot?.perf?.scores || {}),
+    pot:  getAvg(last.snapshot?.pot?.scores  || {}),
+    decision: last.snapshot?.resumen?.decision || '—',
+    risk: last.snapshot?.risk?.global || '—',
+    madurez: last.snapshot?.madurez?.final || '—',
+    closedAt: last.snapshot?.closedAt,
+    justif: last.justif,
+    cycle: last.cycle,
+  };
+}
+
+function openHistoryModal(profileId) {
+  const p = profiles[profileId];
+  if(!p) return;
+  document.getElementById('historyModalTitle').textContent = `Historial — ${p.nombre||'—'}`;
+  document.getElementById('historyModalSub').textContent =
+    `${(p._cycle||1)} ciclo(s) de evaluación · ${p.general?.seniority||'—'} · ${p.rol||'—'}`;
+
+  const archived = (p._history||[]).filter(h => h.event === 'cycle_archived');
+  const body = document.getElementById('historyModalBody');
+
+  const cycles = archived.map(h => ({
+    cycle:    h.cycle,
+    justif:   h.justif,
+    closedAt: h.snapshot?.closedAt,
+    perf:     getAvg(h.snapshot?.perf?.scores || {}),
+    pot:      getAvg(h.snapshot?.pot?.scores  || {}),
+    madurez:  h.snapshot?.madurez?.final || '—',
+    risk:     h.snapshot?.risk?.global || '—',
+    decision: h.snapshot?.resumen?.decision || '—',
+    fortalezas: h.snapshot?.resumen?.fortalezas || '',
+    mejoras:    h.snapshot?.resumen?.mejoras || '',
+    isCurrent: false,
+  }));
+  cycles.push({
+    cycle: p._cycle || 1, justif: p._cycleJustif || '(ciclo inicial)',
+    closedAt: p._closedAt,
+    perf: getAvg(p.perf?.scores||{}), pot: getAvg(p.pot?.scores||{}),
+    madurez: p.madurez?.final||'—', risk: p.risk?.global||'—',
+    decision: p.resumen?.decision||'—',
+    fortalezas: p.resumen?.fortalezas||'', mejoras: p.resumen?.mejoras||'',
+    isCurrent: true,
+  });
+  cycles.sort((a,b) => a.cycle - b.cycle);
+
+  function deltaHtml(curr, prev) {
+    if(!prev||!curr||curr===0||prev===0) return '';
+    const d = curr - prev;
+    if(Math.abs(d) < 0.1) return '<span style="font-size:11px;color:var(--gray-400)"> →</span>';
+    const col = d > 0 ? 'var(--green)' : 'var(--red)';
+    return `<span style="font-size:11px;font-weight:700;color:${col}"> ${d>0?'▲':'▼'}${Math.abs(d).toFixed(1)}</span>`;
+  }
+
+  function miniBar(val, color) {
+    if(!val) return '<span style="color:var(--gray-400);font-size:12px">—</span>';
+    const pct = (val/5)*100;
+    return `<div style="display:flex;align-items:center;gap:6px">
+      <div style="width:50px;height:5px;background:var(--gray-200);border-radius:3px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${color};border-radius:3px"></div>
+      </div>
+      <span style="font-size:12px;font-weight:600;font-family:'DM Mono',monospace">${val.toFixed(1)}</span>
+    </div>`;
+  }
+
+  let html = '';
+
+  // Comparison grid (multi-cycle)
+  if(cycles.length > 1) {
+    html += `<div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:600;color:var(--gray-600);margin-bottom:12px">📈 Evolución entre ciclos</div>
+      <div style="display:grid;grid-template-columns:repeat(${Math.min(cycles.length,4)},1fr);gap:8px">
+        ${cycles.map((c,i) => {
+          const prev = i > 0 ? cycles[i-1] : null;
+          return `<div style="text-align:center;padding:10px;background:white;border-radius:8px;border:1px solid ${c.isCurrent?'var(--teal)':'var(--gray-200)'}">
+            <div style="font-size:10px;font-weight:600;color:${c.isCurrent?'var(--teal)':'var(--gray-400)'};margin-bottom:8px">Ciclo ${c.cycle}${c.isCurrent?' · actual':''}</div>
+            <div style="font-size:10px;color:var(--gray-400);margin-bottom:2px">Perf.</div>
+            <div style="font-size:20px;font-weight:700;color:${c.perf>=4?'var(--green)':c.perf>=3?'var(--amber)':'var(--red)'}">
+              ${c.perf>0?c.perf.toFixed(1):'—'}${prev?deltaHtml(c.perf,prev.perf):''}
+            </div>
+            <div style="font-size:10px;color:var(--gray-400);margin-top:8px;margin-bottom:2px">Potencial</div>
+            <div style="font-size:20px;font-weight:700;color:${c.pot>=4?'var(--purple)':c.pot>=3?'var(--blue)':'var(--amber)'}">
+              ${c.pot>0?c.pot.toFixed(1):'—'}${prev?deltaHtml(c.pot,prev.pot):''}
+            </div>
+            <div style="font-size:10px;color:var(--gray-400);margin-top:8px;border-top:1px solid var(--gray-100);padding-top:6px;line-height:1.4">${c.decision||'—'}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Cycle detail cards, newest first
+  [...cycles].reverse().forEach(c => {
+    const dateStr = c.closedAt
+      ? new Date(c.closedAt).toLocaleDateString('es-CL',{day:'2-digit',month:'long',year:'numeric'})
+      : c.isCurrent ? (p._closed?'—':'En curso') : '—';
+    const riskCol = (c.risk||'').includes('Alto')?'var(--red)':(c.risk||'').includes('Medio')?'var(--amber)':'var(--green)';
+    html += `<div class="cycle-card ${c.isCurrent?'current':''}">
+      <div class="cc-header">
+        <div>
+          <span class="cc-title">Ciclo ${c.cycle}${c.isCurrent?` <span style='font-size:10px;padding:1px 6px;background:var(--teal);color:white;border-radius:4px;font-weight:600'>actual</span>`:''}</span>
+          ${c.justif?`<div style="font-size:11px;color:var(--gray-500);margin-top:2px">📝 ${c.justif}</div>`:''}
+        </div>
+        <span class="cc-date">${dateStr}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><div style="font-size:10px;color:var(--gray-400);margin-bottom:3px">Performance</div>${miniBar(c.perf,'var(--blue)')}</div>
+        <div><div style="font-size:10px;color:var(--gray-400);margin-bottom:3px">Potencial</div>${miniBar(c.pot,'var(--purple)')}</div>
+        <div><div style="font-size:10px;color:var(--gray-400);margin-bottom:3px">Madurez</div><span style="font-size:12px;font-weight:600">${c.madurez}</span></div>
+        <div><div style="font-size:10px;color:var(--gray-400);margin-bottom:3px">Risk</div><span style="font-size:11px;font-weight:600;color:${riskCol}">${c.risk||'—'}</span></div>
+      </div>
+      ${c.decision?`<div style="font-size:11px;background:var(--gray-50);border-radius:6px;padding:6px 10px;margin-bottom:6px"><strong>Decisión:</strong> ${c.decision}</div>`:''}
+      ${c.fortalezas?`<div style="font-size:11px;color:var(--gray-700);margin-bottom:4px"><strong style="color:var(--green)">✓ Fortalezas:</strong> ${c.fortalezas.replace(/\n/g,' · ')}</div>`:''}
+      ${c.mejoras?`<div style="font-size:11px;color:var(--gray-700)"><strong style="color:var(--amber)">⚡ Mejoras:</strong> ${c.mejoras.replace(/\n/g,' · ')}</div>`:''}
+    </div>`;
+  });
+
+  body.innerHTML = html || '<div style="text-align:center;padding:2rem;color:var(--gray-400)">Sin historial de ciclos previos</div>';
+  document.getElementById('historyModal').classList.add('open');
+}
 
 // ═══════════════════════════════════════════════════════════════
 function saveAndContinue() {
