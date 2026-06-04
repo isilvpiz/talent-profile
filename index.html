@@ -383,6 +383,18 @@ textarea { resize: vertical; min-height: 60px; }
 .save-modal p  { font-size: 13px; color: var(--gray-600); margin-bottom: 20px; line-height: 1.6; }
 
 .separator { height: 1px; background: var(--gray-200); margin: 0.5rem 0; }
+
+/* ─── CLOSED PROFILE BANNER ─── */
+.closed-banner {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 1px solid #86efac; border-radius: 10px;
+  padding: 10px 16px; margin-bottom: 1rem;
+  display: none; align-items: center; justify-content: space-between; gap: 12px;
+}
+.closed-banner.show { display: flex; }
+.closed-banner .cb-info { font-size: 12px; color: #166534; font-weight: 600; }
+.closed-banner .cb-sub  { font-size: 11px; color: var(--gray-500); margin-top: 1px; }
+
 @media print {
   .topbar, .sidebar, .section-tabs, .topbar-actions, .add-row-btn { display: none !important; }
   .layout { display: block; }
@@ -656,10 +668,21 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
           </div>
           <div id="profileAlert" style="display:none;margin-top:6px;font-size:12px;color:var(--amber);background:var(--amber-light);padding:4px 10px;border-radius:6px;border:1px solid #fcd34d"></div>
         </div>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px" id="profileActionButtons">
           <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="deleteCurrent()">Eliminar perfil</button>
           <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="saveAndContinue()">💾 Guardar</button>
           <button class="btn btn-teal btn-sm" onclick="closeProfile()">✓ Cerrar perfil</button>
+        </div>
+      </div>
+      <!-- CLOSED BANNER — shown when profile is _closed -->
+      <div id="closedBanner" class="closed-banner">
+        <div>
+          <div class="cb-info">✓ Perfil cerrado — visible en vista consolidada</div>
+          <div class="cb-sub" id="closedBannerMeta">—</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0">
+          <button class="btn btn-ghost btn-sm" style="border:1px solid var(--amber);color:var(--amber)" onclick="reopenProfile()">↩ Reabrir y editar</button>
+          <button class="btn btn-teal btn-sm" onclick="newCycleProfile()">🔄 Nuevo ciclo</button>
         </div>
       </div>
       <!-- SECTION TABS -->
@@ -1497,6 +1520,42 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
     <div style="display:flex;justify-content:flex-end;gap:8px">
       <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('closeProfileModal').classList.remove('open')">Volver al perfil</button>
       <button class="btn btn-blue btn-sm" id="closeProfileConfirmBtn" onclick="confirmCloseProfile()">Confirmar y cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- REOPEN PROFILE MODAL -->
+<div class="save-modal-overlay" id="reopenModal">
+  <div class="save-modal">
+    <h3>↩ Reabrir perfil para edición</h3>
+    <p>Al reabrir, el perfil dejará de aparecer en la vista consolidada hasta que lo vuelvas a cerrar. Queda registrado quién lo reabrió y el motivo.</p>
+    <div class="form-group" style="margin-bottom:16px">
+      <label style="font-size:13px;font-weight:600">Motivo de reapertura <span style="color:var(--red)">*</span></label>
+      <textarea id="reopen-justif" rows="3" placeholder="ej: Error en score de performance, corrección de datos generales…" style="margin-top:6px;width:100%;border:1px solid var(--gray-300);border-radius:7px;padding:8px 10px;font-size:13px;resize:vertical"></textarea>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('reopenModal').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-sm" style="background:var(--amber);color:white" onclick="confirmReopenProfile()">Confirmar reapertura</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW CYCLE MODAL -->
+<div class="save-modal-overlay" id="newCycleModal">
+  <div class="save-modal">
+    <h3>🔄 Iniciar nuevo ciclo de evaluación</h3>
+    <p>El ciclo actual quedará guardado como historial. Se creará una nueva evaluación para esta persona con los datos generales conservados y todos los scores en blanco.</p>
+    <div style="background:var(--gray-50);border-radius:8px;padding:12px;font-size:12px;color:var(--gray-600);margin-bottom:14px">
+      <strong>¿Qué se conserva?</strong> Nombre, Rol, Seniority, Proyectos, Entrevistador, Skills (niveles actuales → nueva base).<br><br>
+      <strong>¿Qué se resetea?</strong> Scores de Performance, Potencial, Madurez técnica (targets), Madurez profesional, Flight Risk, 9-Box y Resumen.
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label style="font-size:13px;font-weight:600">Contexto del nuevo ciclo <span style="color:var(--red)">*</span></label>
+      <textarea id="newcycle-justif" rows="2" placeholder="ej: Revisión trimestral Q3 — Septiembre 2025" style="margin-top:6px;width:100%;border:1px solid var(--gray-300);border-radius:7px;padding:8px 10px;font-size:13px;resize:vertical"></textarea>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('newCycleModal').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-teal btn-sm" onclick="confirmNewCycle()">Crear nuevo ciclo</button>
     </div>
   </div>
 </div>
@@ -2435,7 +2494,26 @@ function openProfile(id) {
 function loadProfileToUI() {
   const p = profiles[currentId];
   document.getElementById('profileName').textContent = p.nombre || '(sin nombre)';
-  document.getElementById('profileMeta').textContent = (p.rol || '') + (p.general.seniority ? ' · ' + p.general.seniority : '');
+  document.getElementById('profileMeta').textContent =
+    (p.rol || '') +
+    (p.general.seniority ? ' · ' + p.general.seniority : '') +
+    (p._cycle && p._cycle > 1 ? ` · Ciclo ${p._cycle}` : '');
+
+  // Closed state — banner and button visibility
+  const isClosed = !!p._closed;
+  const banner = document.getElementById('closedBanner');
+  if(isClosed) {
+    banner.classList.add('show');
+    const closedBy = p._closedBy || '';
+    const closedAt = p._closedAt ? new Date(p._closedAt).toLocaleDateString('es-CL') : '—';
+    const cycle = p._cycle || 1;
+    document.getElementById('closedBannerMeta').textContent =
+      `Cerrado el ${closedAt}${closedBy ? ' por ' + closedBy : ''} · Ciclo ${cycle}${p._reopenJustif ? ' · Reabierto: ' + p._reopenJustif : ''}`;
+  } else {
+    banner.classList.remove('show');
+  }
+  // Show/hide action buttons based on closed state
+  document.getElementById('profileActionButtons').style.display = isClosed ? 'none' : 'flex';
 
   // Rebuild dims for this profile's seniority
   const sen = p.general?.seniority;
@@ -3689,7 +3767,133 @@ function renderHomeView() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// SAVE & CLOSE PROFILE
+// REOPEN PROFILE
+// ═══════════════════════════════════════════════════════════════
+function reopenProfile() {
+  document.getElementById('reopen-justif').value = '';
+  document.getElementById('reopenModal').classList.add('open');
+}
+
+function confirmReopenProfile() {
+  const justif = document.getElementById('reopen-justif').value.trim();
+  if(!justif) {
+    document.getElementById('reopen-justif').style.borderColor = 'var(--red)';
+    document.getElementById('reopen-justif').placeholder = '⚠ Motivo obligatorio para reabrir';
+    return;
+  }
+  document.getElementById('reopen-justif').style.borderColor = '';
+  if(!currentId) return;
+  const p = profiles[currentId];
+  const uname = currentUser?.user_metadata?.full_name || currentUser?.email;
+  // Archive reopen event in history
+  if(!p._history) p._history = [];
+  p._history.push({
+    event: 'reopen',
+    date: new Date().toISOString(),
+    by: uname,
+    justif,
+    closedAt: p._closedAt,
+  });
+  p._closed = false;
+  p._reopenJustif = justif;
+  p._reopenBy = uname;
+  p._reopenAt = new Date().toISOString();
+  document.getElementById('reopenModal').classList.remove('open');
+  autoSave();
+  pushToSupabase(currentId, p);
+  loadProfileToUI();
+  // Toast
+  const ind = document.getElementById('saveIndicator');
+  ind.textContent = '↩ Perfil reabierto para edición';
+  ind.classList.add('show');
+  setTimeout(() => { ind.classList.remove('show'); ind.textContent = 'Guardado ✓'; }, 2500);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NEW EVALUATION CYCLE
+// ═══════════════════════════════════════════════════════════════
+function newCycleProfile() {
+  document.getElementById('newcycle-justif').value = '';
+  document.getElementById('newCycleModal').classList.add('open');
+}
+
+function confirmNewCycle() {
+  const justif = document.getElementById('newcycle-justif').value.trim();
+  if(!justif) {
+    document.getElementById('newcycle-justif').style.borderColor = 'var(--red)';
+    document.getElementById('newcycle-justif').placeholder = '⚠ Contexto obligatorio';
+    return;
+  }
+  document.getElementById('newcycle-justif').style.borderColor = '';
+  if(!currentId) return;
+  const oldP = profiles[currentId];
+  const uname = currentUser?.user_metadata?.full_name || currentUser?.email;
+  const cycleNum = (oldP._cycle || 1) + 1;
+
+  // Snapshot current cycle into history
+  if(!oldP._history) oldP._history = [];
+  oldP._history.push({
+    event: 'cycle_archived',
+    cycle: oldP._cycle || 1,
+    date: new Date().toISOString(),
+    by: uname,
+    justif,
+    snapshot: {
+      perf: JSON.parse(JSON.stringify(oldP.perf)),
+      pot: JSON.parse(JSON.stringify(oldP.pot)),
+      madurez: JSON.parse(JSON.stringify(oldP.madurez)),
+      ninebox: JSON.parse(JSON.stringify(oldP.ninebox)),
+      risk: JSON.parse(JSON.stringify(oldP.risk)),
+      resumen: JSON.parse(JSON.stringify(oldP.resumen)),
+      closedAt: oldP._closedAt,
+    }
+  });
+
+  // Reset evaluation fields, preserve identity + skills as new baseline
+  const newPerfScores = {}, newPerfEvidence = {};
+  Object.keys(oldP.perf.scores).forEach(i => { newPerfScores[i] = 0; newPerfEvidence[i] = ""; });
+  const newPotScores = {}, newPotEvidence = {};
+  Object.keys(oldP.pot.scores).forEach(i => { newPotScores[i] = 0; newPotEvidence[i] = ""; });
+
+  // Skills: move target → actual (last cycle's target becomes this cycle's baseline)
+  const newSkills = {};
+  Object.entries(oldP.skills).forEach(([skill, d]) => {
+    newSkills[skill] = { actual: d.target || d.actual, target: 0, plan: "", prioridad: "", planActivo: "" };
+  });
+
+  const newMatData = {};
+  Object.keys(oldP.madurez.dims).forEach(i => { newMatData[i] = { nivel: "", justif: "" }; });
+  const newRiskData = {};
+  Object.keys(oldP.risk.items).forEach(i => { newRiskData[i] = { estado: "", obs: "", accion: "" }; });
+
+  // Apply reset
+  oldP.perf = { scores: newPerfScores, evidence: newPerfEvidence };
+  oldP.pot  = { scores: newPotScores,  evidence: newPotEvidence };
+  oldP.skills = newSkills;
+  oldP.madurez = { dims: newMatData, final: "", gap: "", justif: "" };
+  oldP.ninebox = { comment: "", validated: "", aspiraciones: "", justifValid: "" };
+  oldP.risk = { items: newRiskData, global: "", nextrev: "", accion: "" };
+  oldP.idp  = [];
+  oldP.resumen = { fortalezas: "", mejoras: "", decision: "", justif: "", hito: "", notas: "" };
+  oldP._closed = false;
+  oldP._closedAt = null;
+  oldP._cycle = cycleNum;
+  oldP._cycleStartedAt = new Date().toISOString();
+  oldP._cycleJustif = justif;
+  oldP._updatedAt = new Date().toISOString();
+
+  document.getElementById('newCycleModal').classList.remove('open');
+  autoSave();
+  pushToSupabase(currentId, oldP);
+  loadProfileToUI();
+  switchTab('general', document.querySelector('.section-tab'));
+  const ind = document.getElementById('saveIndicator');
+  ind.textContent = `🔄 Ciclo ${cycleNum} iniciado`;
+  ind.classList.add('show');
+  setTimeout(() => { ind.classList.remove('show'); ind.textContent = 'Guardado ✓'; }, 2500);
+}
+
+
 // ═══════════════════════════════════════════════════════════════
 function saveAndContinue() {
   autoSave();
@@ -3741,8 +3945,11 @@ function closeProfile() {
 
 function confirmCloseProfile() {
   if(!currentId) return;
+  const uname = currentUser?.user_metadata?.full_name || currentUser?.email;
   profiles[currentId]._closed = true;
   profiles[currentId]._closedAt = new Date().toISOString();
+  profiles[currentId]._closedBy = uname;
+  if(!profiles[currentId]._cycle) profiles[currentId]._cycle = 1;
   autoSave();
   clearTimeout(autoSaveTimer);
   pushToSupabase(currentId, profiles[currentId]);
