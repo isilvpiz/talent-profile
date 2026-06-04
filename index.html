@@ -500,6 +500,10 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
         <div class="sidebar-dot"></div>
         Guía metodológica
       </div>
+      <div class="sidebar-nav-item" onclick="showRoleCompetencies()" id="nav-role-comp" style="margin-top:4px">
+        <div class="sidebar-dot"></div>
+        Competencias por Rol
+      </div>
     </div>
   </div>
 
@@ -704,13 +708,16 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
             <div class="form-grid">
               <div class="form-group">
                 <label>Nivel final asignado</label>
-                <select id="mat-final" onchange="autoSave()">
-                  <option value="">— Seleccionar —</option>
-                  <option>1 — Junior</option><option>2 — Engineer / Analyst</option>
-                  <option>3 — Lead</option><option>4 — Expert</option>
+                <select id="mat-final" onchange="updateMatGap();autoSave()">
+                  <option value="">— Seleccionar nivel final —</option>
+                  <option>1 — Ejecutor guiado (Junior)</option>
+                  <option>2 — Ejecutor independiente (Engineer/Analyst)</option>
+                  <option>3 — Contribuidor de equipo (Lead)</option>
+                  <option>4 — Referente de área (Expert)</option>
+                  <option>5 — Líder estratégico (Chief/Evangelist)</option>
                 </select>
               </div>
-              <div class="form-group"><label>Gap vs seniority declarado</label><input type="text" id="mat-gap" oninput="autoSave()"></div>
+              <div class="form-group"><label>Gap vs seniority declarado</label><input type="text" id="mat-gap" oninput="autoSave()" placeholder="Se calcula automáticamente" readonly style="background:var(--gray-50);color:var(--gray-600)"></div>
               <div class="form-group full"><label>Justificación del manager</label><textarea id="mat-justif" rows="2" oninput="autoSave()"></textarea></div>
             </div>
           </div>
@@ -1231,6 +1238,33 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
 
     </div><!-- end methodologyView -->
 
+    <!-- ROLE COMPETENCIES VIEW -->
+    <div id="roleCompView" style="display:none">
+      <div style="margin-bottom:1.5rem">
+        <div style="font-size:18px;font-weight:600">Competencias por Rol</div>
+        <div style="font-size:12px;color:var(--gray-400)">6 dimensiones por pilar × 12 roles — derivadas del Career Ladder NTT DATA</div>
+      </div>
+
+      <!-- Role selector -->
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px" id="rc-role-buttons"></div>
+
+      <!-- Role header -->
+      <div id="rc-role-header" class="card" style="margin-bottom:12px"></div>
+
+      <!-- Pillar tabs -->
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button onclick="rcSelectPillar('perf')" id="rc-tab-perf" class="btn btn-sm" style="flex:1;border:2px solid var(--green);background:var(--green-light);color:var(--green);font-weight:700">📊 Performance</button>
+        <button onclick="rcSelectPillar('pot')"  id="rc-tab-pot"  class="btn btn-sm" style="flex:1;border:1px solid var(--gray-200);background:white;color:var(--gray-500)">🚀 Potencial</button>
+        <button onclick="rcSelectPillar('mat')"  id="rc-tab-mat"  class="btn btn-sm" style="flex:1;border:1px solid var(--gray-200);background:white;color:var(--gray-500)">🎯 Madurez Profesional</button>
+      </div>
+
+      <!-- Pillar description -->
+      <div id="rc-pillar-desc" style="font-size:12px;color:var(--gray-500);margin-bottom:12px;font-style:italic"></div>
+
+      <!-- Dimensions list -->
+      <div id="rc-dims-list" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div><!-- end roleCompView -->
+
   </div><!-- end main -->
 </div>
 
@@ -1245,6 +1279,27 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
     <div class="form-group" style="margin-bottom:12px">
       <label>Rol / Cargo</label>
       <input type="text" id="modal-rol" placeholder="ej: Data Engineer">
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Seniority declarado</label>
+      <select id="modal-seniority">
+        <option value="">— Seleccionar —</option>
+        <optgroup label="Track Técnico">
+          <option>Junior Engineer</option><option>Engineer</option>
+          <option>Lead Engineer</option><option>Expert Engineer</option>
+          <option>Chief Architect</option>
+        </optgroup>
+        <optgroup label="Track Analítico">
+          <option>Junior Analyst</option><option>Analyst</option>
+          <option>Lead Analyst</option><option>Expert Analyst</option>
+        </optgroup>
+        <optgroup label="Track Gestión">
+          <option>Project Leader</option><option>Sr. Technical PL</option>
+        </optgroup>
+        <optgroup label="Transversal">
+          <option>Evangelist</option>
+        </optgroup>
+      </select>
     </div>
     <div class="form-group">
       <label>Color de identificación</label>
@@ -1916,6 +1971,18 @@ const DEFAULT_BENCHMARKS = {
   }
 };
 
+// Migrate old benchmark format in localStorage
+(function migrateBenchmarks() {
+  try {
+    const stored = JSON.parse(localStorage.getItem('talent_benchmarks') || 'null');
+    if(!stored) return;
+    const oldKeys = ['Junior', 'Engineer / Analyst', 'Lead', 'Expert'];
+    if(stored.perf && Object.keys(stored.perf).some(k => oldKeys.includes(k))) {
+      localStorage.removeItem('talent_benchmarks');
+    }
+  } catch(e) {}
+})();
+
 let benchmarks = JSON.parse(localStorage.getItem('talent_benchmarks') || 'null') || DEFAULT_BENCHMARKS;
 
 function saveBenchmarks() {
@@ -1931,7 +1998,17 @@ async function loadBenchmarks() {
   if(!supabaseClient) return;
   const { data, error } = await supabaseClient.from('talent_config').select('data').eq('id', 'benchmarks').single();
   if(!error && data?.data) {
-    benchmarks = data.data;
+    const loaded = data.data;
+    // Migrate: if loaded benchmarks use old keys (Junior, Engineer / Analyst...) discard and use defaults
+    const oldKeys = ['Junior', 'Engineer / Analyst', 'Lead', 'Expert'];
+    const isOldFormat = loaded.perf && Object.keys(loaded.perf).some(k => oldKeys.includes(k));
+    if(isOldFormat) {
+      console.log('Old benchmark format detected — resetting to new role-based benchmarks');
+      saveBenchmarks(); // push new defaults to Supabase
+      return;
+    }
+    // Merge loaded with defaults (ensure all 12 roles present)
+    benchmarks = { perf: { ...DEFAULT_BENCHMARKS.perf, ...loaded.perf }, pot: { ...DEFAULT_BENCHMARKS.pot, ...loaded.pot } };
     localStorage.setItem('talent_benchmarks', JSON.stringify(benchmarks));
   }
 }
@@ -2197,10 +2274,12 @@ function openProfile(id) {
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('overviewView').style.display = 'none';
   document.getElementById('methodologyView')&&(document.getElementById('methodologyView').style.display = 'none');
+  document.getElementById('roleCompView')&&(document.getElementById('roleCompView').style.display = 'none');
   document.getElementById('profileView').style.display = 'block';
   document.getElementById('nav-overview-mine')?.classList.remove('active');
   document.getElementById('nav-overview-all')?.classList.remove('active');
   document.getElementById('nav-methodology')?.classList.remove('active');
+  document.getElementById('nav-role-comp')?.classList.remove('active');
   renderSidebar();
   loadProfileToUI();
   switchTab('general', document.querySelector('.section-tab'));
@@ -2265,6 +2344,7 @@ function loadProfileToUI() {
   document.getElementById('mat-final').value = p.madurez.final || '';
   document.getElementById('mat-gap').value   = p.madurez.gap || '';
   document.getElementById('mat-justif').value = p.madurez.justif || '';
+  updateMatGap();
   // Risk
   buildRiskTable();
   document.getElementById('risk-global').value  = p.risk.global || '';
@@ -2416,10 +2496,11 @@ function buildMatTable() {
       <td>
         <select class="risk-select" style="font-size:12px;width:100%" onchange="setMatNivel(${i},this.value)">
           <option value="">— Seleccionar —</option>
-          <option ${d.nivel==='1 — Junior'?'selected':''}>1 — Junior</option>
-          <option ${d.nivel==='2 — Engineer / Analyst'?'selected':''}>2 — Engineer / Analyst</option>
-          <option ${d.nivel==='3 — Lead'?'selected':''}>3 — Lead</option>
-          <option ${d.nivel==='4 — Expert'?'selected':''}>4 — Expert</option>
+          <option ${d.nivel==='1'?'selected':''} value="1">1 — Ejecutor guiado</option>
+          <option ${d.nivel==='2'?'selected':''} value="2">2 — Ejecutor independiente</option>
+          <option ${d.nivel==='3'?'selected':''} value="3">3 — Contribuidor de equipo</option>
+          <option ${d.nivel==='4'?'selected':''} value="4">4 — Referente de área</option>
+          <option ${d.nivel==='5'?'selected':''} value="5">5 — Líder estratégico</option>
         </select>
       </td>
       <td><textarea class="evidence-input" rows="1" placeholder="Justificación…" onchange="setMatJustif(${i},this.value)">${d.justif||''}</textarea></td>`;
@@ -2428,6 +2509,37 @@ function buildMatTable() {
 }
 function setMatNivel(i, val) { if(!currentId) return; profiles[currentId].madurez.dims[i].nivel = val; autoSave(); }
 function setMatJustif(i, val) { if(!currentId) return; profiles[currentId].madurez.dims[i].justif = val; autoSave(); }
+
+// Expected maturity level per role (1-5 scale)
+const ROLE_MATURITY_EXPECTED = {
+  'Junior Engineer': 1, 'Junior Analyst': 1,
+  'Engineer': 2, 'Analyst': 2,
+  'Lead Engineer': 3, 'Lead Analyst': 3,
+  'Expert Engineer': 4, 'Expert Analyst': 4,
+  'Project Leader': 3, 'Sr. Technical PL': 4,
+  'Chief Architect': 5, 'Evangelist': 5,
+};
+
+function updateMatGap() {
+  if(!currentId) return;
+  const finalSel = document.getElementById('mat-final');
+  const gapEl    = document.getElementById('mat-gap');
+  if(!finalSel || !gapEl) return;
+  const finalVal  = parseInt(finalSel.value) || 0;
+  const seniority = profiles[currentId]?.general?.seniority;
+  const expected  = seniority ? (ROLE_MATURITY_EXPECTED[seniority] || 0) : 0;
+  if(finalVal && expected) {
+    const diff = finalVal - expected;
+    gapEl.value = diff === 0 ? '0 (En línea con el rol)' :
+                  diff > 0   ? `+${diff} (Por encima del rol)` :
+                               `${diff} (Por debajo del rol)`;
+    gapEl.style.color = diff >= 0 ? 'var(--green)' : 'var(--red)';
+  } else {
+    gapEl.value = '';
+    gapEl.style.color = 'var(--gray-600)';
+  }
+  if(currentId) { profiles[currentId].madurez.gap = gapEl.value; }
+}
 
 // ═══════════════════════════════════════════════════════════════
 // RISK TABLE
@@ -3019,12 +3131,114 @@ function showMethodology() {
   document.getElementById('profileView').style.display = 'none';
   document.getElementById('overviewView').style.display = 'none';
   document.getElementById('methodologyView').style.display = 'block';
+  document.getElementById('roleCompView').style.display = 'none';
   document.getElementById('nav-overview-mine').classList.remove('active');
   document.getElementById('nav-overview-all').classList.remove('active');
   document.getElementById('nav-methodology').classList.add('active');
+  document.getElementById('nav-role-comp').classList.remove('active');
   renderSidebar();
   renderMethodologyBenchmarkTable();
 }
+
+// ─── ROLE COMPETENCIES VIEW ───
+let rcCurrentRole = Object.keys(ROLE_COMPETENCIES)[0];
+let rcCurrentPillar = 'perf';
+const RC_PILLAR_CONFIG = {
+  perf: { label: 'Performance', icon: '📊', color: 'var(--green)',  desc: '¿Qué está entregando hoy en su rol?' },
+  pot:  { label: 'Potencial',   icon: '🚀', color: 'var(--purple)', desc: '¿Qué capacidad de crecimiento tiene?' },
+  mat:  { label: 'Madurez Profesional', icon: '🎯', color: 'var(--orange)', desc: '¿Opera al nivel de complejidad de su rol?' },
+};
+
+function showRoleCompetencies() {
+  currentId = null;
+  activeView = 'rolecomp';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('profileView').style.display = 'none';
+  document.getElementById('overviewView').style.display = 'none';
+  document.getElementById('methodologyView').style.display = 'none';
+  document.getElementById('roleCompView').style.display = 'block';
+  document.getElementById('nav-overview-mine').classList.remove('active');
+  document.getElementById('nav-overview-all').classList.remove('active');
+  document.getElementById('nav-methodology').classList.remove('active');
+  document.getElementById('nav-role-comp').classList.add('active');
+  renderSidebar();
+  renderRCView();
+}
+
+function renderRCView() {
+  // Build role buttons
+  const btns = document.getElementById('rc-role-buttons');
+  if(btns) {
+    btns.innerHTML = Object.keys(ROLE_COMPETENCIES).map(r => {
+      const rc = ROLE_COMPETENCIES[r];
+      const isActive = r === rcCurrentRole;
+      return `<button onclick="rcSelectRole('${r}')" style="
+        padding:5px 11px;border-radius:8px;font-size:12px;cursor:pointer;
+        font-weight:${isActive?700:500};
+        border:${isActive?`2px solid ${rc.color}`:'1px solid #e2e8f0'};
+        background:${isActive?rc.color+'15':'white'};
+        color:${isActive?rc.color:'#475569'}">${r}</button>`;
+    }).join('');
+  }
+  // Role header
+  const rc = ROLE_COMPETENCIES[rcCurrentRole];
+  const hdr = document.getElementById('rc-role-header');
+  if(hdr) {
+    hdr.innerHTML = `<div class="card-body" style="padding:14px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-size:16px;font-weight:700;color:${rc.color}">${rcCurrentRole}</span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:6px;background:${rc.color}18;color:${rc.color};font-weight:600">${rc.track} · ${rc.level}</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${rc.criticalIBIOL.map(c=>`<span style="font-size:11px;padding:2px 8px;border-radius:6px;background:#1e3a5f15;color:#1e3a5f;font-weight:500">🔑 ${c}</span>`).join('')}
+      </div>
+    </div>`;
+  }
+  // Pillar tabs
+  Object.entries(RC_PILLAR_CONFIG).forEach(([key, p]) => {
+    const btn = document.getElementById(`rc-tab-${key}`);
+    if(!btn) return;
+    const isActive = key === rcCurrentPillar;
+    btn.style.border    = isActive ? `2px solid ${p.color}` : '1px solid #e2e8f0';
+    btn.style.background = isActive ? p.color.replace('var(','').replace(')','') + '-light' : 'white';
+    btn.style.color     = isActive ? p.color : 'var(--gray-500)';
+    btn.style.fontWeight = isActive ? '700' : '500';
+    // Fix colors for active state using inline approach
+    if(isActive) {
+      btn.style.borderColor = p.color;
+      btn.style.color = p.color;
+      btn.style.background = p.color.includes('green') ? '#f0fdf4' :
+                             p.color.includes('purple') ? '#f5f3ff' :
+                             p.color.includes('orange') ? '#fff7ed' : '#f0f9ff';
+    } else {
+      btn.style.borderColor = '#e2e8f0';
+      btn.style.color = 'var(--gray-500)';
+      btn.style.background = 'white';
+    }
+  });
+  // Pillar desc
+  const descEl = document.getElementById('rc-pillar-desc');
+  if(descEl) descEl.textContent = RC_PILLAR_CONFIG[rcCurrentPillar].icon + ' ' + RC_PILLAR_CONFIG[rcCurrentPillar].desc;
+  // Dims
+  const dims = rc[rcCurrentPillar];
+  const pillarColor = RC_PILLAR_CONFIG[rcCurrentPillar].color;
+  const list = document.getElementById('rc-dims-list');
+  if(list) {
+    list.innerHTML = dims.map((dim, i) => `
+      <div style="background:white;border:1px solid #e2e8f0;border-radius:10px;padding:14px;border-left:3px solid ${pillarColor}">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:11px;font-weight:700;color:white;background:${pillarColor};width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</span>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#0f172a">${dim}</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:2px">Escala 1–5 · Benchmark esperado: <strong style="color:${pillarColor}">${pillarColor === 'var(--green)' ? (benchmarks.perf?.[rcCurrentRole]?.[i]?.toFixed(1) ?? '—') : (benchmarks.pot?.[rcCurrentRole]?.[i]?.toFixed(1) ?? '—')}</strong></div>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function rcSelectRole(role) { rcCurrentRole = role; renderRCView(); }
+function rcSelectPillar(p)   { rcCurrentPillar = p;  renderRCView(); }
 
 function renderMethodologyBenchmarkTable() {
   const el = document.getElementById('methodologyBenchmarkTable');
@@ -3066,7 +3280,9 @@ function showOverview(filter) {
   document.getElementById('profileView').style.display = 'none';
   document.getElementById('overviewView').style.display = 'block';
   document.getElementById('methodologyView').style.display = 'none';
+  document.getElementById('roleCompView').style.display = 'none';
   document.getElementById('nav-methodology').classList.remove('active');
+  document.getElementById('nav-role-comp').classList.remove('active');
   // Update nav active state
   document.getElementById('nav-overview-mine').classList.toggle('active', overviewFilter==='mine');
   document.getElementById('nav-overview-all').classList.toggle('active', overviewFilter==='all');
@@ -3147,6 +3363,7 @@ function openAddModal() {
   document.getElementById('addModal').classList.add('open');
   document.getElementById('modal-nombre').value = '';
   document.getElementById('modal-rol').value = '';
+  document.getElementById('modal-seniority').value = '';
   selectedColor = '#2563eb';
   document.querySelectorAll('.color-opt').forEach(c => {
     c.style.border = '2px solid transparent';
@@ -3165,18 +3382,28 @@ function selectColor(el) {
   el.style.border = '2px solid var(--gray-800)'; el.style.transform = 'scale(1.2)';
 }
 function createProfile() {
-  const nombre = document.getElementById('modal-nombre').value.trim();
-  const rol    = document.getElementById('modal-rol').value.trim();
+  const nombre   = document.getElementById('modal-nombre').value.trim();
+  const rol      = document.getElementById('modal-rol').value.trim();
+  const seniority = document.getElementById('modal-seniority').value;
   if(!nombre) { document.getElementById('modal-nombre').focus(); return; }
   const id = 'p_' + Date.now();
   profiles[id] = newProfileData(id, nombre, rol, selectedColor);
   const now = new Date().toISOString();
   profiles[id]._updatedAt = now;
   profiles[id]._createdAt = now;
+  const uname = currentUser?.user_metadata?.full_name || currentUser?.email || '';
   if(currentUser) {
-    const uname = currentUser.user_metadata?.full_name || currentUser.email;
     profiles[id]._createdByName = uname;
     profiles[id]._updatedByName = uname;
+  }
+  // Pre-fill seniority and interviewer
+  if(seniority) profiles[id].general.seniority = seniority;
+  profiles[id].general.entrevistador = uname;
+  // Init dims for role
+  if(seniority && ROLE_COMPETENCIES[seniority]) {
+    PERF_DIMS = ROLE_COMPETENCIES[seniority].perf.slice();
+    POT_DIMS  = ROLE_COMPETENCIES[seniority].pot.slice();
+    MAT_DIMS  = ROLE_COMPETENCIES[seniority].mat.slice();
   }
   saveLocalState();
   pushToSupabase(id, profiles[id]);
