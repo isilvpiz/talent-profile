@@ -1483,7 +1483,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
     <div style="background:var(--gray-50);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--gray-600);margin-bottom:16px" id="saveModalPct"></div>
     <div style="display:flex;justify-content:flex-end;gap:8px">
       <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('saveModal').classList.remove('open')">Continuar editando</button>
-      <button class="btn btn-teal btn-sm" onclick="closeSaveModalAndClose()">✓ Cerrar perfil ahora</button>
+      <button class="btn btn-teal btn-sm" id="saveModalCloseBtn" onclick="closeSaveModalAndClose()">✓ Cerrar perfil ahora</button>
     </div>
   </div>
 </div>
@@ -1492,11 +1492,11 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
 <div class="save-modal-overlay" id="closeProfileModal">
   <div class="save-modal">
     <h3>✓ Cerrar perfil</h3>
-    <p>Al cerrar el perfil, quedará disponible en la <strong>vista consolidada del equipo</strong>. Asegúrate de haber completado todos los campos obligatorios.</p>
+    <p>Al cerrar el perfil, quedará disponible en la <strong>vista Todos</strong> del equipo. Solo perfiles cerrados y 100% completos aparecen en esa vista.</p>
     <div id="closeProfileSummary" style="margin-bottom:16px;font-size:12px"></div>
     <div style="display:flex;justify-content:flex-end;gap:8px">
       <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('closeProfileModal').classList.remove('open')">Volver al perfil</button>
-      <button class="btn btn-blue btn-sm" onclick="confirmCloseProfile()">Confirmar y cerrar</button>
+      <button class="btn btn-blue btn-sm" id="closeProfileConfirmBtn" onclick="confirmCloseProfile()">Confirmar y cerrar</button>
     </div>
   </div>
 </div>
@@ -3457,9 +3457,10 @@ function showOverview(filter) {
   document.getElementById('ov-btn-all').style.background = overviewFilter==='all' ? 'var(--navy)' : '';
   document.getElementById('ov-btn-all').style.color = overviewFilter==='all' ? 'white' : '';
   // Update title
-  const uname = currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'mis';
-  document.getElementById('overviewTitle').textContent = overviewFilter==='mine' ? `Perfiles de ${uname}` : 'Vista consolidada — Todos';
-  document.getElementById('overviewSubtitle').textContent = overviewFilter==='mine' ? 'Solo tus perfiles' : 'Todos los evaluadores';
+  document.getElementById('overviewTitle').textContent = overviewFilter==='mine' ? `Mis perfiles` : 'Vista consolidada — Todos';
+  document.getElementById('overviewSubtitle').textContent = overviewFilter==='mine'
+    ? 'Todos tus perfiles (incompletos, guardados y cerrados)'
+    : 'Solo perfiles cerrados y completos — visibles al equipo';
   renderSidebar();
   renderOverview();
 }
@@ -3468,18 +3469,25 @@ function renderOverview() {
   const tbody = document.getElementById('overviewBody');
   tbody.innerHTML = '';
   let ids = Object.keys(profiles);
+  const uname = currentUser?.user_metadata?.full_name || currentUser?.email;
+
   if(overviewFilter === 'mine') {
-    const uname = currentUser?.user_metadata?.full_name || currentUser?.email;
+    // All profiles created/updated by me, regardless of closed state
     ids = ids.filter(id => {
       const p = profiles[id];
       return p._createdByName === uname || p._updatedByName === uname;
     });
   } else {
-    // 'all' — filter by hierarchy visibility
-    ids = ids.filter(id => canSeeProfile(profiles[id]));
+    // 'all' — ONLY closed profiles visible to the user by hierarchy
+    ids = ids.filter(id => profiles[id]._closed && canSeeProfile(profiles[id]));
   }
+
   if(!ids.length) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--gray-400)">${overviewFilter==='mine' ? 'No tienes perfiles asignados' : 'Sin perfiles aún'}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--gray-400)">${
+      overviewFilter === 'mine'
+        ? 'No tienes perfiles asignados. Crea un nuevo perfil para comenzar.'
+        : 'No hay perfiles cerrados aún. Los perfiles aparecen aquí cuando el manager los cierra al 100%.'
+    }</td></tr>`;
     return;
   }
   ids.forEach(id => {
@@ -3505,7 +3513,12 @@ function renderOverview() {
           <div style="width:26px;height:26px;border-radius:50%;background:${p.color}22;color:${p.color};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${initials}</div>
           <div>
             <span style="font-weight:500">${p.nombre||'—'}</span>
-            ${p._closed ? '<span style="font-size:10px;padding:1px 5px;background:var(--green-light);color:var(--green);border-radius:4px;font-weight:600;margin-left:4px">✓ Cerrado</span>' : ''}
+            ${(() => {
+              if(p._closed) return '<span style="font-size:10px;padding:1px 5px;background:var(--green-light);color:var(--green);border-radius:4px;font-weight:600;margin-left:4px">✓ Cerrado</span>';
+              const pct = calcCompleteness(p);
+              if(pct >= 100) return '<span style="font-size:10px;padding:1px 5px;background:#dbeafe;color:var(--blue);border-radius:4px;font-weight:600;margin-left:4px">Listo para cerrar</span>';
+              return `<span style="font-size:10px;padding:1px 5px;background:var(--amber-light);color:var(--amber);border-radius:4px;font-weight:600;margin-left:4px">Incompleto ${pct}%</span>`;
+            })()}
           </div>
         </div>
       </td>
@@ -3684,8 +3697,12 @@ function saveAndContinue() {
   if(currentId) pushToSupabase(currentId, profiles[currentId]);
   const pct = calcCompleteness(profiles[currentId]);
   const col = completenessColor(pct);
+  const canClose = pct >= 100;
   const pctEl = document.getElementById('saveModalPct');
-  if(pctEl) pctEl.innerHTML = `Completado: <strong style="color:${col}">${pct}%</strong> de los campos obligatorios${pct < 100 ? ` · Faltan ${100-pct}% para cerrar el perfil` : ' — ¡Perfil listo para cerrar!'}`;
+  if(pctEl) pctEl.innerHTML = `Completado: <strong style="color:${col}">${pct}%</strong> de los campos obligatorios${pct < 100 ? ` · Faltan ${100-pct}% para poder cerrar el perfil` : ' — ¡Perfil listo para cerrar!'}`;
+  // Show/hide "Cerrar ahora" button
+  const closeNowBtn = document.getElementById('saveModalCloseBtn');
+  if(closeNowBtn) closeNowBtn.style.display = canClose ? '' : 'none';
   document.getElementById('saveModal').classList.add('open');
 }
 
@@ -3699,20 +3716,26 @@ function closeProfile() {
   autoSave();
   const p = profiles[currentId];
   const pct = calcCompleteness(p);
-
-  // Build summary
   const missing = getMissingFields(p);
+  const canClose = pct >= 100;
+
   let summaryHtml = '';
-  if(pct < 100) {
-    summaryHtml = `<div style="background:var(--amber-light);border:1px solid #fcd34d;border-radius:8px;padding:10px 12px">
-      <div style="font-weight:600;color:var(--amber);margin-bottom:4px">⚠ Perfil incompleto (${pct}%)</div>
-      <div style="font-size:11px;color:var(--gray-700)">Faltan: ${missing.join(', ')}</div>
-      <div style="font-size:11px;color:var(--gray-500);margin-top:4px">Puedes cerrar igualmente, pero los campos vacíos quedarán en blanco en la vista consolidada.</div>
+  if(!canClose) {
+    summaryHtml = `<div style="background:var(--red-light);border:1px solid #fca5a5;border-radius:8px;padding:12px 14px">
+      <div style="font-weight:600;color:var(--red);margin-bottom:6px">🚫 No se puede cerrar — perfil incompleto (${pct}%)</div>
+      <div style="font-size:12px;color:var(--gray-700);line-height:1.7">Campos pendientes:<br><strong>${missing.join(', ')}</strong></div>
+      <div style="font-size:11px;color:var(--gray-500);margin-top:8px">Completa todos los campos obligatorios para poder cerrar el perfil y enviarlo a la vista consolidada.</div>
     </div>`;
   } else {
     summaryHtml = `<div style="background:var(--green-light);border:1px solid #86efac;border-radius:8px;padding:10px 12px;color:var(--green);font-weight:600">✅ Perfil completo al 100% — listo para cerrar</div>`;
   }
+
   document.getElementById('closeProfileSummary').innerHTML = summaryHtml;
+  // Show/hide confirm button based on completeness
+  const confirmBtn = document.getElementById('closeProfileConfirmBtn');
+  if(confirmBtn) {
+    confirmBtn.style.display = canClose ? '' : 'none';
+  }
   document.getElementById('closeProfileModal').classList.add('open');
 }
 
