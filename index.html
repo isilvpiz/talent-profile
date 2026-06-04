@@ -518,6 +518,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
           <div style="font-size:18px; font-weight:600" id="profileName">—</div>
           <div style="display:flex;align-items:center;gap:10px;margin-top:3px">
             <div style="font-size:12px; color:var(--gray-400)" id="profileMeta">—</div>
+            <span id="role-badge" style="font-size:11px;padding:2px 8px;border-radius:6px;font-weight:600;display:none"></span>
             <div id="profileCompleteness" style="display:none;align-items:center;gap:6px">
               <div style="width:80px;height:5px;background:var(--gray-200);border-radius:3px;overflow:hidden">
                 <div id="complBar" style="height:100%;border-radius:3px;transition:width 0.3s"></div>
@@ -564,9 +565,28 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
               </div>
               <div class="form-group"><label>Fecha de ingreso</label><input type="date" id="g-ingreso" onchange="autoSave()"></div>
               <div class="form-group"><label>Seniority declarado</label>
-                <select id="g-seniority" onchange="autoSave()">
+                <select id="g-seniority" onchange="onSeniorityChange()">
                   <option value="">— Seleccionar —</option>
-                  <option>Junior</option><option>Engineer / Analyst</option><option>Lead</option><option>Expert</option>
+                  <optgroup label="Track Técnico">
+                    <option>Junior Engineer</option>
+                    <option>Engineer</option>
+                    <option>Lead Engineer</option>
+                    <option>Expert Engineer</option>
+                    <option>Chief Architect</option>
+                  </optgroup>
+                  <optgroup label="Track Analítico">
+                    <option>Junior Analyst</option>
+                    <option>Analyst</option>
+                    <option>Lead Analyst</option>
+                    <option>Expert Analyst</option>
+                  </optgroup>
+                  <optgroup label="Track Gestión">
+                    <option>Project Leader</option>
+                    <option>Sr. Technical PL</option>
+                  </optgroup>
+                  <optgroup label="Transversal">
+                    <option>Evangelist</option>
+                  </optgroup>
                 </select>
               </div>
               <div class="form-group"><label>Tiempo en el rol actual</label><input type="text" id="g-tiempo" placeholder="ej: 8 meses" oninput="autoSave()"></div>
@@ -1002,10 +1022,31 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
       <div class="card" style="margin-bottom:1rem">
         <div class="card-header"><div class="card-header-dot" style="background:var(--green)"></div><span class="card-title">Performance</span></div>
         <div class="card-body">
-          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> El desempeño actual observable en el rol, basado en comportamientos y resultados concretos.</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> El desempeño actual observable en el rol — comportamientos y resultados concretos alineados con las responsabilidades del cargo según el Career Ladder de NTT DATA.</p>
           <p style="font-size:13px;margin-bottom:8px"><strong>Escala:</strong> 1 (Muy por debajo) → 2 (Por debajo) → 3 (Cumple) → 4 (Supera) → 5 (Excepcional)</p>
-          <p style="font-size:13px;margin-bottom:8px"><strong>Cálculo:</strong> Promedio simple de 6 dimensiones — Calidad técnica, Cumplimiento OKRs, Autonomía/ownership, Velocidad de entrega, Colaboración, Comunicación con stakeholders.</p>
-          <p style="font-size:12px;color:var(--gray-400);margin-bottom:8px">⚠ Evaluar con evidencias concretas. El score debe poder justificarse con ejemplos observables, no percepciones.</p>
+          <div style="background:var(--blue-light);border-radius:8px;padding:12px;margin-bottom:10px;font-size:12px">
+            <strong style="color:var(--navy)">🔄 Dimensiones dinámicas por rol</strong><br>
+            Las 6 dimensiones de Performance cambian automáticamente según el seniority declarado. Cada rol tiene dimensiones derivadas directamente de sus responsabilidades documentadas en el Career Ladder de NTT DATA. Evaluar a un Engineer con las dimensiones de un Lead no tiene sentido — la comparación siempre es dentro del mismo rol.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;font-size:11px">
+            <div style="padding:8px;background:var(--gray-50);border-radius:6px;border:1px solid var(--gray-200)">
+              <strong style="color:var(--navy)">Track Técnico (Eng)</strong><br>
+              Junior: calidad de código, tests, metodología<br>
+              Engineer: diseño, pruebas, resolución de problemas<br>
+              Lead: liderazgo técnico, equipo, cliente<br>
+              Expert: referencia, notoriedad, innovación<br>
+              Chief Architect: arquitectura e2e, estrategia, riesgos
+            </div>
+            <div style="padding:8px;background:var(--gray-50);border-radius:6px;border:1px solid var(--gray-200)">
+              <strong style="color:var(--navy)">Track Analítico / Gestión</strong><br>
+              Junior/Analyst: análisis, informes, configuración<br>
+              Lead Analyst: marco analítico, equipo, cliente<br>
+              Expert Analyst: referencia, notoriedad, innovación<br>
+              Project Leader: proyecto e2e, equipo, cliente<br>
+              Sr. Technical PL: complejidad, gestión económica
+            </div>
+          </div>
+          <p style="font-size:12px;color:var(--gray-400);margin-bottom:8px">⚠ Evaluar con evidencias concretas. El score debe justificarse con comportamientos observables, no percepciones.</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <span style="background:var(--red-light);color:var(--red);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">1.0–2.4 Bajo</span>
             <span style="background:var(--amber-light);color:var(--amber);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">2.5–3.4 Medio</span>
@@ -1020,10 +1061,13 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
         <div class="card-body">
           <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Capacidad de crecer, asumir mayor complejidad y responsabilidad futura. No es performance actual — es proyección de crecimiento.</p>
           <p style="font-size:13px;margin-bottom:8px"><strong>Escala:</strong> 1 (Muy limitado) → 5 (Excepcional)</p>
-          <p style="font-size:13px;margin-bottom:8px"><strong>Cálculo:</strong> Promedio de 6 dimensiones — Learning Agility, Pensamiento sistémico, Liderazgo/influencia, Gestión de ambigüedad, Proactividad estratégica, <strong>Velocidad de incorporación de feedback</strong>.</p>
-          <div style="background:var(--blue-light);border-radius:6px;padding:10px 12px;margin-bottom:8px;font-size:12px">
-            <strong style="color:var(--navy)">¿Por qué "Velocidad de incorporación de feedback" y no "Aspiraciones"?</strong><br>
-            Las aspiraciones son un indicador de motivación y retención — no de capacidad. Una persona puede querer crecer pero no tener las condiciones para hacerlo, o tener alto potencial pero no aspirar a un cargo de liderazgo (IC track). Mezclar ambas contamina el score. Las aspiraciones se capturan por separado en la sección 9-Box para orientar la decisión de desarrollo, no para calcular el potencial.
+          <div style="background:var(--blue-light);border-radius:8px;padding:12px;margin-bottom:10px;font-size:12px">
+            <strong style="color:var(--navy)">🔄 Dimensiones dinámicas por rol</strong><br>
+            Las 6 dimensiones de Potencial también se adaptan al rol. Para roles Junior, el foco está en aprendizaje y adaptación. Para roles de liderazgo, en influencia y visión estratégica. Para roles estratégicos, en transformación organizacional y anticipación. Esto alinea la evaluación de potencial con las expectativas reales del siguiente nivel en cada track.
+          </div>
+          <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:12px">
+            <strong style="color:#991b1b">¿Por qué "Velocidad de incorporación de feedback" y no "Aspiraciones"?</strong><br>
+            Las aspiraciones son motivación y retención — no capacidad. Se capturan por separado en la sección 9-Box. La velocidad de feedback es el predictor más confiable de crecimiento sostenido.
           </div>
           <p style="font-size:12px;color:var(--gray-400)">⚠ Triangular con evidencias concretas. Evitar sesgos de afinidad o similaridad con el evaluador.</p>
         </div>
@@ -1082,10 +1126,13 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
       <div class="card" style="margin-bottom:1rem">
         <div class="card-header"><div class="card-header-dot" style="background:var(--orange)"></div><span class="card-title">Madurez Profesional</span></div>
         <div class="card-body">
-          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Nivel de autonomía y madurez organizacional, independiente del rol técnico. Es el termómetro de si la persona opera al nivel de complejidad que exige su seniority.</p>
+          <p style="font-size:13px;margin-bottom:8px"><strong>¿Qué mide?</strong> Nivel de autonomía y madurez organizacional. Es el termómetro de si la persona opera al nivel de complejidad que exige su seniority — independiente de sus habilidades técnicas.</p>
           <p style="font-size:13px;margin-bottom:8px"><strong>Escala:</strong> 1 (Ejecutor guiado) → 2 (Ejecutor independiente) → 3 (Contribuidor de equipo) → 4 (Referente de área) → 5 (Líder estratégico)</p>
-          <p style="font-size:13px;margin-bottom:8px"><strong>Dimensiones:</strong> Impacto del trabajo · Supervisión requerida (inverso) · Complejidad de problemas · Mentoría a otros · Visibilidad externa.</p>
-          <p style="font-size:12px;color:var(--gray-400)">El nivel final es asignado por el evaluador integrando promedio + juicio cualitativo. El gap con el nivel esperado del seniority declarado es la señal más clara de si una promoción es prematura.</p>
+          <div style="background:var(--blue-light);border-radius:8px;padding:12px;margin-bottom:10px;font-size:12px">
+            <strong style="color:var(--navy)">🔄 Dimensiones dinámicas por rol</strong><br>
+            Las 6 dimensiones de Madurez Profesional reflejan el grado de madurez esperado para cada rol. Un Junior mide autonomía básica y adherencia a metodología; un Expert mide referencia organizacional y visión de productividad global. El gap con el nivel esperado del rol es la señal más clara de si una promoción es prematura.
+          </div>
+          <p style="font-size:12px;color:var(--gray-400)">El nivel final es asignado por el evaluador integrando promedio + juicio cualitativo. Alguien técnicamente brillante que requiere supervisión constante no está listo para un Lead.</p>
         </div>
       </div>
 
@@ -1130,6 +1177,40 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
             <span style="background:var(--green-light);color:var(--green);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">🟢 ≥80% Válido para decisiones</span>
           </div>
           <p style="font-size:12px;color:var(--gray-400)">Ponderación: Datos generales 20% · Performance 20% · Potencial 10% · Skills 10% · Madurez 10% · 9-Box (calculado + validado) 10% · Risk 10% · Resumen/Decisión 10%</p>
+        </div>
+      </div>
+
+      <!-- IBIOL ALIGNMENT -->
+      <div class="card" style="margin-bottom:1rem;border-left:4px solid var(--navy)">
+        <div class="card-header"><div class="card-header-dot" style="background:var(--navy)"></div><span class="card-title">Alineación con NTT DATA Career Ladder e IBIOL</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;margin-bottom:12px">Este modelo está diseñado para ser compatible con la evaluación anual de NTT DATA (IBIOL/RRHH). Las dimensiones de cada rol se derivan directamente de los PDFs del Career Ladder oficial. Esto permite que la evaluación interna del manager y la evaluación corporativa hablen el mismo idioma.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div style="padding:10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;font-size:12px">
+              <div style="font-weight:600;margin-bottom:6px;color:var(--navy)">12 Roles del Career Ladder</div>
+              <div style="display:flex;flex-direction:column;gap:3px">
+                <span>🩷 <strong>Track Técnico:</strong> Junior Eng → Engineer → Lead Eng → Expert Eng → Chief Architect</span>
+                <span>🩵 <strong>Track Analítico:</strong> Junior Analyst → Analyst → Lead Analyst → Expert Analyst</span>
+                <span>🔵 <strong>Track Gestión:</strong> Project Leader → Sr. Technical PL</span>
+                <span>🟤 <strong>Transversal:</strong> Evangelist</span>
+              </div>
+            </div>
+            <div style="padding:10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;font-size:12px">
+              <div style="font-weight:600;margin-bottom:6px;color:var(--navy)">Competencias IBIOL críticas por rol</div>
+              <div style="display:flex;flex-direction:column;gap:2px;color:var(--gray-600)">
+                <span>Junior: Interacción software/Data Analytics (1) + Learning Agility (1)</span>
+                <span>Engineer/Analyst: Interacción sw/Data Analytics (2) + Com. asertiva (2)</span>
+                <span>Lead: Interacción sw/Data Analytics (3) + Desarrollo personas (2)</span>
+                <span>Expert: Interacción sw/Data Analytics (4) + Impacto (3)</span>
+                <span>PL: Gestión proyectos (2) + Envisioning change (3)</span>
+                <span>Chief Arch/Evang: Impacto (4) + Envisioning change (4)</span>
+              </div>
+            </div>
+          </div>
+          <div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:10px 12px;font-size:12px">
+            <strong style="color:#854d0e">Escala IBIOL → Escala App</strong><br>
+            El diccionario IBIOL usa niveles 1-4 (donde Nivel 1 = Junior, Nivel 4 = Expert). La app usa escala 1-5. La equivalencia orientativa: IBIOL nivel 1 ≈ App 2 (cumple mínimo), IBIOL nivel 2 ≈ App 3 (cumple), IBIOL nivel 3 ≈ App 4 (supera), IBIOL nivel 4 ≈ App 4.5-5 (excepcional). El benchmark por rol en la app refleja el nivel mínimo esperado para ese cargo.
+          </div>
         </div>
       </div>
 
@@ -1435,14 +1516,352 @@ async function pullFromSupabase() {
 // ═══════════════════════════════════════════════════════════════
 // DATA DEFINITIONS
 // ═══════════════════════════════════════════════════════════════
-let PERF_DIMS = [
-  "Calidad técnica del trabajo",
-  "Cumplimiento de objetivos / OKRs",
-  "Autonomía y ownership",
-  "Velocidad de entrega",
-  "Colaboración e impacto en equipo",
-  "Comunicación con stakeholders",
-];
+// ═══════════════════════════════════════════════════════════════
+// ROLE-BASED COMPETENCY MODEL — Derived from NTT DATA Career Ladder PDFs
+// ═══════════════════════════════════════════════════════════════
+const ROLE_COMPETENCIES = {
+  "Junior Engineer": {
+    track: "Técnico", level: "Entrada", color: "#ec4899",
+    criticalIBIOL: ["Interacción con software (1)", "Agilidad de aprendizaje (1)"],
+    perf: [
+      "Calidad del diseño técnico y código",
+      "Ejecución y resolución de problemas técnicos",
+      "Cumplimiento de metodología y calidad",
+      "Estimación y reporte de avance propio",
+      "Velocidad de aprendizaje técnico",
+      "Colaboración y apoyo al equipo",
+    ],
+    pot: [
+      "Capacidad de aprendizaje técnico",
+      "Curiosidad por nuevas tecnologías",
+      "Pensamiento analítico básico",
+      "Adaptación al cambio",
+      "Comunicación y colaboración",
+      "Incorporación de feedback",
+    ],
+    mat: [
+      "Autonomía en tareas asignadas",
+      "Adherencia a metodología y calidad",
+      "Capacidad de estimar y reportar",
+      "Colaboración dentro del equipo",
+      "Comprensión del contexto del cliente",
+      "Uso de herramientas y fundamentos de IA",
+    ],
+  },
+  "Junior Analyst": {
+    track: "Analítico", level: "Entrada", color: "#0d9488",
+    criticalIBIOL: ["Data Analytics & Insights (1)", "Agilidad de aprendizaje (1)"],
+    perf: [
+      "Calidad del análisis y extracción de datos",
+      "Elaboración de informes y conclusiones sencillas",
+      "Configuración de módulos y consultas de datos",
+      "Cumplimiento de metodología y calidad",
+      "Velocidad de aprendizaje funcional/analítico",
+      "Apoyo en sesiones y soporte a usuarios",
+    ],
+    pot: [
+      "Capacidad de aprendizaje analítico",
+      "Curiosidad por nuevas tecnologías y datos",
+      "Pensamiento analítico básico",
+      "Adaptación al cambio",
+      "Comunicación y colaboración",
+      "Incorporación de feedback",
+    ],
+    mat: [
+      "Autonomía en tareas analíticas asignadas",
+      "Adherencia a metodología y calidad",
+      "Capacidad de estimar y reportar",
+      "Colaboración dentro del equipo",
+      "Comprensión del contexto del cliente",
+      "Uso de herramientas y fundamentos de IA",
+    ],
+  },
+  "Engineer": {
+    track: "Técnico", level: "Medio", color: "#ec4899",
+    criticalIBIOL: ["Interacción con software (2)", "Comunicación asertiva (2)"],
+    perf: [
+      "Calidad técnica de la solución (diseño + código)",
+      "Diseño y ejecución de pruebas",
+      "Resolución de problemas técnicos",
+      "Autonomía y definición de estándares",
+      "Comunicación de resultados al equipo/cliente",
+      "Orientación al valor del cliente",
+    ],
+    pot: [
+      "Capacidad de aprendizaje y aplicación en nuevos contextos",
+      "Pensamiento sistémico",
+      "Influencia y comunicación con distintos interlocutores",
+      "Adaptación a entornos diversos",
+      "Proactividad en identificar mejoras",
+      "Autodesarrollo y apertura al feedback",
+    ],
+    mat: [
+      "Autonomía para definir soluciones y autoorganizarse",
+      "Aplicación activa de metodología y estándares",
+      "Estimación de esfuerzos y seguimiento del trabajo",
+      "Comunicación efectiva de resultados",
+      "Orientación al valor del cliente",
+      "Evaluación del uso de IA en actividades propias",
+    ],
+  },
+  "Analyst": {
+    track: "Analítico", level: "Medio", color: "#0d9488",
+    criticalIBIOL: ["Data Analytics & Insights (2)", "Comunicación asertiva (2)"],
+    perf: [
+      "Calidad del análisis y selección de métodos",
+      "Validación y gestión de calidad de datos",
+      "Diseño de soluciones analíticas equilibradas",
+      "Elaboración de modelos, informes y reporting",
+      "Comunicación y presentación de resultados",
+      "Orientación al valor del cliente",
+    ],
+    pot: [
+      "Capacidad de aprendizaje y aplicación en nuevos contextos",
+      "Pensamiento sistémico",
+      "Influencia y comunicación con distintos interlocutores",
+      "Adaptación a entornos diversos",
+      "Proactividad en identificar mejoras",
+      "Autodesarrollo y apertura al feedback",
+    ],
+    mat: [
+      "Autonomía para definir soluciones analíticas",
+      "Aplicación activa de metodología y estándares",
+      "Estimación de esfuerzos y seguimiento del trabajo",
+      "Comunicación efectiva de resultados",
+      "Orientación al valor del cliente",
+      "Evaluación del uso de IA en actividades propias",
+    ],
+  },
+  "Lead Engineer": {
+    track: "Técnico", level: "Liderazgo", color: "#ec4899",
+    criticalIBIOL: ["Interacción con software (3)", "Desarrollo de personas (2)"],
+    perf: [
+      "Liderazgo técnico de la solución",
+      "Resolución de problemas de alta complejidad",
+      "Desarrollo y supervisión del equipo técnico",
+      "Alineación con tendencias de mercado",
+      "Interlocución con cliente y stakeholders",
+      "Seguimiento, planificación y propuestas comerciales",
+    ],
+    pot: [
+      "Visión estratégica más allá del proyecto",
+      "Liderazgo e influencia sobre otros",
+      "Gestión de complejidad creciente",
+      "Pensamiento sistémico cross-área",
+      "Proactividad en identificar oportunidades",
+      "Adaptabilidad e incorporación de feedback",
+    ],
+    mat: [
+      "Supervisión y desarrollo del equipo",
+      "Promoción activa de metodología y calidad",
+      "Planificación y seguimiento del área",
+      "Representación experta ante el cliente",
+      "Identificación de necesidades comerciales",
+      "Evaluación de impacto de IA en soluciones",
+    ],
+  },
+  "Lead Analyst": {
+    track: "Analítico", level: "Liderazgo", color: "#0d9488",
+    criticalIBIOL: ["Data Analytics & Insights (3)", "Desarrollo de personas (2)"],
+    perf: [
+      "Liderazgo del marco analítico y selección de métodos",
+      "Resolución de problemas complejos con datos",
+      "Desarrollo y supervisión del equipo analítico",
+      "Alineación con tendencias de mercado",
+      "Interlocución con cliente y stakeholders",
+      "Seguimiento, planificación y propuestas comerciales",
+    ],
+    pot: [
+      "Visión estratégica más allá del proyecto",
+      "Liderazgo e influencia sobre otros",
+      "Gestión de complejidad creciente",
+      "Pensamiento sistémico cross-área",
+      "Proactividad en identificar oportunidades",
+      "Adaptabilidad e incorporación de feedback",
+    ],
+    mat: [
+      "Supervisión y desarrollo del equipo",
+      "Promoción activa de metodología y calidad",
+      "Planificación y seguimiento del área",
+      "Representación experta ante el cliente",
+      "Identificación de necesidades comerciales",
+      "Evaluación de impacto de IA en soluciones",
+    ],
+  },
+  "Expert Engineer": {
+    track: "Técnico", level: "Referente", color: "#ec4899",
+    criticalIBIOL: ["Interacción con software (4)", "Impacto (3)"],
+    perf: [
+      "Referencia técnica y resolución de alta complejidad",
+      "Alineación estratégica de la solución con el mercado",
+      "Generación de conocimiento y notoriedad externa",
+      "Contribución comercial y propuestas de negocio",
+      "Innovación y adopción de nuevas tecnologías",
+      "Supervisión de calidad y metodología del equipo",
+    ],
+    pot: [
+      "Visión estratégica organizacional",
+      "Influencia en entornos nuevos y desconocidos",
+      "Gestión de alta complejidad e incertidumbre",
+      "Liderazgo transformacional del equipo",
+      "Anticipación de tendencias tecnológicas",
+      "Evolución continua e integración de feedback",
+    ],
+    mat: [
+      "Referencia técnica para equipo y organización",
+      "Supervisión de calidad y metodología como modelo",
+      "Planificación con visión de productividad global",
+      "Representación experta ante cliente y stakeholders",
+      "Contribución a propuestas comerciales",
+      "Evaluación de IA en soluciones complejas",
+    ],
+  },
+  "Expert Analyst": {
+    track: "Analítico", level: "Referente", color: "#0d9488",
+    criticalIBIOL: ["Data Analytics & Insights (4)", "Impacto (3)"],
+    perf: [
+      "Referencia analítica y resolución de alta complejidad",
+      "Alineación estratégica de la solución con el mercado",
+      "Generación de conocimiento y notoriedad externa",
+      "Contribución comercial y propuestas de negocio",
+      "Innovación y adopción de nuevas tecnologías",
+      "Supervisión de calidad y metodología del equipo",
+    ],
+    pot: [
+      "Visión estratégica organizacional",
+      "Influencia en entornos nuevos y desconocidos",
+      "Gestión de alta complejidad e incertidumbre",
+      "Liderazgo transformacional del equipo",
+      "Anticipación de tendencias tecnológicas",
+      "Evolución continua e integración de feedback",
+    ],
+    mat: [
+      "Referencia analítica para equipo y organización",
+      "Supervisión de calidad y metodología como modelo",
+      "Planificación con visión de productividad global",
+      "Representación experta ante cliente y stakeholders",
+      "Contribución a propuestas comerciales",
+      "Evaluación de IA en soluciones complejas",
+    ],
+  },
+  "Project Leader": {
+    track: "Gestión", level: "Liderazgo de proyecto", color: "#6366f1",
+    criticalIBIOL: ["Gestión de proyectos (2)", "Gestión de la complejidad (2)", "Desarrollo de personas (3)", "Envisioning change (3)"],
+    perf: [
+      "Gestión end-to-end del proyecto (alcance, tiempo, costo)",
+      "Liderazgo y desarrollo del equipo",
+      "Gestión de expectativas y relación con cliente",
+      "Supervisión de calidad y metodología",
+      "Contribución comercial y preventa",
+      "Adaptación continua de la solución a necesidades",
+    ],
+    pot: [
+      "Visión estratégica de negocio",
+      "Liderazgo de personas y equipos",
+      "Gestión de complejidad multi-proyecto",
+      "Influencia en entornos diversos",
+      "Anticipación de cambios del mercado",
+      "Adaptabilidad estratégica",
+    ],
+    mat: [
+      "Gestión integral del proyecto (alcance, ETC, planificación)",
+      "Entorno motivador y desarrollo del equipo",
+      "Supervisión de calidad, metodología y centros",
+      "Gestión de relación con cliente",
+      "Colaboración comercial y preventa",
+      "Decisiones sobre IA en proyectos",
+    ],
+  },
+  "Sr. Technical PL": {
+    track: "Gestión + Técnico", level: "Liderazgo senior", color: "#4f46e5",
+    criticalIBIOL: ["Gestión de proyectos (3)", "Gestión de la complejidad (3)", "Impacto (4)", "Envisioning change (4)"],
+    perf: [
+      "Gestión de entregas de alta complejidad tecnológica",
+      "Estrategia de soluciones innovadoras y diferenciales",
+      "Liderazgo y desarrollo del equipo multidisciplinario",
+      "Gestión económica completa (ingresos, costes, márgenes, WIP)",
+      "Impacto comercial y definición de propuesta de valor",
+      "Generación de conocimiento y referencia técnica",
+    ],
+    pot: [
+      "Visión estratégica integral",
+      "Liderazgo transformacional",
+      "Gestión de alta complejidad multi-proyecto simultánea",
+      "Influencia a nivel directivo",
+      "Anticipación tecnológica y de mercado",
+      "Capacidad de definir propuesta de valor diferencial",
+    ],
+    mat: [
+      "Gestión estratégica multi-proyecto de alta complejidad",
+      "Gestión económica integral del proyecto/servicio",
+      "Supervisión de excelencia, innovación y mejora continua",
+      "Gestión ejecutiva de expectativas y relación con cliente",
+      "Definición de propuesta de valor e iniciativas nuevas",
+      "Decisiones de IA y generación de ventaja competitiva",
+    ],
+  },
+  "Chief Architect": {
+    track: "Técnico", level: "Estratégico", color: "#7c3aed",
+    criticalIBIOL: ["Interacción con la arquitectura (4)", "Gestión de la complejidad (3)", "Impacto (4)", "Envisioning change (4)"],
+    perf: [
+      "Diseño de arquitecturas integradas end-to-end",
+      "Hoja de ruta tecnológica y alineación estratégica",
+      "Gestión de riesgos y seguridad de soluciones",
+      "Liderazgo del equipo de arquitectura",
+      "Impacto en decisiones de cliente y negocio",
+      "Innovación y propuesta de nuevos modelos tecnológicos",
+    ],
+    pot: [
+      "Visión estratégica global",
+      "Capacidad de transformación organizacional",
+      "Influencia a nivel directivo",
+      "Anticipación tecnológica",
+      "Liderazgo de cambio adaptativo",
+      "Adaptación estratégica ante entornos cambiantes",
+    ],
+    mat: [
+      "Visión integral de arquitectura y estrategia tecnológica",
+      "Gestión de alcance y seguimiento global",
+      "Supervisión de calidad, metodología y centros",
+      "Gestión de expectativas ejecutivas y cliente",
+      "Desarrollo de propuestas de alto valor",
+      "Decisiones sobre IA y ventaja competitiva",
+    ],
+  },
+  "Evangelist": {
+    track: "Transversal", level: "Estratégico", color: "#92400e",
+    criticalIBIOL: ["Visión estratégica (4)", "Envisioning change (4)", "Gestión de la complejidad (3)", "Impacto (4)"],
+    perf: [
+      "Creación de contenido de alto impacto",
+      "Generación de notoriedad y networking interno/externo",
+      "Influencia sobre adopción de tecnología/producto",
+      "Gestión de relación y expectativas con cliente",
+      "Contribución comercial y generación de recurrencia",
+      "Innovación y propuesta de nuevos modelos",
+    ],
+    pot: [
+      "Visión estratégica global",
+      "Capacidad de transformación organizacional",
+      "Influencia a nivel directivo",
+      "Anticipación tecnológica y de mercado",
+      "Liderazgo de cambio adaptativo",
+      "Adaptación estratégica ante entornos cambiantes",
+    ],
+    mat: [
+      "Referencia global en su especialidad técnica",
+      "Gestión de expectativas y relación con cliente",
+      "Supervisión de calidad y metodología como modelo",
+      "Contribución comercial y generación de recurrencia",
+      "Formación interna global y externa",
+      "Decisiones sobre IA y ventaja competitiva",
+    ],
+  },
+};
+
+const SENIORITY_LEVELS = Object.keys(ROLE_COMPETENCIES);
+
+// Dynamic PERF_DIMS — updated when seniority changes
+let PERF_DIMS = ROLE_COMPETENCIES["Junior Engineer"].perf.slice();
 let POT_DIMS = [
   "Capacidad de aprendizaje (Learning Agility)",
   "Pensamiento sistémico / visión de negocio",
@@ -1451,21 +1870,49 @@ let POT_DIMS = [
   "Iniciativa y proactividad estratégica",
   "Velocidad de incorporación de feedback",
 ];
-const SENIORITY_LEVELS = ['Junior', 'Engineer / Analyst', 'Lead', 'Expert'];
 
-// Default benchmarks — editable from the app
+function getDimsForRole(seniority, pillar) {
+  const rc = ROLE_COMPETENCIES[seniority];
+  if(!rc) return null;
+  if(pillar === 'perf') return rc.perf;
+  if(pillar === 'pot')  return rc.pot;
+  if(pillar === 'mat')  return rc.mat;
+  return null;
+}
+
+function getRoleColor(seniority) {
+  return ROLE_COMPETENCIES[seniority]?.color || 'var(--navy)';
+}
+
+// Default benchmarks — per role, expected score on 1-5 scale
 const DEFAULT_BENCHMARKS = {
   perf: {
-    'Junior':             [2.0, 2.5, 1.5, 2.0, 2.0, 1.5],
-    'Engineer / Analyst': [3.0, 3.0, 3.0, 3.0, 3.0, 2.5],
-    'Lead':               [3.5, 3.5, 4.0, 3.5, 4.0, 4.0],
-    'Expert':             [4.5, 4.0, 4.5, 4.0, 4.5, 4.5],
+    'Junior Engineer':   [2.0, 2.0, 2.5, 2.5, 3.0, 2.0],
+    'Junior Analyst':    [2.0, 2.0, 2.0, 2.5, 3.0, 2.0],
+    'Engineer':          [3.0, 3.0, 3.0, 3.0, 3.0, 3.0],
+    'Analyst':           [3.0, 3.0, 3.0, 3.0, 3.0, 3.0],
+    'Lead Engineer':     [3.5, 3.5, 3.5, 3.5, 3.5, 3.5],
+    'Lead Analyst':      [3.5, 3.5, 3.5, 3.5, 3.5, 3.5],
+    'Expert Engineer':   [4.0, 4.0, 4.0, 4.0, 4.0, 4.0],
+    'Expert Analyst':    [4.0, 4.0, 4.0, 4.0, 4.0, 4.0],
+    'Project Leader':    [3.5, 3.5, 3.5, 3.5, 3.0, 3.5],
+    'Sr. Technical PL':  [4.0, 4.0, 4.0, 4.0, 4.0, 4.0],
+    'Chief Architect':   [4.5, 4.0, 4.0, 4.0, 4.0, 4.0],
+    'Evangelist':        [4.0, 4.0, 4.0, 4.0, 4.0, 4.0],
   },
   pot: {
-    'Junior':             [3.0, 1.5, 1.0, 1.5, 1.5, 3.0],
-    'Engineer / Analyst': [3.0, 2.5, 2.0, 2.5, 2.5, 3.0],
-    'Lead':               [3.5, 3.5, 4.0, 3.5, 3.5, 3.0],
-    'Expert':             [4.0, 4.5, 4.0, 4.5, 4.5, 3.0],
+    'Junior Engineer':   [3.0, 1.5, 1.0, 1.5, 1.5, 3.0],
+    'Junior Analyst':    [3.0, 1.5, 1.0, 1.5, 1.5, 3.0],
+    'Engineer':          [3.0, 2.5, 2.0, 2.5, 2.5, 3.0],
+    'Analyst':           [3.0, 2.5, 2.0, 2.5, 2.5, 3.0],
+    'Lead Engineer':     [3.5, 3.5, 3.5, 3.5, 3.5, 3.0],
+    'Lead Analyst':      [3.5, 3.5, 3.5, 3.5, 3.5, 3.0],
+    'Expert Engineer':   [4.0, 4.0, 4.0, 4.0, 4.0, 3.5],
+    'Expert Analyst':    [4.0, 4.0, 4.0, 4.0, 4.0, 3.5],
+    'Project Leader':    [3.5, 4.0, 3.5, 3.5, 3.5, 3.0],
+    'Sr. Technical PL':  [4.0, 4.0, 4.0, 4.0, 4.0, 3.5],
+    'Chief Architect':   [4.5, 4.5, 4.5, 4.5, 4.5, 4.0],
+    'Evangelist':        [4.5, 4.5, 4.5, 4.5, 4.5, 4.0],
   }
 };
 
@@ -1538,13 +1985,38 @@ let SKILL_GROUPS = {
   "AI / MACHINE LEARNING": ["ML Algorithms & Modeling","LLMs / Generative AI","MLOps / AI Deployment","Prompt Engineering","AI Ethics & Governance"],
   "SOFT / LEADERSHIP": ["Comunicación ejecutiva","Gestión de stakeholders","Pensamiento crítico / Problem solving","Gestión de proyectos / Agile","Mentoría / Transferencia de conocimiento"],
 };
-let MAT_DIMS = [
-  "Impacto del trabajo (individual → organizacional)",
-  "Nivel de supervisión requerida (inverso)",
-  "Complejidad de problemas que resuelve",
-  "Capacidad de mentorizar a otros",
-  "Visibilidad y representación externa",
-];
+let MAT_DIMS = ROLE_COMPETENCIES["Junior Engineer"].mat.slice();
+
+// Called when seniority dropdown changes — rebuilds Performance & Madurez dims for the role
+function onSeniorityChange() {
+  const seniority = document.getElementById('g-seniority')?.value;
+  if(seniority && ROLE_COMPETENCIES[seniority]) {
+    PERF_DIMS = ROLE_COMPETENCIES[seniority].perf.slice();
+    MAT_DIMS  = ROLE_COMPETENCIES[seniority].mat.slice();
+    POT_DIMS  = ROLE_COMPETENCIES[seniority].pot.slice();
+    // Rebuild score tables if a profile is open
+    if(currentId && profiles[currentId]) {
+      buildScoreTable('perf', PERF_DIMS, 'perf-table');
+      buildScoreTable('pot',  POT_DIMS,  'pot-table');
+      buildMatTable();
+    }
+    // Update role badge visible in the profile
+    updateRoleBadge(seniority);
+  }
+  autoSave();
+}
+
+function updateRoleBadge(seniority) {
+  const rc = ROLE_COMPETENCIES[seniority];
+  if(!rc) return;
+  let badge = document.getElementById('role-badge');
+  if(badge) {
+    badge.textContent = `${rc.track} · ${rc.level}`;
+    badge.style.background = rc.color + '18';
+    badge.style.color = rc.color;
+    badge.style.display = 'inline-block';
+  }
+}
 const RISK_ITEMS = [
   "Nivel de motivación percibida",
   "Indicadores de desenganche (motivación, participación, iniciativa)",
@@ -1738,6 +2210,15 @@ function loadProfileToUI() {
   const p = profiles[currentId];
   document.getElementById('profileName').textContent = p.nombre || '(sin nombre)';
   document.getElementById('profileMeta').textContent = (p.rol || '') + (p.general.seniority ? ' · ' + p.general.seniority : '');
+
+  // Rebuild dims for this profile's seniority
+  const sen = p.general?.seniority;
+  if(sen && ROLE_COMPETENCIES[sen]) {
+    PERF_DIMS = ROLE_COMPETENCIES[sen].perf.slice();
+    POT_DIMS  = ROLE_COMPETENCIES[sen].pot.slice();
+    MAT_DIMS  = ROLE_COMPETENCIES[sen].mat.slice();
+    updateRoleBadge(sen);
+  }
 
   // Completeness
   const pct = calcCompleteness(p);
