@@ -130,7 +130,7 @@ body {
 .person-chip .person-name { font-size: 12px; font-weight: 500; }
 .person-chip .person-role { font-size: 11px; opacity: 0.65; }
 /* ─── MAIN ─── */
-.main { flex: 1; padding: 2rem; max-width: 1320px; }
+.main { flex: 1; padding: 1.5rem 1.75rem; min-width: 0; overflow-x: hidden; }
 /* ─── CARDS ─── */
 .card {
   background: var(--white); border-radius: var(--radius);
@@ -737,25 +737,21 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
         </div>
       </div>
       <!-- SECTION TABS -->
-      <div class="section-tabs">
-        <div style="display:flex;flex-direction:column;gap:6px;width:100%">
-          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
-            <span style="font-size:9px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.08em;padding:0 6px 0 2px;white-space:nowrap">① Diagnóstico</span>
-            <div class="section-tab active" onclick="switchTab('general',this)" data-section="general">Datos generales</div>
-            <div class="section-tab" onclick="switchTab('performance',this)" data-section="performance">Performance</div>
-            <div class="section-tab" onclick="switchTab('potencial',this)" data-section="potencial">Potencial</div>
-            <div class="section-tab" onclick="switchTab('ninebox',this)" data-section="ninebox">9-Box</div>
-            <div style="width:1px;height:24px;background:var(--gray-200);margin:0 4px"></div>
-            <span style="font-size:9px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.08em;padding:0 6px 0 2px;white-space:nowrap">② Evaluación</span>
-            <div class="section-tab" onclick="switchTab('skills',this)" data-section="skills">Madurez técnica</div>
-            <div class="section-tab" onclick="switchTab('madurez',this)" data-section="madurez">Madurez profesional</div>
-            <div style="width:1px;height:24px;background:var(--gray-200);margin:0 4px"></div>
-            <span style="font-size:9px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.08em;padding:0 6px 0 2px;white-space:nowrap">③ Decisión</span>
-            <div class="section-tab" onclick="switchTab('risk',this)" data-section="risk">Flight risk</div>
-            <div class="section-tab" onclick="switchTab('idp',this)" data-section="idp">IDP</div>
-            <div class="section-tab" onclick="switchTab('resumen',this)" data-section="resumen">Resumen</div>
-          </div>
-        </div>
+      <div class="section-tabs" style="flex-wrap:nowrap;overflow-x:auto;gap:0;padding-bottom:2px;margin-bottom:1.25rem">
+        <span style="font-size:9px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.06em;padding:0 6px 0 2px;white-space:nowrap;align-self:center">① Diagnóstico</span>
+        <div class="section-tab active" onclick="switchTab('general',this)" data-section="general" style="white-space:nowrap">General</div>
+        <div class="section-tab" onclick="switchTab('performance',this)" data-section="performance" style="white-space:nowrap">Performance</div>
+        <div class="section-tab" onclick="switchTab('potencial',this)" data-section="potencial" style="white-space:nowrap">Potencial</div>
+        <div class="section-tab" onclick="switchTab('ninebox',this)" data-section="ninebox" style="white-space:nowrap">9-Box</div>
+        <div style="width:1px;height:24px;background:var(--gray-200);margin:0 4px;flex-shrink:0;align-self:center"></div>
+        <span style="font-size:9px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.06em;padding:0 6px 0 2px;white-space:nowrap;align-self:center">② Evaluación</span>
+        <div class="section-tab" onclick="switchTab('skills',this)" data-section="skills" style="white-space:nowrap">Mad. Técnica</div>
+        <div class="section-tab" onclick="switchTab('madurez',this)" data-section="madurez" style="white-space:nowrap">Mad. Profesional</div>
+        <div style="width:1px;height:24px;background:var(--gray-200);margin:0 4px;flex-shrink:0;align-self:center"></div>
+        <span style="font-size:9px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.06em;padding:0 6px 0 2px;white-space:nowrap;align-self:center">③ Decisión</span>
+        <div class="section-tab" onclick="switchTab('risk',this)" data-section="risk" style="white-space:nowrap">Flight risk</div>
+        <div class="section-tab" onclick="switchTab('idp',this)" data-section="idp" style="white-space:nowrap">IDP</div>
+        <div class="section-tab" onclick="switchTab('resumen',this)" data-section="resumen" style="white-space:nowrap">Resumen</div>
       </div>
 
       <!-- ═══ SECCIÓN GENERAL ═══ -->
@@ -1146,55 +1142,38 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
           <div style="font-size:18px;font-weight:600" id="overviewTitle">Vista consolidada</div>
           <div style="font-size:12px;color:var(--gray-400)" id="overviewSubtitle">Todos los perfiles</div>
         </div>
-        <div style="display:flex;gap:6px">
+        <div style="display:flex;gap:6px;align-items:center">
           <button class="btn btn-ghost btn-sm" id="ov-btn-mine" onclick="showOverview('mine')" style="font-size:12px">👤 Mis perfiles</button>
           <button class="btn btn-ghost btn-sm" id="ov-btn-all" onclick="showOverview('all')" style="font-size:12px">📊 Vista Consolidada</button>
+          <button onclick="clearOverviewFilters()" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--gray-200);background:var(--gray-100);cursor:pointer;color:var(--gray-600)">✕ Limpiar filtros</button>
         </div>
       </div>
-      <!-- FILTER BAR -->
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:1rem;padding:10px 14px;background:var(--white);border:1px solid var(--gray-200);border-radius:10px">
-        <span style="font-size:11px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.06em;flex-shrink:0">Filtrar:</span>
-        <select id="filter-seniority" onchange="renderOverview()" style="font-size:12px;padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;color:var(--gray-700)">
-          <option value="">Seniority</option>
-          <option>Junior</option><option>Semi Senior</option><option>Senior</option><option>Staff</option><option>Principal / Lead</option>
-        </select>
-        <select id="filter-ninebox" onchange="renderOverview()" style="font-size:12px;padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;color:var(--gray-700)">
-          <option value="">9-Box</option>
-          <option>⭐ Top talent</option>
-          <option>🚀 High performer</option>
-          <option>💡 Alto potencial</option>
-          <option>✅ Core contributor</option>
-          <option>📈 En desarrollo</option>
-          <option>⚠️ Under review</option>
-        </select>
-        <select id="filter-risk" onchange="renderOverview()" style="font-size:12px;padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;color:var(--gray-700)">
-          <option value="">Risk</option>
-          <option value="Alto">🔴 Alto</option>
-          <option value="Medio">🟡 Medio</option>
-          <option value="Bajo">🟢 Bajo</option>
-        </select>
-        <select id="filter-decision" onchange="renderOverview()" style="font-size:12px;padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;color:var(--gray-700)">
-          <option value="">Decisión</option>
-          <option>Promoción inmediata</option>
-          <option>Promoción en 6 meses (condicional)</option>
-          <option>Retener y desarrollar</option>
-          <option>Movimiento lateral</option>
-          <option>PIP — Plan de mejora</option>
-          <option>En observación</option>
-        </select>
-        <input id="filter-search" type="text" placeholder="🔍 Buscar por nombre…" oninput="renderOverview()" style="font-size:12px;padding:4px 10px;border:1px solid var(--gray-200);border-radius:6px;color:var(--gray-700);min-width:160px">
-        <button onclick="clearOverviewFilters()" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--gray-200);background:var(--gray-100);cursor:pointer;color:var(--gray-600)">✕ Limpiar</button>
-        <span id="filter-count" style="font-size:11px;color:var(--gray-400);margin-left:auto"></span>
-      </div>
-      <div class="card">
-        <div class="card-body" style="padding:0;overflow-x:auto">
-          <table class="team-table" id="overviewTable">
-            <thead><tr>
-              <th>Nombre</th><th>Rol</th><th>Nivel</th><th>Seniority</th>
-              <th>Perf.</th><th>Potencial</th><th>9-Box</th>
-              <th>Mad. Técnica</th><th>Mad. Profesional</th><th>Risk</th><th>Decisión</th>
-              <th>Última eval.</th><th>Evaluador</th>
-            </tr></thead>
+      <div class="card" style="overflow:hidden">
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+          <table class="team-table" id="overviewTable" style="min-width:900px">
+            <thead>
+              <tr>
+                <th style="min-width:160px">Nombre</th><th style="min-width:120px">Rol</th><th style="min-width:80px">Nivel</th><th style="min-width:100px">Seniority</th>
+                <th style="min-width:70px">Perf.</th><th style="min-width:80px">Potencial</th><th style="min-width:140px">9-Box</th>
+                <th style="min-width:100px">Mad. Técnica</th><th style="min-width:120px">Mad. Profesional</th><th style="min-width:90px">Risk</th><th style="min-width:140px">Decisión</th>
+                <th style="min-width:120px">Última eval.</th><th style="min-width:100px">Evaluador</th>
+              </tr>
+              <tr style="background:var(--gray-50)">
+                <td style="padding:4px 6px"><input id="filter-nombre" type="text" placeholder="🔍 Nombre" oninput="renderOverview()" style="width:100%;font-size:11px;padding:3px 6px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"></td>
+                <td style="padding:4px 6px"><input id="filter-rol" type="text" placeholder="🔍 Rol" oninput="renderOverview()" style="width:100%;font-size:11px;padding:3px 6px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"></td>
+                <td style="padding:4px 6px"><select id="filter-nivel" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option>Staff</option><option>Líder</option><option>Manager</option><option>Director</option></select></td>
+                <td style="padding:4px 6px"><select id="filter-seniority" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option>Junior</option><option>Semi Senior</option><option>Senior</option><option>Staff</option><option>Principal / Lead</option></select></td>
+                <td style="padding:4px 6px"><select id="filter-perf" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option value="4">≥ 4</option><option value="3">≥ 3</option><option value="2">≤ 2</option></select></td>
+                <td style="padding:4px 6px"><select id="filter-pot" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option value="4">≥ 4</option><option value="3">≥ 3</option><option value="2">≤ 2</option></select></td>
+                <td style="padding:4px 6px"><select id="filter-ninebox" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option>⭐ Top talent</option><option>🚀 High performer</option><option>💡 Alto potencial</option><option>✅ Core contributor</option><option>📈 En desarrollo</option><option>⚠️ Under review</option></select></td>
+                <td style="padding:4px 6px"></td>
+                <td style="padding:4px 6px"></td>
+                <td style="padding:4px 6px"><select id="filter-risk" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option value="Alto">🔴 Alto</option><option value="Medio">🟡 Medio</option><option value="Bajo">🟢 Bajo</option></select></td>
+                <td style="padding:4px 6px"><select id="filter-decision" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option>Promoción inmediata</option><option>Promoción en 6 meses (condicional)</option><option>Retener y desarrollar</option><option>Movimiento lateral</option><option>PIP — Plan de mejora</option><option>En observación</option></select></td>
+                <td style="padding:4px 6px"></td>
+                <td style="padding:4px 6px"><span id="filter-count" style="font-size:10px;color:var(--gray-400)"></span></td>
+              </tr>
+            </thead>
             <tbody id="overviewBody"></tbody>
           </table>
         </div>
@@ -3648,7 +3627,7 @@ function renderMethodologyBenchmarkTable() {
 let overviewFilter = 'all';
 
 function clearOverviewFilters() {
-  ['filter-seniority','filter-ninebox','filter-risk','filter-decision','filter-search'].forEach(id => {
+  ['filter-nombre','filter-rol','filter-nivel','filter-seniority','filter-perf','filter-pot','filter-ninebox','filter-risk','filter-decision'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.value = '';
   });
@@ -3657,11 +3636,16 @@ function clearOverviewFilters() {
 
 function getOverviewFilters() {
   return {
+    nombre:    (document.getElementById('filter-nombre')?.value   || '').toLowerCase().trim(),
+    rol:       (document.getElementById('filter-rol')?.value      || '').toLowerCase().trim(),
+    nivel:     document.getElementById('filter-nivel')?.value     || '',
     seniority: document.getElementById('filter-seniority')?.value || '',
-    ninebox:   document.getElementById('filter-ninebox')?.value || '',
-    risk:      document.getElementById('filter-risk')?.value || '',
-    decision:  document.getElementById('filter-decision')?.value || '',
-    search:    (document.getElementById('filter-search')?.value || '').toLowerCase().trim(),
+    perf:      document.getElementById('filter-perf')?.value      || '',
+    pot:       document.getElementById('filter-pot')?.value       || '',
+    ninebox:   document.getElementById('filter-ninebox')?.value   || '',
+    risk:      document.getElementById('filter-risk')?.value      || '',
+    decision:  document.getElementById('filter-decision')?.value  || '',
+    search:    '',
   };
 }
 
@@ -3670,7 +3654,22 @@ function applyOverviewFilters(ids) {
   return ids.filter(id => {
     const p = profiles[id];
     if(!p) return false;
+    if(f.nombre    && !(p.nombre||'').toLowerCase().includes(f.nombre)) return false;
+    if(f.rol       && !(p.rol||'').toLowerCase().includes(f.rol)) return false;
+    if(f.nivel     && p.general?.nivel !== f.nivel) return false;
     if(f.seniority && p.general?.seniority !== f.seniority) return false;
+    if(f.perf) {
+      const perf = getAvg(p.perf?.scores||{});
+      if(f.perf === '4' && perf < 4) return false;
+      if(f.perf === '3' && perf < 3) return false;
+      if(f.perf === '2' && perf > 2) return false;
+    }
+    if(f.pot) {
+      const pot = getAvg(p.pot?.scores||{});
+      if(f.pot === '4' && pot < 4) return false;
+      if(f.pot === '3' && pot < 3) return false;
+      if(f.pot === '2' && pot > 2) return false;
+    }
     if(f.ninebox) {
       const perf = getAvg(p.perf?.scores||{}), pot = getAvg(p.pot?.scores||{});
       let nb = '';
@@ -3680,11 +3679,10 @@ function applyOverviewFilters(ids) {
       else if(perf>=3&&pot>=3) nb='✅ Core contributor';
       else if(perf<3&&pot<3&&perf>0) nb='⚠️ Under review';
       else if(perf>0||pot>0) nb='📈 En desarrollo';
-      if(!nb.startsWith(f.ninebox.split(' ')[0])) return false;
+      if(nb !== f.ninebox) return false;
     }
-    if(f.risk && !(p.risk?.global||'').includes(f.risk)) return false;
+    if(f.risk     && !(p.risk?.global||'').includes(f.risk)) return false;
     if(f.decision && p.resumen?.decision !== f.decision) return false;
-    if(f.search && !(p.nombre||'').toLowerCase().includes(f.search)) return false;
     return true;
   });
 }
