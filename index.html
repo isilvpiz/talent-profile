@@ -1914,7 +1914,18 @@ function getUserRole() {
   return currentUser?.user_metadata?.role || 'lider';
 }
 
-// Visibility: admin/director=all, manager=staff+lider, lider=staff only
+function getCurrentUserName() {
+  return currentUser?.user_metadata?.full_name || currentUser?.email || '';
+}
+
+function isProfileOwner(id) {
+  const p = profiles[id];
+  if(!p) return false;
+  const uname = getCurrentUserName();
+  return p._createdByName === uname;
+}
+
+
 function canSeeProfile(p) {
   const role = getUserRole();
   if(role === 'admin' || role === 'director') return true;
@@ -2815,6 +2826,59 @@ function loadProfileToUI() {
   updateSectionAlerts();
   updateTabProgress();
 
+  // ── Modo lectura: solo el creador puede editar ──
+  const isOwner = isProfileOwner(currentId);
+  if(!isOwner) {
+    // Banner informativo
+    let roBar = document.getElementById('readOnlyBanner');
+    if(!roBar) {
+      roBar = document.createElement('div');
+      roBar.id = 'readOnlyBanner';
+      roBar.style.cssText = 'background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#92400e;display:flex;align-items:center;gap:8px';
+      roBar.innerHTML = '🔒 <strong>Solo lectura</strong> — Este perfil fue creado por otro evaluador. No puedes modificarlo.';
+      const profileViewInner = document.querySelector('#profileView > .content-area, #profileView');
+      const firstCard = document.querySelector('#sec-general');
+      if(firstCard && firstCard.parentNode) firstCard.parentNode.insertBefore(roBar, firstCard);
+    }
+    roBar.style.display = 'flex';
+    // Deshabilitar todos los controles editables del perfil
+    document.querySelectorAll('#profileView input:not([readonly]), #profileView select, #profileView textarea, #profileView button.add-row-btn').forEach(el => {
+      el.disabled = true;
+      if(el.tagName !== 'BUTTON') {
+        el.style.background = 'var(--gray-100)';
+        el.style.color = 'var(--gray-400)';
+        el.style.cursor = 'not-allowed';
+      }
+    });
+    // Ocultar botones de acción (guardar, cerrar, eliminar, etc.)
+    const actionBtns = document.getElementById('profileActionButtons');
+    if(actionBtns) actionBtns.style.display = 'none';
+    // Ocultar botones ✨ Desde datos y ⚡ Sugerir
+    document.querySelectorAll('#profileView .btn').forEach(btn => {
+      if(!btn.closest('#profileActionButtons')) btn.style.visibility = 'hidden';
+    });
+  } else {
+    // Restaurar si se cambia de perfil propio
+    const roBar = document.getElementById('readOnlyBanner');
+    if(roBar) roBar.style.display = 'none';
+    document.querySelectorAll('#profileView input, #profileView select, #profileView textarea').forEach(el => {
+      // Solo restaurar si no son los campos bloqueados por diseño
+      const lockedIds = ['g-nombre','g-nroEmpleado','g-ingreso','g-antiguedad'];
+      if(!lockedIds.includes(el.id)) {
+        el.disabled = false;
+        el.style.background = '';
+        el.style.color = '';
+        el.style.cursor = '';
+      }
+    });
+    document.querySelectorAll('#profileView .btn').forEach(btn => {
+      btn.style.visibility = '';
+    });
+    const actionBtns = document.getElementById('profileActionButtons');
+    const isClosed = !!profiles[currentId]?._closed;
+    if(actionBtns) actionBtns.style.display = isClosed ? 'none' : 'flex';
+  }
+
   // ── Restricción: Validación del manager solo para rol manager ──
   const userRole = getUserRole();
   const isManager = (userRole === 'manager' || userRole === 'admin');
@@ -3270,6 +3334,7 @@ function switchTab(name, el) {
 // ═══════════════════════════════════════════════════════════════
 function autoSave() {
   if(!currentId) return;
+  if(!isProfileOwner(currentId)) return; // solo el creador puede guardar
   const p = profiles[currentId];
   // Read all general fields
   ['nombre','rol','nivel','ingreso','seniority','nroEmpleado','antiguedad','lasteval','proyectos','entrevistador','notas'].forEach(f => {
@@ -4090,6 +4155,10 @@ function createProfile() {
 }
 function deleteCurrent() {
   if(!currentId) return;
+  if(!isProfileOwner(currentId)) {
+    alert('Solo el evaluador que creó este perfil puede eliminarlo.');
+    return;
+  }
   const p = profiles[currentId];
   if(!confirm(`¿Eliminar el perfil de "${p.nombre}"? Esta acción no se puede deshacer.`)) return;
   const deletedId = currentId;
@@ -4190,6 +4259,10 @@ function renderHomeView() {
 // REOPEN PROFILE
 // ═══════════════════════════════════════════════════════════════
 function reopenProfile() {
+  if(!currentId || !isProfileOwner(currentId)) {
+    alert('Solo el evaluador que creó este perfil puede reabrirlo.');
+    return;
+  }
   document.getElementById('reopen-justif').value = '';
   document.getElementById('reopenModal').classList.add('open');
 }
@@ -4865,6 +4938,10 @@ function closeSaveModalAndClose() {
 
 function closeProfile() {
   if(!currentId) return;
+  if(!isProfileOwner(currentId)) {
+    alert('Solo el evaluador que creó este perfil puede cerrarlo.');
+    return;
+  }
   autoSave();
   const p = profiles[currentId];
   const pct = calcCompleteness(p);
