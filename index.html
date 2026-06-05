@@ -2997,15 +2997,6 @@ function updateNinebox() {
     }
   }
 
-  // Technical overlay
-  const skillVals = Object.values(p.skills || {}).map(s => s.actual).filter(v => v > 0);
-  const techAvg = skillVals.length ? skillVals.reduce((a,b) => a+b, 0) / skillVals.length : 0;
-  let techIcon, techLabel, techColor, techBg, techBorder, techDesc;
-  if(techAvg >= 4)      { techIcon='🟢'; techLabel='Avanzado';    techColor='var(--green)';  techBg='#f0fdf4'; techBorder='#86efac'; techDesc='Dominio técnico sólido — perfil de alta empleabilidad y valor de entrega.'; }
-  else if(techAvg >= 3) { techIcon='🔵'; techLabel='Intermedio';  techColor='var(--blue)';   techBg='#eff6ff'; techBorder='#93c5fd'; techDesc='Buen nivel técnico. Con foco puede alcanzar perfil avanzado.'; }
-  else if(techAvg >= 2) { techIcon='🟡'; techLabel='Básico';      techColor='var(--amber)';  techBg='#fffbeb'; techBorder='#fcd34d'; techDesc='Nivel técnico en desarrollo. Requiere plan de formación activo.'; }
-  else if(techAvg > 0)  { techIcon='🔴'; techLabel='Inicial';     techColor='var(--red)';    techBg='#fef2f2'; techBorder='#fca5a5'; techDesc='Brecha técnica significativa. Priorizar upskilling antes de nuevas responsabilidades.'; }
-
   el.innerHTML = `
     <div class="ninebox-display" style="background:${matched?matched.bg:'var(--gray-100)'};border:1px solid ${matched?matched.bc:'var(--gray-200)'};border-radius:10px">
       <div>
@@ -3021,33 +3012,18 @@ function updateNinebox() {
           <div class="val" style="color:var(--teal)">${pot>0?pot.toFixed(1):'—'}</div>
           <div class="lbl">Potencial</div>
         </div>
-        <div class="ninebox-score-item">
-          <div class="val" style="color:${techAvg>=4?'var(--green)':techAvg>=3?'var(--blue)':techAvg>=2?'var(--amber)':techAvg>0?'var(--red)':'var(--gray-400)'}">${techAvg>0?techAvg.toFixed(1):'—'}</div>
-          <div class="lbl">Técnico</div>
-        </div>
       </div>
     </div>
-    ${techAvg > 0 ? `
-    <div style="margin-top:10px;padding:10px 14px;border-radius:8px;background:${techBg};border:1px solid ${techBorder};display:flex;align-items:center;gap:10px">
-      <span style="font-size:18px">${techIcon}</span>
-      <div>
-        <div style="font-size:12px;font-weight:600;color:${techColor}">${techLabel} — Madurez Técnica</div>
-        <div style="font-size:11px;color:var(--gray-500);margin-top:2px">${techDesc}</div>
-      </div>
-    </div>` : ''}
     ${(() => {
-      // Potencial vs Madurez profesional insight
       const matFinal = parseInt(p.madurez?.final) || 0;
       if(pot > 0 && matFinal > 0) {
-        // pot es 1-5, matFinal es 1-5 — comparar cuadrante de potencial vs nivel de madurez
-        const potBucket = pot >= 4 ? 3 : pot >= 3 ? 2 : 1; // alto/medio/bajo
-        const gap = potBucket - matFinal;
+        const potBucket = pot >= 4 ? 3 : pot >= 3 ? 2 : 1;
         if(potBucket >= 3 && matFinal <= 2) {
           return `<div style="margin-top:8px;padding:10px 14px;border-radius:8px;background:#f0f9ff;border:1px solid #7dd3fc;display:flex;align-items:flex-start;gap:10px">
             <span style="font-size:16px;flex-shrink:0">💡</span>
             <div>
               <div style="font-size:12px;font-weight:600;color:#0369a1">Alto potencial, madurez en desarrollo (Nivel ${matFinal})</div>
-              <div style="font-size:11px;color:var(--gray-500);margin-top:2px">Es coherente y frecuente: el potencial refleja capacidades y proyección; la madurez profesional refleja el seniority demostrado en contexto. Este perfil requiere exposición progresiva y acompañamiento para acelerar la madurez.</div>
+              <div style="font-size:11px;color:var(--gray-500);margin-top:2px">Es coherente: el potencial refleja capacidades y proyección; la madurez profesional refleja el seniority demostrado en contexto. Este perfil requiere exposición progresiva y acompañamiento para acelerar la madurez.</div>
             </div>
           </div>`;
         }
@@ -3166,16 +3142,6 @@ function showSaveIndicator(force) {
 // ═══════════════════════════════════════════════════════════════
 // TEAM OVERVIEW
 // ═══════════════════════════════════════════════════════════════
-function techOverlayBadge(p) {
-  const vals = Object.values(p.skills || {}).map(s => s.actual).filter(v => v > 0);
-  if(!vals.length) return '';
-  const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
-  if(avg >= 4) return '<span title="Técnico: Avanzado" style="font-size:10px">🟢</span>';
-  if(avg >= 3) return '<span title="Técnico: Intermedio" style="font-size:10px">🔵</span>';
-  if(avg >= 2) return '<span title="Técnico: Básico" style="font-size:10px">🟡</span>';
-  return '<span title="Técnico: Inicial" style="font-size:10px">🔴</span>';
-}
-
 function skillMatuLabel(p) {
   const vals = Object.values(p.skills || {}).map(s => s.actual).filter(v => v > 0);
   if(!vals.length) return '—';
@@ -3829,7 +3795,7 @@ function renderOverview() {
           ${trendBadge(potDelta)}
         </div>
       </td>
-      <td style="font-size:12px">${nb} ${techOverlayBadge(p)}</td>
+      <td style="font-size:12px">${nb}</td>
       <td style="font-size:12px">${skillMatuLabel(p)}</td>
       <td style="font-size:12px">${p.madurez.final||'—'}</td>
       <td><span style="color:${riskColor};font-size:12px">${p.risk.global||'—'}</span></td>
