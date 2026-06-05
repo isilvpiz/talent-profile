@@ -833,6 +833,30 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
               <tbody id="perf-tbody"></tbody>
             </table>
           </div>
+          <div class="card-body" style="border-top:1px solid var(--gray-200);padding:14px 18px">
+            <div style="font-size:12px;font-weight:600;color:var(--gray-800);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--blue-light);color:var(--blue);font-size:11px">🤝</span>
+              Feedback externo — Cliente / Stakeholder
+              <span style="font-size:10px;font-weight:400;color:var(--gray-400);margin-left:4px">Evidencia observable desde fuera del equipo</span>
+            </div>
+            <div style="display:grid;grid-template-columns:160px 1fr;gap:12px;align-items:start">
+              <div>
+                <label style="font-size:11px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px">Valoración (1–5)</label>
+                <select id="perf-feedback-score" onchange="autoSave()" style="width:100%;padding:6px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:13px;background:white">
+                  <option value="">— Sin dato —</option>
+                  <option value="1">1 — Muy por debajo</option>
+                  <option value="2">2 — Por debajo</option>
+                  <option value="3">3 — Cumple expectativas</option>
+                  <option value="4">4 — Supera expectativas</option>
+                  <option value="5">5 — Impacto diferencial</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:11px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px">Fuente y comentario</label>
+                <textarea id="perf-feedback-obs" rows="2" oninput="autoSave()" placeholder="ej: Encuesta satisfacción Q1 · NPS 8/10. Cliente destacó proactividad en hitos clave. PM indicó que comunica bien avances y gestiona bien las expectativas." style="width:100%;padding:6px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;resize:vertical;font-family:inherit"></textarea>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -2408,7 +2432,7 @@ function newProfileData(id, nombre, rol, color) {
   return {
     id, nombre, rol, color, created: new Date().toISOString(),
     general: { nombre, rol, nivel:"", ingreso:"", seniority:"", tiempo:"", lasteval:"", proyectos:"", entrevistador:"", notas:"" },
-    perf: { scores: perfScores, evidence: perfEvidence },
+    perf: { scores: perfScores, evidence: perfEvidence, feedbackScore: "", feedbackObs: "" },
     pot: { scores: potScores, evidence: potEvidence },
     skills: skillData,
     madurez: { dims: matData, final:"", gap:"", justif:"" },
@@ -2609,6 +2633,10 @@ function loadProfileToUI() {
 
   // Performance
   buildScoreTable('perf-tbody', PERF_DIMS, p.perf.scores, p.perf.evidence, 'perf', 'avg-perf');
+  const pfbScore = document.getElementById('perf-feedback-score');
+  const pfbObs   = document.getElementById('perf-feedback-obs');
+  if(pfbScore) pfbScore.value = p.perf.feedbackScore || '';
+  if(pfbObs)   pfbObs.value   = p.perf.feedbackObs   || '';
   // Potencial
   buildScoreTable('pot-tbody', POT_DIMS, p.pot.scores, p.pot.evidence, 'pot', 'avg-pot');
   // Skills
@@ -3083,6 +3111,9 @@ function autoSave() {
   p.rol    = p.general.rol    || p.rol;
   // Madurez
   p.madurez.final  = document.getElementById('mat-final')?.value || '';
+  // Perf feedback
+  p.perf.feedbackScore = document.getElementById('perf-feedback-score')?.value || '';
+  p.perf.feedbackObs   = document.getElementById('perf-feedback-obs')?.value   || '';
   p.madurez.gap    = document.getElementById('mat-gap')?.value || '';
   p.madurez.justif = document.getElementById('mat-justif')?.value || '';
   // Risk
@@ -3465,6 +3496,8 @@ function showMethodology() {
   document.getElementById('nav-overview-all').classList.remove('active');
   document.getElementById('nav-methodology').classList.add('active');
   document.getElementById('nav-role-comp').classList.remove('active');
+  document.getElementById('nav-manual')?.classList.remove('active');
+  document.getElementById('nav-home')?.classList.remove('active');
   renderSidebar();
   renderMethodologyBenchmarkTable();
 }
@@ -3487,6 +3520,8 @@ function showRoleCompetencies() {
   document.getElementById('nav-overview-all').classList.remove('active');
   document.getElementById('nav-methodology').classList.remove('active');
   document.getElementById('nav-role-comp').classList.add('active');
+  document.getElementById('nav-manual')?.classList.remove('active');
+  document.getElementById('nav-home')?.classList.remove('active');
   renderSidebar();
   renderRCView();
 }
@@ -3680,6 +3715,7 @@ function showOverview(filter) {
   document.getElementById('nav-methodology').classList.remove('active');
   document.getElementById('nav-role-comp').classList.remove('active');
   document.getElementById('nav-home')?.classList.remove('active');
+  document.getElementById('nav-manual')?.classList.remove('active');
   // Update nav active state
   document.getElementById('nav-overview-mine').classList.toggle('active', overviewFilter==='mine');
   document.getElementById('nav-overview-all').classList.toggle('active', overviewFilter==='all');
@@ -3906,7 +3942,7 @@ function showHome() {
     if(el) el.style.display = 'none';
   });
   document.getElementById('homeView').style.display = 'block';
-  ['nav-overview-mine','nav-overview-all','nav-methodology','nav-role-comp'].forEach(id => {
+  ['nav-overview-mine','nav-overview-all','nav-methodology','nav-role-comp','nav-manual'].forEach(id => {
     document.getElementById(id)?.classList.remove('active');
   });
   renderSidebar();
@@ -4064,7 +4100,7 @@ function confirmNewCycle() {
   Object.keys(oldP.risk.items).forEach(i => { newRiskData[i] = { estado: "", obs: "", accion: "" }; });
 
   // Apply reset
-  oldP.perf = { scores: newPerfScores, evidence: newPerfEvidence };
+  oldP.perf = { scores: newPerfScores, evidence: newPerfEvidence, feedbackScore: "", feedbackObs: "" };
   oldP.pot  = { scores: newPotScores,  evidence: newPotEvidence };
   oldP.skills = newSkills;
   oldP.madurez = { dims: newMatData, final: "", gap: "", justif: "" };
