@@ -583,8 +583,11 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
     </div>
     <div class="user-chip" id="userChip" onclick="doLogout()" style="display:none" title="Clic para cerrar sesión">
       <div class="user-avatar" id="userAvatar">?</div>
-      <span id="userName">—</span>
-      <span style="opacity:0.5;font-size:10px">salir</span>
+      <div style="display:flex;flex-direction:column;line-height:1.2;gap:0">
+        <span id="userName" style="font-size:12px;font-weight:500">—</span>
+        <span id="userRoleLabel" style="font-size:10px;opacity:0.6;text-transform:capitalize"></span>
+      </div>
+      <span style="opacity:0.4;font-size:10px">salir</span>
     </div>
     <button class="btn btn-ghost btn-sm" id="benchmarkBtn" onclick="openBenchmarkModal()" title="Editar benchmarks por Job Rol" style="display:none">⚖ Benchmarks</button>
     <button class="btn btn-ghost btn-sm" onclick="exportJSON()">Exportar JSON</button>
@@ -1890,6 +1893,8 @@ function onAuthSuccess(user) {
   const roleColors = { admin:'var(--blue)', director:'var(--purple)', manager:'var(--teal)', lider:'var(--green)' };
   document.getElementById('userAvatar').style.background = roleColors[role] || 'var(--gray-400)';
   document.getElementById('userChip').title = `${name} · ${role} — Clic para cerrar sesión`;
+  const roleLabel = document.getElementById('userRoleLabel');
+  if(roleLabel) roleLabel.textContent = role;
   if(isAdmin()) {
     document.body.classList.add('is-admin');
     document.getElementById('benchmarkBtn').style.display = '';
