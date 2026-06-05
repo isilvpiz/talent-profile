@@ -774,8 +774,8 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
           </div>
           <div class="card-body">
             <div class="form-grid">
-              <div class="form-group"><label>Nombre completo <span style="color:var(--red)">*</span></label><input type="text" id="g-nombre" oninput="autoSave()"></div>
-              <div class="form-group"><label>N° Empleado <span style="color:var(--red)">*</span></label><input type="text" id="g-nroEmpleado" placeholder="ej: 100234" oninput="autoSave()"></div>
+              <div class="form-group"><label>Nombre completo <span style="color:var(--red)">*</span></label><input type="text" id="g-nombre" readonly style="background:var(--gray-100);color:var(--gray-600);cursor:not-allowed"></div>
+              <div class="form-group"><label>N° Empleado <span style="color:var(--red)">*</span></label><input type="text" id="g-nroEmpleado" placeholder="ej: 100234" readonly style="background:var(--gray-100);color:var(--gray-600);cursor:not-allowed"></div>
               <div class="form-group"><label>Rol / Cargo actual <span style="color:var(--red)">*</span></label><input type="text" id="g-rol" oninput="autoSave()"></div>
               <div class="form-group"><label>Nivel jerárquico <span style="color:var(--red)">*</span></label>
                 <select id="g-nivel" onchange="autoSave()">
@@ -783,7 +783,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
                   <option>Staff</option><option>Líder</option><option>Manager</option>
                 </select>
               </div>
-              <div class="form-group"><label>Fecha de ingreso <span style="color:var(--red)">*</span></label><input type="date" id="g-ingreso" onchange="autoSave()"></div>
+              <div class="form-group"><label>Fecha de ingreso <span style="color:var(--red)">*</span></label><input type="date" id="g-ingreso" readonly style="background:var(--gray-100);color:var(--gray-600);cursor:not-allowed"></div>
               <div class="form-group"><label>Job Rol <span style="color:var(--red)">*</span></label>
                 <select id="g-seniority" onchange="onSeniorityChange()">
                   <option value="">— Seleccionar —</option>
@@ -809,7 +809,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
                   </optgroup>
                 </select>
               </div>
-              <div class="form-group"><label>Antigüedad en NTT <span style="color:var(--red)">*</span></label><input type="text" id="g-antiguedad" placeholder="ej: 2 años 3 meses" oninput="autoSave()"></div>
+              <div class="form-group"><label>Antigüedad en NTT <span style="color:var(--red)">*</span></label><input type="text" id="g-antiguedad" placeholder="ej: 2 años 3 meses" readonly style="background:var(--gray-100);color:var(--gray-600);cursor:not-allowed"></div>
               <div class="form-group"><label>Fecha de última evaluación <span style="color:var(--red)">*</span></label><input type="date" id="g-lasteval" onchange="autoSave()"></div>
               <div class="form-group full"><label>Squads / Proyectos actuales <span style="color:var(--red)">*</span></label><input type="text" id="g-proyectos" oninput="autoSave()"></div>
               <div class="form-group full"><label>Entrevistador(es) <span style="color:var(--red)">*</span></label><input type="text" id="g-entrevistador" placeholder="Nombre del manager que completa el perfil" oninput="autoSave()"></div>
@@ -852,7 +852,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
             </div>
             <div style="display:grid;grid-template-columns:160px 1fr;gap:12px;align-items:start">
               <div>
-                <label style="font-size:11px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px">Valoración (1–5)</label>
+                <label style="font-size:11px;color:var(--gray-600);font-weight:500;display:block;margin-bottom:4px">Valoración (1–5) <span style="color:var(--red)">*</span></label>
                 <select id="perf-feedback-score" onchange="autoSave()" style="width:100%;padding:6px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:13px;background:white">
                   <option value="">— Sin dato —</option>
                   <option value="1">1 — Muy por debajo</option>
@@ -966,7 +966,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
                 </select>
               </div>
               <div class="form-group"><label>Gap vs Job Rol</label><input type="text" id="mat-gap" oninput="autoSave()" placeholder="Se calcula automáticamente" readonly style="background:var(--gray-50);color:var(--gray-600)"></div>
-              <div class="form-group full"><label>Justificación del manager</label><textarea id="mat-justif" rows="2" oninput="autoSave()"></textarea></div>
+              <div class="form-group full"><label>Justificación del manager <span style="color:var(--red)">*</span></label><textarea id="mat-justif" rows="2" oninput="autoSave()"></textarea></div>
             </div>
           </div>
         </div>
@@ -1007,7 +1007,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
                 <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:8px">✅ Validación del manager</div>
                 <div class="form-grid" style="gap:10px">
                   <div class="form-group" style="margin-bottom:0">
-                    <label style="font-size:11px">Cuadrante validado</label>
+                    <label style="font-size:11px">Cuadrante validado <span style="color:var(--red)">*</span></label>
                     <select id="ninebox-validated" onchange="autoSave()">
                       <option value="">— Confirmar o ajustar —</option>
                       <option>⭐ Top talent</option>
@@ -1022,7 +1022,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
                     </select>
                   </div>
                   <div class="form-group" style="margin-bottom:0">
-                    <label style="font-size:11px">Aspiraciones declaradas</label>
+                    <label style="font-size:11px">Aspiraciones declaradas <span style="color:var(--red)">*</span></label>
                     <select id="ninebox-aspiraciones" onchange="autoSave()">
                       <option value="">— Seleccionar —</option>
                       <option>Crecer técnicamente (IC track)</option>
@@ -1080,10 +1080,10 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
                 </select>
               </div>
               <div class="form-group">
-                <label id="risk-nextrev-label">Próxima revisión de riesgo</label>
+                <label id="risk-nextrev-label">Próxima revisión de riesgo <span style="color:var(--red)">*</span></label>
                 <input type="date" id="risk-nextrev" onchange="autoSave()">
               </div>
-              <div class="form-group full"><label>Acción prioritaria de retención</label><textarea id="risk-accion" rows="2" oninput="autoSave()"></textarea></div>
+              <div class="form-group full"><label>Acción prioritaria de retención <span style="color:var(--red)">*</span></label><textarea id="risk-accion" rows="2" oninput="autoSave()"></textarea></div>
             </div>
           </div>
         </div>
@@ -1128,20 +1128,20 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
             <div class="form-grid">
               <div class="form-group">
                 <label style="display:flex;align-items:center;justify-content:space-between">
-                  Fortalezas clave (top 3)
+                  Fortalezas clave (top 3) <span style="color:var(--red)">*</span>
                   <button onclick="generateFortalezas()" class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 7px;color:var(--teal);border:1px solid var(--teal);background:var(--teal-light)" title="Generar desde scores">✨ Desde datos</button>
                 </label>
                 <textarea id="res-fortalezas" rows="3" oninput="autoSave()" placeholder="Ej: Alta autonomía técnica, fuerte ownership…"></textarea>
               </div>
               <div class="form-group">
                 <label style="display:flex;align-items:center;justify-content:space-between">
-                  Áreas de mejora prioritarias (top 3)
+                  Áreas de mejora prioritarias (top 3) <span style="color:var(--red)">*</span>
                   <button onclick="generateMejoras()" class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 7px;color:var(--orange);border:1px solid var(--orange);background:var(--orange-light)" title="Generar desde gaps">✨ Desde datos</button>
                 </label>
                 <textarea id="res-mejoras" rows="3" oninput="autoSave()" placeholder="Ej: Comunicación con stakeholders, visión sistémica…"></textarea>
               </div>
               <div class="form-group full">
-                <label>Decisión recomendada</label>
+                <label>Decisión recomendada <span style="color:var(--red)">*</span></label>
                 <select id="res-decision" onchange="autoSave()">
                   <option value="">— Seleccionar —</option>
                   <option>Promoción inmediata</option>
@@ -1152,8 +1152,8 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
                   <option>En observación</option>
                 </select>
               </div>
-              <div class="form-group full"><label>Justificación de la decisión</label><textarea id="res-justif" rows="2" oninput="autoSave()"></textarea></div>
-              <div class="form-group full"><label>Próximo hito / Checkpoint</label><input type="text" id="res-hito" placeholder="ej: Revisión Q3 — Septiembre 2025" oninput="autoSave()"></div>
+              <div class="form-group full"><label>Justificación de la decisión <span style="color:var(--red)">*</span></label><textarea id="res-justif" rows="2" oninput="autoSave()"></textarea></div>
+              <div class="form-group full"><label>Próximo hito / Checkpoint <span style="color:var(--red)">*</span></label><input type="text" id="res-hito" placeholder="ej: Revisión Q3 — Septiembre 2025" oninput="autoSave()"></div>
               <div class="form-group full"><label>Notas confidenciales del manager</label><textarea id="res-notas" rows="2" oninput="autoSave()"></textarea></div>
             </div>
           </div>
@@ -1572,14 +1572,14 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
         <button onclick="clearModalEquipoSelection()" style="background:none;border:none;cursor:pointer;color:#166534;font-size:13px;padding:0 2px">✕</button>
       </div>
     </div>
-    <div style="font-size:11px;color:var(--gray-400);text-align:center;margin-bottom:12px">— o completa manualmente —</div>
+    <div id="modal-equipo-required-msg" style="display:none;font-size:11px;color:var(--red);text-align:center;margin-bottom:8px;font-weight:500">⚠ Debes seleccionar un integrante del equipo para continuar</div>
     <div class="form-group" style="margin-bottom:12px">
       <label>Nombre completo</label>
-      <input type="text" id="modal-nombre" placeholder="ej: Ana García">
+      <input type="text" id="modal-nombre" placeholder="Selecciona desde equipo" readonly style="background:var(--gray-100);color:var(--gray-400);cursor:not-allowed">
     </div>
     <div class="form-group" style="margin-bottom:12px">
       <label>Job Rol</label>
-      <select id="modal-seniority">
+      <select id="modal-seniority" disabled style="background:var(--gray-100);color:var(--gray-400);cursor:not-allowed">
         <option value="">— Seleccionar —</option>
         <optgroup label="Track Técnico">
           <option>Junior Engineer</option><option>Engineer</option>
@@ -2608,10 +2608,10 @@ function calcCompleteness(p) {
   // Madurez profesional — nivel final obligatorio
   chk(!!p.madurez?.final);
 
-  // Flight risk — estado por cada ítem obligatorio; obs+acción si Alto
+  // Flight risk — estado por cada ítem obligatorio; obs+acción si Alto o Medio
   Object.values(p.risk?.items || {}).forEach(d => {
     chk(!!d.estado);
-    if(d.estado === 'Alto') {
+    if(d.estado === 'Alto' || d.estado === 'Medio') {
       chk(!!d.obs?.trim());
       chk(!!d.accion?.trim());
     }
@@ -2620,6 +2620,24 @@ function calcCompleteness(p) {
 
   // Resumen — decisión obligatoria para consolidado
   chk(!!p.resumen?.decision);
+  chk(!!p.resumen?.fortalezas?.trim());
+  chk(!!p.resumen?.mejoras?.trim());
+  chk(!!p.resumen?.justif?.trim());
+  chk(!!p.resumen?.hito?.trim());
+
+  // 9-Box — cuadrante validado y aspiraciones obligatorios
+  chk(!!p.ninebox?.validated);
+  chk(!!p.ninebox?.aspiraciones);
+
+  // Risk global — acción y próxima revisión obligatorios
+  chk(!!p.risk?.accion?.trim());
+  chk(!!p.risk?.nextrev);
+
+  // Madurez profesional — justificación obligatoria
+  chk(!!p.madurez?.justif?.trim());
+
+  // Performance — feedback score obligatorio
+  chk(!!p.perf?.feedbackScore);
 
   return total > 0 ? Math.round((done / total) * 100) : 0;
 }
@@ -2796,8 +2814,29 @@ function loadProfileToUI() {
   updateSummaryMetrics();
   updateSectionAlerts();
   updateTabProgress();
-}
 
+  // ── Restricción: Validación del manager solo para rol manager ──
+  const userRole = getUserRole();
+  const isManager = (userRole === 'manager' || userRole === 'admin');
+  const managerFields = ['ninebox-validated','ninebox-aspiraciones','ninebox-justif-valid'];
+  managerFields.forEach(fid => {
+    const el = document.getElementById(fid);
+    if(!el) return;
+    if(!isManager) {
+      el.disabled = true;
+      el.style.background = 'var(--gray-100)';
+      el.style.color = 'var(--gray-400)';
+      el.style.cursor = 'not-allowed';
+      el.title = 'Solo disponible para rol Manager';
+    } else {
+      el.disabled = false;
+      el.style.background = '';
+      el.style.color = '';
+      el.style.cursor = '';
+      el.title = '';
+    }
+  });
+}
 
 function getEvidencePlaceholder(prefix, i) {
   const perf = [
@@ -3015,6 +3054,9 @@ function buildRiskTable() {
   RISK_ITEMS.forEach((item, i) => {
     const d = p.risk.items[i] || {estado:'',obs:'',accion:''};
     const isAlto = d.estado === 'Alto';
+    const isMedio = d.estado === 'Medio';
+    const needsObs = isAlto || isMedio;
+    const obsStyle = needsObs ? `border-color:${isAlto?'var(--red)':'var(--amber)'};background:${isAlto?'#fff5f5':'#fffbeb'}` : '';
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td style="font-size:12px">${item}</td>
@@ -3026,8 +3068,8 @@ function buildRiskTable() {
           <option ${d.estado==='Bajo'?'selected':''} style="color:#16a34a">Bajo</option>
         </select>
       </td>
-      <td><textarea class="evidence-input" rows="1" placeholder="${isAlto?'⚠ Obligatorio…':'Obs…'}" style="${isAlto?'border-color:var(--red);background:#fff5f5':''}" onchange="setRiskObs(${i},this.value)">${d.obs||''}</textarea></td>
-      <td><textarea class="evidence-input" rows="1" placeholder="${isAlto?'⚠ Obligatorio…':'Acción…'}" style="${isAlto?'border-color:var(--red);background:#fff5f5':''}" onchange="setRiskAccion(${i},this.value)">${d.accion||''}</textarea></td>`;
+      <td><textarea class="evidence-input" rows="1" placeholder="${needsObs?'⚠ Obligatorio…':'Obs…'}" style="${obsStyle}" onchange="setRiskObs(${i},this.value)">${d.obs||''}</textarea></td>
+      <td><textarea class="evidence-input" rows="1" placeholder="${needsObs?'⚠ Obligatorio…':'Acción…'}" style="${obsStyle}" onchange="setRiskAccion(${i},this.value)">${d.accion||''}</textarea></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -3057,6 +3099,7 @@ function onRiskGlobalChange() {
 
 function setRiskObs(i,v){if(!currentId)return;profiles[currentId].risk.items[i].obs=v;autoSave();}
 function setRiskAccion(i,v){if(!currentId)return;profiles[currentId].risk.items[i].accion=v;autoSave();}
+function setRiskEstado(i,v){if(!currentId)return;profiles[currentId].risk.items[i].estado=v;autoSave();buildRiskTable();updateSectionAlerts();updateTabProgress();}
 
 // ═══════════════════════════════════════════════════════════════
 // IDP
@@ -4012,7 +4055,12 @@ function selectColor(el) {
 function createProfile() {
   const nombre   = document.getElementById('modal-nombre').value.trim();
   const seniority = document.getElementById('modal-seniority').value;
-  if(!nombre) { document.getElementById('modal-nombre').focus(); return; }
+  const msgEl = document.getElementById('modal-equipo-required-msg');
+  if(!nombre || !selectedEquipoMember) {
+    if(msgEl) msgEl.style.display = 'block';
+    return;
+  }
+  if(msgEl) msgEl.style.display = 'none';
   const id = 'p_' + Date.now();
   profiles[id] = newProfileData(id, nombre, '', selectedColor);
   const now = new Date().toISOString();
@@ -4609,6 +4657,9 @@ function renderModalEquipoList() {
 function selectModalEquipoMember(idx) {
   selectedEquipoMember = equipoData[idx];
   const m = selectedEquipoMember;
+  // Hide required msg if shown
+  const msgEl = document.getElementById('modal-equipo-required-msg');
+  if(msgEl) msgEl.style.display = 'none';
   // Fill manual fields
   document.getElementById('modal-nombre').value = m.nombre;
   // Try to set seniority to matching job rol
@@ -4881,9 +4932,19 @@ function getMissingFields(p) {
   if(!p.madurez?.final) missing.push('Madurez final');
   if(!p.risk?.global) missing.push('Risk global');
   if(!p.resumen?.decision) missing.push('Decisión');
+  if(!p.resumen?.fortalezas?.trim()) missing.push('Fortalezas clave');
+  if(!p.resumen?.mejoras?.trim()) missing.push('Áreas de mejora');
+  if(!p.resumen?.justif?.trim()) missing.push('Justificación decisión');
+  if(!p.resumen?.hito?.trim()) missing.push('Próximo hito');
+  if(!p.ninebox?.validated) missing.push('Cuadrante validado');
+  if(!p.ninebox?.aspiraciones) missing.push('Aspiraciones');
+  if(!p.risk?.accion?.trim()) missing.push('Acción prioritaria retención');
+  if(!p.risk?.nextrev) missing.push('Próxima revisión de riesgo');
+  if(!p.madurez?.justif?.trim()) missing.push('Justificación madurez');
+  if(!p.perf?.feedbackScore) missing.push('Score feedback calibración');
   const sp = Object.entries(p.skills||{}).filter(([,d])=>d.planActivo==='Sí'&&!d.plan?.trim()).length;
   if(sp) missing.push(`${sp} plan(es) skill vacío`);
-  const rp = Object.values(p.risk?.items||{}).filter(d=>d.estado==='Alto'&&(!d.obs?.trim()||!d.accion?.trim())).length;
+  const rp = Object.values(p.risk?.items||{}).filter(d=>(d.estado==='Alto'||d.estado==='Medio')&&(!d.obs?.trim()||!d.accion?.trim())).length;
   if(rp) missing.push(`${rp} indicador Alto sin obs/acción`);
   return missing;
 }
@@ -4912,10 +4973,9 @@ function calcSectionProgress() {
   const potFilled = potScores.filter(s => s > 0).length;
   results.potencial = potScores.length ? Math.round((potFilled / potScores.length) * 100) : 0;
 
-  // 9-Box (auto-calculated, just needs perf+pot)
+  // perfAvg/potAvg used later for 9-Box section progress
   const perfAvg = perfScores.length ? perfScores.reduce((a,b)=>a+b,0)/perfScores.length : 0;
   const potAvg  = potScores.length  ? potScores.reduce((a,b)=>a+b,0)/potScores.length   : 0;
-  results.ninebox = (perfAvg > 0 && potAvg > 0) ? 100 : (perfAvg > 0 || potAvg > 0 ? 50 : 0);
 
   // Skills — planActivo=Sí requires plan
   const skillEntries = Object.values(p.skills || {});
@@ -4932,8 +4992,9 @@ function calcSectionProgress() {
   const matDims = Object.values(p.madurez?.dims || {});
   const matFilled = matDims.filter(d => d.nivel).length;
   const matHasFinal = p.madurez?.final ? 1 : 0;
-  const matTotal = matDims.length + 1;
-  results.madurez = matTotal ? Math.round(((matFilled + matHasFinal) / matTotal) * 100) : 0;
+  const matHasJustif = p.madurez?.justif?.trim() ? 1 : 0;
+  const matTotal = matDims.length + 2;
+  results.madurez = matTotal ? Math.round(((matFilled + matHasFinal + matHasJustif) / matTotal) * 100) : 0;
 
   // Flight Risk
   const riskItems = Object.values(p.risk?.items || {});
@@ -4941,22 +5002,32 @@ function calcSectionProgress() {
   riskItems.forEach(d => {
     rTotal++;
     if(d.estado) rFilled++;
-    if(d.estado === 'Alto') {
+    if(d.estado === 'Alto' || d.estado === 'Medio') {
       rTotal += 2;
       if(d.obs?.trim()) rFilled++;
       if(d.accion?.trim()) rFilled++;
     }
   });
   rTotal++; if(p.risk?.global) rFilled++; // global
+  rTotal++; if(p.risk?.accion?.trim()) rFilled++; // acción retención
+  rTotal++; if(p.risk?.nextrev) rFilled++; // próxima revisión
   results.risk = rTotal ? Math.round((rFilled / rTotal) * 100) : 0;
 
   // IDP — optional but show how many items have data
   const idpItems = p.idp || [];
   results.idp = idpItems.length > 0 ? Math.min(100, idpItems.length * 25) : 0;
 
+  // 9-Box — include validated and aspiraciones
+  let nbTotal = 4, nbFilled = 0;
+  if(perfAvg > 0) nbFilled++;
+  if(potAvg > 0) nbFilled++;
+  if(p.ninebox?.validated) nbFilled++;
+  if(p.ninebox?.aspiraciones) nbFilled++;
+  results.ninebox = Math.round((nbFilled / nbTotal) * 100);
+
   // Resumen
-  const resFields = ['decision'];
-  const resFilled = resFields.filter(f => p.resumen?.[f]).length;
+  const resFields = ['decision','fortalezas','mejoras','justif','hito'];
+  const resFilled = resFields.filter(f => p.resumen?.[f]?.toString().trim()).length;
   results.resumen = Math.round((resFilled / resFields.length) * 100);
 
   return results;
