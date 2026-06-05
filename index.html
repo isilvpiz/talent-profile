@@ -586,7 +586,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
       <span id="userName">—</span>
       <span style="opacity:0.5;font-size:10px">salir</span>
     </div>
-    <button class="btn btn-ghost btn-sm" id="benchmarkBtn" onclick="openBenchmarkModal()" title="Editar benchmarks por seniority" style="display:none">⚖ Benchmarks</button>
+    <button class="btn btn-ghost btn-sm" id="benchmarkBtn" onclick="openBenchmarkModal()" title="Editar benchmarks por Job Rol" style="display:none">⚖ Benchmarks</button>
     <button class="btn btn-ghost btn-sm" onclick="exportJSON()">Exportar JSON</button>
     <button class="btn btn-teal btn-sm" onclick="openAddModal()">+ Nuevo perfil</button>
   </div>
@@ -768,6 +768,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
           <div class="card-body">
             <div class="form-grid">
               <div class="form-group"><label>Nombre completo <span style="color:var(--red)">*</span></label><input type="text" id="g-nombre" oninput="autoSave()"></div>
+              <div class="form-group"><label>N° Empleado <span style="color:var(--red)">*</span></label><input type="text" id="g-nroEmpleado" placeholder="ej: 100234" oninput="autoSave()"></div>
               <div class="form-group"><label>Rol / Cargo actual <span style="color:var(--red)">*</span></label><input type="text" id="g-rol" oninput="autoSave()"></div>
               <div class="form-group"><label>Nivel jerárquico <span style="color:var(--red)">*</span></label>
                 <select id="g-nivel" onchange="autoSave()">
@@ -776,7 +777,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
                 </select>
               </div>
               <div class="form-group"><label>Fecha de ingreso <span style="color:var(--red)">*</span></label><input type="date" id="g-ingreso" onchange="autoSave()"></div>
-              <div class="form-group"><label>Seniority declarado <span style="color:var(--red)">*</span></label>
+              <div class="form-group"><label>Job Rol <span style="color:var(--red)">*</span></label>
                 <select id="g-seniority" onchange="onSeniorityChange()">
                   <option value="">— Seleccionar —</option>
                   <optgroup label="Track Técnico">
@@ -801,7 +802,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
                   </optgroup>
                 </select>
               </div>
-              <div class="form-group"><label>Tiempo en el rol actual <span style="color:var(--red)">*</span></label><input type="text" id="g-tiempo" placeholder="ej: 8 meses" oninput="autoSave()"></div>
+              <div class="form-group"><label>Antigüedad en NTT <span style="color:var(--red)">*</span></label><input type="text" id="g-antiguedad" placeholder="ej: 2 años 3 meses" oninput="autoSave()"></div>
               <div class="form-group"><label>Fecha de última evaluación <span style="color:var(--red)">*</span></label><input type="date" id="g-lasteval" onchange="autoSave()"></div>
               <div class="form-group full"><label>Squads / Proyectos actuales <span style="color:var(--red)">*</span></label><input type="text" id="g-proyectos" oninput="autoSave()"></div>
               <div class="form-group full"><label>Entrevistador(es) <span style="color:var(--red)">*</span></label><input type="text" id="g-entrevistador" placeholder="Nombre del manager que completa el perfil" oninput="autoSave()"></div>
@@ -957,7 +958,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
                   <option>5 — Líder estratégico (Chief/Evangelist)</option>
                 </select>
               </div>
-              <div class="form-group"><label>Gap vs seniority declarado</label><input type="text" id="mat-gap" oninput="autoSave()" placeholder="Se calcula automáticamente" readonly style="background:var(--gray-50);color:var(--gray-600)"></div>
+              <div class="form-group"><label>Gap vs Job Rol</label><input type="text" id="mat-gap" oninput="autoSave()" placeholder="Se calcula automáticamente" readonly style="background:var(--gray-50);color:var(--gray-600)"></div>
               <div class="form-group full"><label>Justificación del manager</label><textarea id="mat-justif" rows="2" oninput="autoSave()"></textarea></div>
             </div>
           </div>
@@ -1183,7 +1184,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
           <table class="team-table" id="overviewTable" style="min-width:900px">
             <thead>
               <tr>
-                <th style="min-width:160px">Nombre</th><th style="min-width:120px">Rol</th><th style="min-width:80px">Nivel</th><th style="min-width:100px">Seniority</th>
+                <th style="min-width:160px">Nombre</th><th style="min-width:120px">Rol</th><th style="min-width:80px">Nivel</th><th style="min-width:100px">Job Rol</th>
                 <th style="min-width:70px">Perf.</th><th style="min-width:80px">Potencial</th><th style="min-width:140px">9-Box</th>
                 <th style="min-width:100px">Mad. Técnica</th><th style="min-width:120px">Mad. Profesional</th><th style="min-width:90px">Risk</th><th style="min-width:140px">Decisión</th>
                 <th style="min-width:120px">Última eval.</th><th style="min-width:100px">Evaluador</th>
@@ -1192,7 +1193,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
                 <td style="padding:4px 6px"><input id="filter-nombre" type="text" placeholder="🔍 Nombre" oninput="renderOverview()" style="width:100%;font-size:11px;padding:3px 6px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"></td>
                 <td style="padding:4px 6px"><input id="filter-rol" type="text" placeholder="🔍 Rol" oninput="renderOverview()" style="width:100%;font-size:11px;padding:3px 6px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"></td>
                 <td style="padding:4px 6px"><select id="filter-nivel" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option>Staff</option><option>Líder</option><option>Manager</option><option>Director</option></select></td>
-                <td style="padding:4px 6px"><select id="filter-seniority" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option>Junior</option><option>Semi Senior</option><option>Senior</option><option>Staff</option><option>Principal / Lead</option></select></td>
+                <td style="padding:4px 6px"><select id="filter-seniority" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option>Junior Engineer</option><option>Engineer</option><option>Lead Engineer</option><option>Expert Engineer</option><option>Chief Architect</option><option>Junior Analyst</option><option>Analyst</option><option>Lead Analyst</option><option>Expert Analyst</option><option>Project Leader</option><option>Sr. Technical PL</option><option>Evangelist</option></select></td>
                 <td style="padding:4px 6px"><select id="filter-perf" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option value="4">≥ 4</option><option value="3">≥ 3</option><option value="2">≤ 2</option></select></td>
                 <td style="padding:4px 6px"><select id="filter-pot" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option value="4">≥ 4</option><option value="3">≥ 3</option><option value="2">≤ 2</option></select></td>
                 <td style="padding:4px 6px"><select id="filter-ninebox" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option>⭐ Top talent</option><option>🚀 High performer</option><option>💡 Alto potencial</option><option>✅ Core contributor</option><option>📈 En desarrollo</option><option>⚠️ Under review</option></select></td>
@@ -1327,7 +1328,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
           <div class="card-header"><div class="card-header-dot" style="background:var(--teal)"></div><span class="card-title">Ciclo de vida de un perfil</span></div>
           <div class="card-body">
             <div style="display:flex;align-items:center;gap:0;margin-bottom:18px;overflow-x:auto;padding-bottom:6px">
-              <div style="flex-shrink:0;text-align:center;padding:0 10px"><div style="width:42px;height:42px;border-radius:50%;background:var(--gray-200);border:2px solid var(--gray-400);display:flex;align-items:center;justify-content:center;font-size:16px;margin:0 auto 4px">➕</div><div style="font-size:11px;font-weight:600">Crear</div><div style="font-size:10px;color:var(--gray-400);max-width:80px">Nombre + Seniority</div></div>
+              <div style="flex-shrink:0;text-align:center;padding:0 10px"><div style="width:42px;height:42px;border-radius:50%;background:var(--gray-200);border:2px solid var(--gray-400);display:flex;align-items:center;justify-content:center;font-size:16px;margin:0 auto 4px">➕</div><div style="font-size:11px;font-weight:600">Crear</div><div style="font-size:10px;color:var(--gray-400);max-width:80px">Nombre + Job Rol</div></div>
               <div style="font-size:18px;color:var(--gray-300);flex-shrink:0">→</div>
               <div style="flex-shrink:0;text-align:center;padding:0 10px"><div style="width:42px;height:42px;border-radius:50%;background:#dbeafe;border:2px solid var(--blue);display:flex;align-items:center;justify-content:center;font-size:16px;margin:0 auto 4px">✏️</div><div style="font-size:11px;font-weight:600">Completar</div><div style="font-size:10px;color:var(--gray-400);max-width:80px">Solo en Mis perfiles</div></div>
               <div style="font-size:18px;color:var(--gray-300);flex-shrink:0">→</div>
@@ -1372,13 +1373,13 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
             <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--blue)">🔑 Capacidades exclusivas</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
               <div style="padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:3px">✏️ Editar dimensiones</div><div style="font-size:11px;color:var(--gray-700)">Botón "✏" en Performance y Potencial. Agrega, elimina o renombra dimensiones. Impacta perfiles nuevos.</div></div>
-              <div style="padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:3px">📊 Editar benchmarks</div><div style="font-size:11px;color:var(--gray-700)">Botón "📊 Benchmarks" en topbar. Define scores esperados por seniority. Base del cálculo de gap vs rol.</div></div>
+              <div style="padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:3px">📊 Editar benchmarks</div><div style="font-size:11px;color:var(--gray-700)">Botón "📊 Benchmarks" en topbar. Define scores esperados por Job Rol. Base del cálculo de gap vs rol.</div></div>
               <div style="padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:3px">👁 Ver todos los perfiles</div><div style="font-size:11px;color:var(--gray-700)">Vista Consolidada: todos los perfiles cerrados de todos los managers. Sin filtros de jerarquía.</div></div>
               <div style="padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:3px">🔄 Configurar roles</div><div style="font-size:11px;color:var(--gray-700)">Desde Supabase dashboard: asignar role en user_metadata (admin/director/manager/lider).</div></div>
             </div>
             <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--blue)">📋 Flujo recomendado</div>
             <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
-              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--blue);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div><div style="font-size:12px;font-weight:600">Configuración inicial</div><div style="font-size:11px;color:var(--gray-600)">Ajustar benchmarks por seniority (Topbar → 📊). Validar dimensiones relevantes para el contexto.</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--blue);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div><div style="font-size:12px;font-weight:600">Configuración inicial</div><div style="font-size:11px;color:var(--gray-600)">Ajustar benchmarks por Job Rol (Topbar → 📊). Validar dimensiones relevantes para el contexto.</div></div></div>
               <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--blue);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div><div><div style="font-size:12px;font-weight:600">Durante el ciclo</div><div style="font-size:11px;color:var(--gray-600)">Monitorear completitud en Mis perfiles. Hacer seguimiento a managers con perfiles incompletos.</div></div></div>
               <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--blue);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div><div><div style="font-size:12px;font-weight:600">Al cierre</div><div style="font-size:11px;color:var(--gray-600)">Revisar Vista Todos. Identificar Top Talent con riesgo Alto, concentración en Under Review, tendencias ▲▼.</div></div></div>
               <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--blue);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div><div><div style="font-size:12px;font-weight:600">Nuevo ciclo</div><div style="font-size:11px;color:var(--gray-600)">Coordinar fecha con managers. El nuevo ciclo se activa por perfil individual — no es reset global.</div></div></div>
@@ -1419,7 +1420,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
             <p style="font-size:13px;color:var(--gray-600);margin-bottom:14px">Evaluador principal. Crea, completa y cierra perfiles de su equipo directo. Visibilidad: sus perfiles en cualquier estado + perfiles cerrados de Staff en Vista Consolidada.</p>
             <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--teal)">📋 Paso a paso — completar un perfil</div>
             <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
-              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--teal);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div><div style="font-size:12px;font-weight:600">Crear perfil</div><div style="font-size:11px;color:var(--gray-600)">"+ Nuevo perfil" desde home o sidebar. Solo Nombre + Seniority. El resto se completa en el perfil.</div></div></div>
+              <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--teal);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div><div style="font-size:12px;font-weight:600">Crear perfil</div><div style="font-size:11px;color:var(--gray-600)">"+ Nuevo perfil" desde home o sidebar. Solo Nombre + Job Rol. El resto se completa en el perfil.</div></div></div>
               <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--teal);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div><div><div style="font-size:12px;font-weight:600">Datos generales</div><div style="font-size:11px;color:var(--gray-600)">Todos los campos * son obligatorios. Completar primero sube el % rápidamente.</div></div></div>
               <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--teal);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div><div><div style="font-size:12px;font-weight:600">Performance y Potencial</div><div style="font-size:11px;color:var(--gray-600)">Score 1–5 por dimensión. Gap vs benchmark automático. Evidencia no obligatoria pero mejora calidad.</div></div></div>
               <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--teal);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div><div><div style="font-size:12px;font-weight:600">Madurez técnica</div><div style="font-size:11px;color:var(--gray-600)">Nivel actual + objetivo por skill. Si activas ¿Plan?=Sí, descripción del plan obligatoria. Gap alimenta IDP.</div></div></div>
@@ -1459,11 +1460,11 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
       <!-- TAB BENCHMARKS -->
       <div id="guide-tab-benchmarks" class="guide-tab-content" style="display:none">
         <div class="card">
-          <div class="card-header"><div class="card-header-dot" style="background:var(--navy)"></div><span class="card-title">Benchmarks por Seniority</span>
+          <div class="card-header"><div class="card-header-dot" style="background:var(--navy)"></div><span class="card-title">Benchmarks por Job Rol</span>
             <span class="card-subtitle" style="margin-left:auto"><button class="btn btn-ghost btn-sm admin-edit-btn" onclick="openBenchmarkModal()" style="font-size:11px">✏ Editar (admin)</button></span>
           </div>
           <div class="card-body">
-            <p style="font-size:13px;margin-bottom:12px">Scores esperados por seniority y dimensión. Usados para calcular el <strong>gap vs rol</strong> en Performance y Potencial. Gap negativo = supera expectativas. Gap positivo = brecha a desarrollar. Editables por admin.</p>
+            <p style="font-size:13px;margin-bottom:12px">Scores esperados por Job Rol y dimensión. Usados para calcular el <strong>gap vs rol</strong> en Performance y Potencial. Gap negativo = supera expectativas. Gap positivo = brecha a desarrollar. Editables por admin.</p>
             <div id="methodologyBenchmarkTable"></div>
           </div>
         </div>
@@ -1527,7 +1528,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
       <input type="text" id="modal-nombre" placeholder="ej: Ana García">
     </div>
     <div class="form-group" style="margin-bottom:12px">
-      <label>Seniority declarado</label>
+      <label>Job Rol</label>
       <select id="modal-seniority">
         <option value="">— Seleccionar —</option>
         <optgroup label="Track Técnico">
@@ -1584,7 +1585,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
 <!-- BENCHMARK EDITOR MODAL -->
 <div class="modal-overlay" id="benchmarkModal">
   <div class="modal" style="width:720px;max-height:85vh;overflow-y:auto">
-    <h3>⚖ Benchmarks por Seniority</h3>
+    <h3>⚖ Benchmarks por Job Rol</h3>
     <p style="font-size:12px;color:var(--gray-400);margin-bottom:16px">Define el score esperado (1–5) por dimensión y nivel. Estos valores se usan para calcular el gap en Performance y Potencial.</p>
     <div id="benchmarkEditorContent"></div>
     <div class="modal-actions" style="margin-top:16px">
@@ -1646,7 +1647,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
     <h3>🔄 Iniciar nuevo ciclo de evaluación</h3>
     <p>El ciclo actual quedará guardado como historial. Se creará una nueva evaluación para esta persona con los datos generales conservados y todos los scores en blanco.</p>
     <div style="background:var(--gray-50);border-radius:8px;padding:12px;font-size:12px;color:var(--gray-600);margin-bottom:14px">
-      <strong>¿Qué se conserva?</strong> Nombre, Rol, Seniority, Proyectos, Entrevistador, Skills (niveles actuales → nueva base).<br><br>
+      <strong>¿Qué se conserva?</strong> Nombre, Rol, Job Rol, Proyectos, Entrevistador, Skills (niveles actuales → nueva base).<br><br>
       <strong>¿Qué se resetea?</strong> Scores de Performance, Potencial, Madurez técnica (targets), Madurez profesional, Flight Risk, 9-Box y Resumen.
     </div>
     <div class="form-group" style="margin-bottom:16px">
@@ -2461,7 +2462,7 @@ function newProfileData(id, nombre, rol, color) {
   RISK_ITEMS.forEach((_, i) => { riskData[i] = {estado:"", obs:"", accion:""}; });
   return {
     id, nombre, rol, color, created: new Date().toISOString(),
-    general: { nombre, rol, nivel:"", ingreso:"", seniority:"", tiempo:"", lasteval:"", proyectos:"", entrevistador:"", notas:"" },
+    general: { nombre, rol, nivel:"", ingreso:"", seniority:"", nroEmpleado:"", antiguedad:"", lasteval:"", proyectos:"", entrevistador:"", notas:"" },
     perf: { scores: perfScores, evidence: perfEvidence, feedbackScore: "", feedbackObs: "" },
     pot: { scores: potScores, evidence: potEvidence },
     skills: skillData,
@@ -2492,7 +2493,8 @@ function calcCompleteness(p) {
   chk(!!p.general?.nivel);
   chk(!!p.general?.ingreso);
   chk(!!p.general?.seniority);
-  chk(!!p.general?.tiempo);
+  chk(!!p.general?.nroEmpleado);
+  chk(!!p.general?.antiguedad);
   chk(!!p.general?.lasteval);
   chk(!!p.general?.proyectos);
   chk(!!p.general?.entrevistador);
@@ -2611,6 +2613,7 @@ function loadProfileToUI() {
   document.getElementById('profileMeta').textContent =
     (p.rol || '') +
     (p.general.seniority ? ' · ' + p.general.seniority : '') +
+    (p.general.nroEmpleado ? ' · #' + p.general.nroEmpleado : '') +
     (p._cycle && p._cycle > 1 ? ` · Ciclo ${p._cycle}` : '');
 
   // Closed state — banner and button visibility
@@ -2656,7 +2659,7 @@ function loadProfileToUI() {
   if(alertDiv) alertDiv.style.display = 'none';
 
   // General
-  ['nombre','rol','nivel','ingreso','seniority','tiempo','lasteval','proyectos','entrevistador','notas'].forEach(f => {
+  ['nombre','rol','nivel','ingreso','seniority','nroEmpleado','antiguedad','lasteval','proyectos','entrevistador','notas'].forEach(f => {
     const el = document.getElementById('g-'+f);
     if(el) el.value = p.general[f] || '';
   });
@@ -3133,7 +3136,7 @@ function autoSave() {
   if(!currentId) return;
   const p = profiles[currentId];
   // Read all general fields
-  ['nombre','rol','nivel','ingreso','seniority','tiempo','lasteval','proyectos','entrevistador','notas'].forEach(f => {
+  ['nombre','rol','nivel','ingreso','seniority','nroEmpleado','antiguedad','lasteval','proyectos','entrevistador','notas'].forEach(f => {
     const el = document.getElementById('g-'+f);
     if(el) p.general[f] = el.value;
   });
@@ -3178,7 +3181,7 @@ function autoSave() {
     document.getElementById('complPct').style.color = col2;
   }
   document.getElementById('profileName').textContent = p.nombre || '(sin nombre)';
-  document.getElementById('profileMeta').textContent = (p.rol||'') + (p.general.seniority ? ' · '+p.general.seniority : '');
+  document.getElementById('profileMeta').textContent = (p.rol||'') + (p.general.seniority ? ' · '+p.general.seniority : '') + (p.general.nroEmpleado ? ' · #'+p.general.nroEmpleado : '');
   // Debounce Supabase push — 2s after last change
   clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(() => {
@@ -4213,7 +4216,7 @@ function getManualHtml(role) {
         <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--blue)">🔑 Capacidades exclusivas</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
           <div style="padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:3px">✏️ Editar dimensiones</div><div style="font-size:11px;color:var(--gray-700)">Botón "✏" en Performance y Potencial. Agrega, elimina o renombra dimensiones. Impacta perfiles nuevos.</div></div>
-          <div style="padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:3px">📊 Editar benchmarks</div><div style="font-size:11px;color:var(--gray-700)">Botón "📊 Benchmarks" en topbar. Define scores esperados por seniority. Base del cálculo de gap vs rol.</div></div>
+          <div style="padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:3px">📊 Editar benchmarks</div><div style="font-size:11px;color:var(--gray-700)">Botón "📊 Benchmarks" en topbar. Define scores esperados por Job Rol. Base del cálculo de gap vs rol.</div></div>
           <div style="padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:3px">👁 Ver todos los perfiles</div><div style="font-size:11px;color:var(--gray-700)">Vista Consolidada: acceso completo a todos los perfiles cerrados, sin filtros de jerarquía.</div></div>
           <div style="padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:3px">🔄 Configurar roles</div><div style="font-size:11px;color:var(--gray-700)">Desde Supabase: asignar role en user_metadata (admin/director/manager/lider).</div></div>
         </div>
@@ -4258,7 +4261,7 @@ function getManualHtml(role) {
         </div>
         <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--teal)">📋 Completar un perfil — paso a paso</div>
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
-          ${[['Crear perfil','"+ Nuevo perfil" desde home o sidebar. Solo Nombre + Seniority. El resto se completa dentro del perfil.'],['Datos generales','Todos los campos * son obligatorios. Completarlos primero sube el % rápidamente.'],['Performance y Potencial','Score 1–5 por dimensión. Gap vs benchmark calculado automáticamente. Evidencia opcional pero recomendada.'],['Madurez técnica','Nivel actual + objetivo por skill. Si activas ¿Plan?=Sí, la descripción del plan se vuelve obligatoria.'],['Madurez profesional','6 dimensiones. El nivel final es la señal más importante para decisiones de promoción.'],['9-Box','Calculado automáticamente. Ajusta en "Cuadrante validado" si el contexto lo requiere.'],['Flight Risk','Si marcas Alto en algún indicador, observación y acción se vuelven obligatorios.'],['IDP','Acciones derivadas de los gaps técnicos. "⚡ Sugerir desde gaps" genera un punto de partida.'],['Resumen','"✨ Desde datos" propone fortalezas y mejoras desde los scores. La Decisión es obligatoria para cerrar.'],['Cerrar perfil','Solo disponible al 100%. Aparece en Vista Consolidada. Registra quién cerró y cuándo.']].map(([t,d],i)=>`
+          ${[['Crear perfil','"+ Nuevo perfil" desde home o sidebar. Solo Nombre + Job Rol. El resto se completa dentro del perfil.'],['Datos generales','Todos los campos * son obligatorios. Completarlos primero sube el % rápidamente.'],['Performance y Potencial','Score 1–5 por dimensión. Gap vs benchmark calculado automáticamente. Evidencia opcional pero recomendada.'],['Madurez técnica','Nivel actual + objetivo por skill. Si activas ¿Plan?=Sí, la descripción del plan se vuelve obligatoria.'],['Madurez profesional','6 dimensiones. El nivel final es la señal más importante para decisiones de promoción.'],['9-Box','Calculado automáticamente. Ajusta en "Cuadrante validado" si el contexto lo requiere.'],['Flight Risk','Si marcas Alto en algún indicador, observación y acción se vuelven obligatorios.'],['IDP','Acciones derivadas de los gaps técnicos. "⚡ Sugerir desde gaps" genera un punto de partida.'],['Resumen','"✨ Desde datos" propone fortalezas y mejoras desde los scores. La Decisión es obligatoria para cerrar.'],['Cerrar perfil','Solo disponible al 100%. Aparece en Vista Consolidada. Registra quién cerró y cuándo.']].map(([t,d],i)=>`
           <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--teal);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div><div><div style="font-size:12px;font-weight:600">${t}</div><div style="font-size:11px;color:var(--gray-600)">${d}</div></div></div>`).join('')}
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
@@ -4279,7 +4282,7 @@ function getManualHtml(role) {
         </div>
         <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--green)">📋 Completar un perfil — paso a paso</div>
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
-          <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--green);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div><div style="font-size:12px;font-weight:600">Crear perfil</div><div style="font-size:11px;color:var(--gray-600)">"+ Nuevo perfil" desde home o sidebar. Solo Nombre + Seniority. El resto se completa dentro del perfil.</div></div></div>
+          <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--green);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div><div style="font-size:12px;font-weight:600">Crear perfil</div><div style="font-size:11px;color:var(--gray-600)">"+ Nuevo perfil" desde home o sidebar. Solo Nombre + Job Rol. El resto se completa dentro del perfil.</div></div></div>
           <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--green);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div><div><div style="font-size:12px;font-weight:600">Datos generales</div><div style="font-size:11px;color:var(--gray-600)">Todos los campos * son obligatorios. Completarlos primero sube el % rápidamente.</div></div></div>
           <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--green);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div><div><div style="font-size:12px;font-weight:600">Madurez técnica primero</div><div style="font-size:11px;color:var(--gray-600)">Como líder técnico tienes la mejor perspectiva del gap técnico real. Nivel actual + objetivo por skill.</div></div></div>
           <div style="display:flex;gap:10px"><div style="min-width:20px;height:20px;border-radius:50%;background:var(--green);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div><div><div style="font-size:12px;font-weight:600">Performance y Potencial</div><div style="font-size:11px;color:var(--gray-600)">Score 1–5 por dimensión. Agrega evidencia cuando el score sea ≤2 o ≥4 — es tu respaldo en conversaciones difíciles.</div></div></div>
@@ -4517,8 +4520,9 @@ function getMissingFields(p) {
   if(!g.rol) missing.push('Rol');
   if(!g.nivel) missing.push('Nivel jerárquico');
   if(!g.ingreso) missing.push('Ingreso');
-  if(!g.seniority) missing.push('Seniority');
-  if(!g.tiempo) missing.push('Tiempo en rol');
+  if(!g.seniority) missing.push('Job Rol');
+  if(!g.nroEmpleado) missing.push('N° Empleado');
+  if(!g.antiguedad) missing.push('Antigüedad en NTT');
   if(!g.lasteval) missing.push('Última evaluación');
   if(!g.proyectos) missing.push('Proyectos');
   if(!g.entrevistador) missing.push('Entrevistador');
@@ -4546,7 +4550,7 @@ function calcSectionProgress() {
   const results = {};
 
   // General
-  const genFields = ['nombre','rol','nivel','ingreso','seniority','tiempo','lasteval','proyectos','entrevistador'];
+  const genFields = ['nombre','rol','nivel','ingreso','seniority','nroEmpleado','antiguedad','lasteval','proyectos','entrevistador'];
   const genFilled = genFields.filter(f => g[f] && String(g[f]).trim()).length;
   results.general = Math.round((genFilled / genFields.length) * 100);
 
@@ -4758,8 +4762,9 @@ function updateSectionAlerts() {
   if(!g.rol) genMissing.push('Rol / Cargo');
   if(!g.nivel) genMissing.push('Nivel jerárquico');
   if(!g.ingreso) genMissing.push('Fecha de ingreso');
-  if(!g.seniority) genMissing.push('Seniority');
-  if(!g.tiempo) genMissing.push('Tiempo en el rol');
+  if(!g.seniority) genMissing.push('Job Rol');
+  if(!g.nroEmpleado) genMissing.push('N° Empleado');
+  if(!g.antiguedad) genMissing.push('Antigüedad en NTT');
   if(!g.lasteval) genMissing.push('Última evaluación');
   if(!g.proyectos) genMissing.push('Proyectos');
   if(!g.entrevistador) genMissing.push('Entrevistador');
