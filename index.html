@@ -1522,7 +1522,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
 
     <!-- EQUIPO VIEW -->
     <div id="equipoView" style="display:none">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:10px">
         <div>
           <div style="font-size:18px;font-weight:600">👥 Equipo</div>
           <div style="font-size:12px;color:var(--gray-400)" id="equipo-subtitle">Directorio de integrantes · Data &amp; AI NTT DATA</div>
@@ -1532,16 +1532,19 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
           <button class="btn btn-teal btn-sm" onclick="openEquipoAddModal()">+ Agregar</button>
         </div>
       </div>
+      <!-- Contador de perfiles -->
+      <div id="equipo-profile-counter" style="display:flex;gap:10px;margin-bottom:1rem;flex-wrap:wrap"></div>
       <div class="card" style="overflow:hidden">
         <div style="overflow-x:auto">
-          <table class="score-table" id="equipo-table" style="min-width:700px">
+          <table class="score-table" id="equipo-table" style="min-width:750px">
             <thead><tr>
               <th style="width:90px">N° Empleado</th>
               <th>Nombre</th>
-              <th style="width:200px">Job Rol</th>
+              <th style="width:190px">Job Rol</th>
               <th style="width:110px">Fecha Ingreso</th>
-              <th style="width:140px">Antigüedad</th>
-              <th style="width:100px;text-align:center">Acciones</th>
+              <th style="width:130px">Antigüedad</th>
+              <th style="width:80px;text-align:center">Perfil</th>
+              <th style="width:90px;text-align:center">Acciones</th>
             </tr></thead>
             <tbody id="equipo-tbody"></tbody>
           </table>
@@ -4441,23 +4444,75 @@ function renderEquipoTable() {
     (m.jobRol||'').toLowerCase().includes(q)
   ).sort((a,b) => a.nombre.localeCompare(b.nombre));
 
+  // Build lookup: nroEmpleado → profileId (any cycle, any state)
+  const profileByNro = {};
+  const profileByNombre = {};
+  Object.entries(profiles).forEach(([pid, p]) => {
+    const nro = p.general?.nroEmpleado;
+    const nom = (p.general?.nombre || p.nombre || '').trim().toLowerCase();
+    if(nro) profileByNro[nro] = pid;
+    if(nom) profileByNombre[nom] = pid;
+  });
+
+  // Count how many equipo members have a profile
+  const totalWithProfile = equipoData.filter(m => {
+    const hasNro = m.nroEmpleado && profileByNro[m.nroEmpleado];
+    const hasNom = profileByNombre[(m.nombre||'').trim().toLowerCase()];
+    return !!(hasNro || hasNom);
+  }).length;
+
+  // Counter widget
+  const counter = document.getElementById('equipo-profile-counter');
+  if(counter) {
+    const pct = equipoData.length ? Math.round(totalWithProfile / equipoData.length * 100) : 0;
+    const remaining = equipoData.length - totalWithProfile;
+    counter.innerHTML = `
+      <div style="display:flex;align-items:center;gap:14px;padding:10px 16px;background:white;border:1px solid var(--gray-200);border-radius:8px;flex:1;min-width:200px">
+        <div style="font-size:28px;font-weight:700;color:var(--navy);line-height:1">${totalWithProfile}<span style="font-size:16px;color:var(--gray-400);font-weight:400">/${equipoData.length}</span></div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--gray-800)">Perfiles creados</div>
+          <div style="font-size:11px;color:var(--gray-400)">${pct}% del equipo evaluado</div>
+        </div>
+        <div style="margin-left:auto;width:80px">
+          <div style="height:6px;background:var(--gray-200);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${pct>=80?'var(--green)':pct>=40?'var(--amber)':'var(--red)'};border-radius:3px;transition:width 0.4s"></div>
+          </div>
+          <div style="font-size:10px;color:var(--gray-400);margin-top:3px;text-align:right">${remaining} sin perfil</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:white;border:1px solid var(--gray-200);border-radius:8px">
+        <div style="width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0"></div>
+        <div style="font-size:12px;color:var(--gray-700)">Con perfil: <strong>${totalWithProfile}</strong></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:white;border:1px solid var(--gray-200);border-radius:8px">
+        <div style="width:10px;height:10px;border-radius:50%;background:var(--gray-300);flex-shrink:0"></div>
+        <div style="font-size:12px;color:var(--gray-700)">Sin perfil: <strong>${remaining}</strong></div>
+      </div>`;
+  }
+
   const sub = document.getElementById('equipo-subtitle');
   if(sub) sub.textContent = `${filtered.length} de ${equipoData.length} integrantes · Data & AI NTT DATA`;
 
   const tbody = document.getElementById('equipo-tbody');
   if(!tbody) return;
   if(!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--gray-400)">Sin resultados para la búsqueda</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--gray-400)">Sin resultados para la búsqueda</td></tr>';
     return;
   }
-  tbody.innerHTML = filtered.map((m, fi) => {
+  tbody.innerHTML = filtered.map((m) => {
     const idx = equipoData.indexOf(m);
+    const pid = (m.nroEmpleado && profileByNro[m.nroEmpleado]) || profileByNombre[(m.nombre||'').trim().toLowerCase()];
+    const hasProfile = !!pid;
+    const profileBadge = hasProfile
+      ? `<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--green-light);color:var(--green);cursor:pointer" onclick="openProfile('${pid}')" title="Abrir perfil">✓ Sí</span>`
+      : `<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:var(--gray-100);color:var(--gray-400)">— No</span>`;
     return `<tr>
       <td style="font-family:var(--mono,monospace);font-size:11px">${m.nroEmpleado}</td>
       <td style="font-weight:500">${m.nombre}</td>
       <td><span style="font-size:11px;padding:2px 7px;border-radius:4px;background:var(--gray-100);color:var(--gray-700)">${m.jobRol||'—'}</span></td>
       <td style="font-size:12px;color:var(--gray-600)">${m.ingreso||'—'}</td>
       <td style="font-size:12px;color:var(--gray-600)">${m.antiguedad||'—'}</td>
+      <td style="text-align:center">${profileBadge}</td>
       <td style="text-align:center">
         <button onclick="editEquipoMember(${idx})" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 5px;color:var(--blue)" title="Editar">✏️</button>
         <button onclick="deleteEquipoMember(${idx})" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 5px;color:var(--red)" title="Eliminar">🗑</button>
