@@ -85,10 +85,10 @@ body {
   width: 260px; flex-shrink: 0;
   background: var(--white);
   border-right: 1px solid var(--gray-200);
-  padding: 1.5rem 0;
   position: sticky; top: 56px;
   height: calc(100vh - 56px);
-  overflow-y: auto;
+  display: flex; flex-direction: column;
+  overflow: hidden;
 }
 .sidebar-section { margin-bottom: 1.5rem; }
 .sidebar-label {
@@ -595,35 +595,38 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
 <div class="layout">
   <!-- SIDEBAR -->
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-section">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <div class="sidebar-label" style="margin-bottom:0">Perfiles</div>
+    <!-- Perfiles — zona scrolleable -->
+    <div style="flex:1;overflow-y:auto;padding:1.25rem 0 0.5rem">
+      <div class="sidebar-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div class="sidebar-label" style="margin-bottom:0">Perfiles</div>
+        </div>
+        <div class="person-list" id="personList"></div>
       </div>
-      <div class="person-list" id="personList"></div>
     </div>
-    <div class="separator"></div>
-    <div class="sidebar-section" style="padding-top:0.75rem">
+    <!-- Navegación — fija abajo -->
+    <div style="border-top:1px solid var(--gray-200);padding:0.75rem 0;flex-shrink:0;background:var(--white)">
       <div class="sidebar-nav-item" onclick="showHome()" id="nav-home">
         <div class="sidebar-dot"></div>
         🏠 Inicio
       </div>
-      <div class="sidebar-nav-item" onclick="showOverview('mine')" id="nav-overview-mine" style="margin-top:4px">
+      <div class="sidebar-nav-item" onclick="showOverview('mine')" id="nav-overview-mine" style="margin-top:2px">
         <div class="sidebar-dot"></div>
         👤 Mis perfiles
       </div>
-      <div class="sidebar-nav-item" onclick="showOverview('all')" id="nav-overview-all" style="margin-top:4px">
+      <div class="sidebar-nav-item" onclick="showOverview('all')" id="nav-overview-all" style="margin-top:2px">
         <div class="sidebar-dot"></div>
         📊 Vista Consolidada
       </div>
-      <div class="sidebar-nav-item" onclick="showMethodology()" id="nav-methodology" style="margin-top:4px">
+      <div class="sidebar-nav-item" onclick="showMethodology()" id="nav-methodology" style="margin-top:2px">
         <div class="sidebar-dot"></div>
         📖 Guía metodológica
       </div>
-      <div class="sidebar-nav-item" onclick="showManual()" id="nav-manual" style="margin-top:4px">
+      <div class="sidebar-nav-item" onclick="showManual()" id="nav-manual" style="margin-top:2px">
         <div class="sidebar-dot"></div>
         📘 Manual de usuario
       </div>
-      <div class="sidebar-nav-item" onclick="showRoleCompetencies()" id="nav-role-comp" style="margin-top:4px">
+      <div class="sidebar-nav-item" onclick="showRoleCompetencies()" id="nav-role-comp" style="margin-top:2px">
         <div class="sidebar-dot"></div>
         🎯 Competencias por Rol
       </div>
@@ -1166,8 +1169,8 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
                 <td style="padding:4px 6px"><select id="filter-perf" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option value="4">≥ 4</option><option value="3">≥ 3</option><option value="2">≤ 2</option></select></td>
                 <td style="padding:4px 6px"><select id="filter-pot" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option value="4">≥ 4</option><option value="3">≥ 3</option><option value="2">≤ 2</option></select></td>
                 <td style="padding:4px 6px"><select id="filter-ninebox" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option>⭐ Top talent</option><option>🚀 High performer</option><option>💡 Alto potencial</option><option>✅ Core contributor</option><option>📈 En desarrollo</option><option>⚠️ Under review</option></select></td>
-                <td style="padding:4px 6px"></td>
-                <td style="padding:4px 6px"></td>
+                <td style="padding:4px 6px"><select id="filter-mad-tec" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option value="4">≥ 4</option><option value="3">≥ 3</option><option value="2">≤ 2</option></select></td>
+                <td style="padding:4px 6px"><select id="filter-mad-prof" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option>1 — Ejecutor guiado</option><option>2 — Ejecutor independiente</option><option>3 — Contribuidor de equipo</option><option>4 — Referente de área</option><option>5 — Líder estratégico</option></select></td>
                 <td style="padding:4px 6px"><select id="filter-risk" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option value="Alto">🔴 Alto</option><option value="Medio">🟡 Medio</option><option value="Bajo">🟢 Bajo</option></select></td>
                 <td style="padding:4px 6px"><select id="filter-decision" onchange="renderOverview()" style="width:100%;font-size:11px;padding:3px 4px;border:1px solid var(--gray-200);border-radius:4px;color:var(--gray-700)"><option value="">Todo</option><option>Promoción inmediata</option><option>Promoción en 6 meses (condicional)</option><option>Retener y desarrollar</option><option>Movimiento lateral</option><option>PIP — Plan de mejora</option><option>En observación</option></select></td>
                 <td style="padding:4px 6px"></td>
@@ -3627,7 +3630,7 @@ function renderMethodologyBenchmarkTable() {
 let overviewFilter = 'all';
 
 function clearOverviewFilters() {
-  ['filter-nombre','filter-rol','filter-nivel','filter-seniority','filter-perf','filter-pot','filter-ninebox','filter-risk','filter-decision'].forEach(id => {
+  ['filter-nombre','filter-rol','filter-nivel','filter-seniority','filter-perf','filter-pot','filter-ninebox','filter-mad-tec','filter-mad-prof','filter-risk','filter-decision'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.value = '';
   });
@@ -3636,16 +3639,17 @@ function clearOverviewFilters() {
 
 function getOverviewFilters() {
   return {
-    nombre:    (document.getElementById('filter-nombre')?.value   || '').toLowerCase().trim(),
-    rol:       (document.getElementById('filter-rol')?.value      || '').toLowerCase().trim(),
-    nivel:     document.getElementById('filter-nivel')?.value     || '',
-    seniority: document.getElementById('filter-seniority')?.value || '',
-    perf:      document.getElementById('filter-perf')?.value      || '',
-    pot:       document.getElementById('filter-pot')?.value       || '',
-    ninebox:   document.getElementById('filter-ninebox')?.value   || '',
-    risk:      document.getElementById('filter-risk')?.value      || '',
-    decision:  document.getElementById('filter-decision')?.value  || '',
-    search:    '',
+    nombre:   (document.getElementById('filter-nombre')?.value   || '').toLowerCase().trim(),
+    rol:      (document.getElementById('filter-rol')?.value      || '').toLowerCase().trim(),
+    nivel:     document.getElementById('filter-nivel')?.value    || '',
+    seniority: document.getElementById('filter-seniority')?.value|| '',
+    perf:      document.getElementById('filter-perf')?.value     || '',
+    pot:       document.getElementById('filter-pot')?.value      || '',
+    ninebox:   document.getElementById('filter-ninebox')?.value  || '',
+    madTec:    document.getElementById('filter-mad-tec')?.value  || '',
+    madProf:   document.getElementById('filter-mad-prof')?.value || '',
+    risk:      document.getElementById('filter-risk')?.value     || '',
+    decision:  document.getElementById('filter-decision')?.value || '',
   };
 }
 
@@ -3660,19 +3664,19 @@ function applyOverviewFilters(ids) {
     if(f.seniority && p.general?.seniority !== f.seniority) return false;
     if(f.perf) {
       const perf = getAvg(p.perf?.scores||{});
-      if(f.perf === '4' && perf < 4) return false;
-      if(f.perf === '3' && perf < 3) return false;
-      if(f.perf === '2' && perf > 2) return false;
+      if(f.perf==='4' && perf<4) return false;
+      if(f.perf==='3' && perf<3) return false;
+      if(f.perf==='2' && perf>2) return false;
     }
     if(f.pot) {
       const pot = getAvg(p.pot?.scores||{});
-      if(f.pot === '4' && pot < 4) return false;
-      if(f.pot === '3' && pot < 3) return false;
-      if(f.pot === '2' && pot > 2) return false;
+      if(f.pot==='4' && pot<4) return false;
+      if(f.pot==='3' && pot<3) return false;
+      if(f.pot==='2' && pot>2) return false;
     }
     if(f.ninebox) {
-      const perf = getAvg(p.perf?.scores||{}), pot = getAvg(p.pot?.scores||{});
-      let nb = '';
+      const perf=getAvg(p.perf?.scores||{}), pot=getAvg(p.pot?.scores||{});
+      let nb='';
       if(perf>=4&&pot>=4) nb='⭐ Top talent';
       else if(perf>=4&&pot>=2) nb='🚀 High performer';
       else if(perf>=2&&pot>=4) nb='💡 Alto potencial';
@@ -3680,6 +3684,20 @@ function applyOverviewFilters(ids) {
       else if(perf<3&&pot<3&&perf>0) nb='⚠️ Under review';
       else if(perf>0||pot>0) nb='📈 En desarrollo';
       if(nb !== f.ninebox) return false;
+    }
+    if(f.madTec) {
+      // skillMatuLabel returns a text with the avg — filter by numeric avg
+      const skillAvg = (() => {
+        const vals = Object.values(p.skills||{}).map(d=>d.actual).filter(v=>v>0);
+        return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+      })();
+      if(f.madTec==='4' && skillAvg<4) return false;
+      if(f.madTec==='3' && skillAvg<3) return false;
+      if(f.madTec==='2' && skillAvg>2) return false;
+    }
+    if(f.madProf) {
+      const matFinal = p.madurez?.final || '';
+      if(!matFinal.startsWith(f.madProf.charAt(0))) return false;
     }
     if(f.risk     && !(p.risk?.global||'').includes(f.risk)) return false;
     if(f.decision && p.resumen?.decision !== f.decision) return false;
