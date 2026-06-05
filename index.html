@@ -630,6 +630,10 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
         <div class="sidebar-dot"></div>
         🎯 Competencias por Rol
       </div>
+      <div class="sidebar-nav-item" onclick="showEquipo()" id="nav-equipo" style="margin-top:2px">
+        <div class="sidebar-dot"></div>
+        👥 Equipo
+      </div>
     </div>
   </div>
 
@@ -1516,13 +1520,53 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
       <div id="rc-dims-list" style="display:flex;flex-direction:column;gap:8px"></div>
     </div><!-- end roleCompView -->
 
+    <!-- EQUIPO VIEW -->
+    <div id="equipoView" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-size:18px;font-weight:600">👥 Equipo</div>
+          <div style="font-size:12px;color:var(--gray-400)" id="equipo-subtitle">Directorio de integrantes · Data &amp; AI NTT DATA</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="equipo-search" placeholder="Buscar por nombre, N° empleado o rol…" oninput="renderEquipoTable()" style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;width:260px">
+          <button class="btn btn-teal btn-sm" onclick="openEquipoAddModal()">+ Agregar</button>
+        </div>
+      </div>
+      <div class="card" style="overflow:hidden">
+        <div style="overflow-x:auto">
+          <table class="score-table" id="equipo-table" style="min-width:700px">
+            <thead><tr>
+              <th style="width:90px">N° Empleado</th>
+              <th>Nombre</th>
+              <th style="width:200px">Job Rol</th>
+              <th style="width:110px">Fecha Ingreso</th>
+              <th style="width:140px">Antigüedad</th>
+              <th style="width:100px;text-align:center">Acciones</th>
+            </tr></thead>
+            <tbody id="equipo-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- end equipoView -->
+
   </div><!-- end main -->
 </div>
 
 <!-- MODAL ADD PERSON -->
 <div class="modal-overlay" id="addModal">
-  <div class="modal">
+  <div class="modal" style="width:500px">
     <h3>Nuevo perfil</h3>
+    <!-- Equipo selector -->
+    <div style="padding:12px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:6px">⚡ Seleccionar desde equipo</div>
+      <input type="text" id="modal-equipo-search" placeholder="Buscar por nombre o N° empleado…" oninput="renderModalEquipoList()" style="width:100%;padding:6px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;margin-bottom:6px">
+      <div id="modal-equipo-list" style="max-height:160px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:6px;background:white"></div>
+      <div id="modal-equipo-selected" style="display:none;margin-top:8px;padding:7px 10px;background:#dcfce7;border:1px solid #86efac;border-radius:6px;font-size:12px;color:#166534;display:flex;align-items:center;justify-content:space-between">
+        <span id="modal-equipo-selected-name"></span>
+        <button onclick="clearModalEquipoSelection()" style="background:none;border:none;cursor:pointer;color:#166534;font-size:13px;padding:0 2px">✕</button>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--gray-400);text-align:center;margin-bottom:12px">— o completa manualmente —</div>
     <div class="form-group" style="margin-bottom:12px">
       <label>Nombre completo</label>
       <input type="text" id="modal-nombre" placeholder="ej: Ana García">
@@ -1564,6 +1608,47 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
     <div class="modal-actions">
       <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="closeAddModal()">Cancelar</button>
       <button class="btn btn-blue btn-sm" onclick="createProfile()">Crear perfil</button>
+    </div>
+  </div>
+</div>
+
+<!-- EQUIPO ADD/EDIT MODAL -->
+<div class="modal-overlay" id="equipoModal">
+  <div class="modal" style="width:460px">
+    <h3 id="equipoModalTitle">Agregar integrante</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div class="form-group">
+        <label>N° Empleado <span style="color:var(--red)">*</span></label>
+        <input type="text" id="eq-nroEmpleado" placeholder="ej: 100234">
+      </div>
+      <div class="form-group">
+        <label>Fecha Ingreso</label>
+        <input type="date" id="eq-ingreso">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Nombre completo <span style="color:var(--red)">*</span></label>
+      <input type="text" id="eq-nombre" placeholder="ej: Ana García Pérez">
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Job Rol <span style="color:var(--red)">*</span></label>
+      <select id="eq-jobRol">
+        <option value="">— Seleccionar —</option>
+        <option>Junior Engineer</option><option>Engineer</option><option>Lead Engineer</option>
+        <option>Expert Engineer</option><option>Chief Architect</option>
+        <option>Junior Analyst</option><option>Analyst</option><option>Lead Analyst</option>
+        <option>Expert Analyst</option><option>Project Leader</option>
+        <option>Sr. Technical PL</option><option>Senior Technical Project Leader</option>
+        <option>Chief Designer</option><option>Evangelist</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Antigüedad en NTT</label>
+      <input type="text" id="eq-antiguedad" placeholder="ej: 3 años y 2 meses">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="closeEquipoModal()">Cancelar</button>
+      <button class="btn btn-blue btn-sm" onclick="saveEquipoMember()">Guardar</button>
     </div>
   </div>
 </div>
@@ -3523,13 +3608,14 @@ function rebuildBenchmarksForDim(prefix, newLen) {
 function showMethodology() {
   currentId = null;
   activeView = 'methodology';
-  ['emptyState','profileView','overviewView','roleCompView','homeView','manualView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  ['emptyState','profileView','overviewView','roleCompView','homeView','manualView','equipoView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   document.getElementById('methodologyView').style.display = 'block';
   document.getElementById('nav-overview-mine').classList.remove('active');
   document.getElementById('nav-overview-all').classList.remove('active');
   document.getElementById('nav-methodology').classList.add('active');
   document.getElementById('nav-role-comp').classList.remove('active');
   document.getElementById('nav-manual')?.classList.remove('active');
+  document.getElementById('nav-equipo')?.classList.remove('active');
   document.getElementById('nav-home')?.classList.remove('active');
   renderSidebar();
   renderMethodologyBenchmarkTable();
@@ -3547,13 +3633,14 @@ const RC_PILLAR_CONFIG = {
 function showRoleCompetencies() {
   currentId = null;
   activeView = 'rolecomp';
-  ['emptyState','profileView','overviewView','methodologyView','homeView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  ['emptyState','profileView','overviewView','methodologyView','homeView','equipoView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   document.getElementById('roleCompView').style.display = 'block';
   document.getElementById('nav-overview-mine').classList.remove('active');
   document.getElementById('nav-overview-all').classList.remove('active');
   document.getElementById('nav-methodology').classList.remove('active');
   document.getElementById('nav-role-comp').classList.add('active');
   document.getElementById('nav-manual')?.classList.remove('active');
+  document.getElementById('nav-equipo')?.classList.remove('active');
   document.getElementById('nav-home')?.classList.remove('active');
   renderSidebar();
   renderRCView();
@@ -3743,12 +3830,13 @@ function showOverview(filter) {
   overviewFilter = filter || 'all';
   currentId = null;
   activeView = 'overview';
-  ['emptyState','profileView','methodologyView','roleCompView','homeView','manualView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  ['emptyState','profileView','methodologyView','roleCompView','homeView','manualView','equipoView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   document.getElementById('overviewView').style.display = 'block';
   document.getElementById('nav-methodology').classList.remove('active');
   document.getElementById('nav-role-comp').classList.remove('active');
   document.getElementById('nav-home')?.classList.remove('active');
   document.getElementById('nav-manual')?.classList.remove('active');
+  document.getElementById('nav-equipo')?.classList.remove('active');
   // Update nav active state
   document.getElementById('nav-overview-mine').classList.toggle('active', overviewFilter==='mine');
   document.getElementById('nav-overview-all').classList.toggle('active', overviewFilter==='all');
@@ -3895,6 +3983,14 @@ function openAddModal() {
   });
   const first = document.querySelector('.color-opt');
   if(first) { first.style.border = '2px solid var(--gray-800)'; first.style.transform = 'scale(1.2)'; }
+  // Reset equipo selector
+  selectedEquipoMember = null;
+  const eSearch = document.getElementById('modal-equipo-search');
+  if(eSearch) eSearch.value = '';
+  const eList = document.getElementById('modal-equipo-list');
+  if(eList) eList.innerHTML = '<div style="padding:8px 12px;font-size:12px;color:var(--gray-400)">Escribe para buscar…</div>';
+  const eBadge = document.getElementById('modal-equipo-selected');
+  if(eBadge) eBadge.style.display = 'none';
   document.getElementById('modal-nombre').focus();
 }
 function closeAddModal() { document.getElementById('addModal').classList.remove('open'); }
@@ -3922,6 +4018,8 @@ function createProfile() {
   // Pre-fill seniority and interviewer
   if(seniority) profiles[id].general.seniority = seniority;
   profiles[id].general.entrevistador = uname;
+  // Auto-fill from equipo selection if present
+  autoFillGeneralFromEquipo(id);
   // Init dims for role
   if(seniority && ROLE_COMPETENCIES[seniority]) {
     PERF_DIMS = ROLE_COMPETENCIES[seniority].perf.slice();
@@ -3970,12 +4068,12 @@ function exportJSON() {
 function showHome() {
   currentId = null;
   activeView = 'home';
-  ['emptyState','profileView','overviewView','methodologyView','roleCompView'].forEach(id => {
+  ['emptyState','profileView','overviewView','methodologyView','roleCompView','equipoView'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.style.display = 'none';
   });
   document.getElementById('homeView').style.display = 'block';
-  ['nav-overview-mine','nav-overview-all','nav-methodology','nav-role-comp','nav-manual'].forEach(id => {
+  ['nav-overview-mine','nav-overview-all','nav-methodology','nav-role-comp','nav-manual','nav-equipo'].forEach(id => {
     document.getElementById(id)?.classList.remove('active');
   });
   renderSidebar();
@@ -4167,7 +4265,7 @@ function confirmNewCycle() {
 function showManual() {
   currentId = null;
   activeView = 'manual';
-  ['emptyState','profileView','overviewView','methodologyView','roleCompView','homeView','manualView'].forEach(id => {
+  ['emptyState','profileView','overviewView','methodologyView','roleCompView','homeView','manualView','equipoView'].forEach(id => {
     const el = document.getElementById(id); if(el) el.style.display = 'none';
   });
   document.getElementById('manualView').style.display = 'block';
@@ -4300,6 +4398,196 @@ function getManualHtml(role) {
     </div>`
   };
   return manuals[role] || `<div style="text-align:center;padding:2rem;color:var(--gray-400)">Manual no disponible para el rol: ${role}</div>`;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// EQUIPO — Directorio de integrantes
+// ═══════════════════════════════════════════════════════════════
+
+// Seed data from Excel upload — editable at runtime via CRUD
+const EQUIPO_SEED = [{"nroEmpleado": "291594", "nombre": "Nicolas Cerna Araya", "ingreso": "2025-11-12", "antiguedad": "0 años y 6 meses", "jobRol": "Senior Technical Project Leader"}, {"nroEmpleado": "218978", "nombre": "Antonio Varas Curin", "ingreso": "2022-03-07", "antiguedad": "4 años y 2 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "102831", "nombre": "Cristian Alejandro Chandia Poblete", "ingreso": "2010-06-29", "antiguedad": "15 años y 11 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "279634", "nombre": "Giuseppe Lavarello Osorio", "ingreso": "2025-05-12", "antiguedad": "1 años y 0 meses", "jobRol": "Junior Engineer"}, {"nroEmpleado": "133785", "nombre": "Cristian Zuñiga Meza", "ingreso": "2018-06-01", "antiguedad": "8 años y 0 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "131129", "nombre": "Cristian Ahumada Bustos", "ingreso": "2020-02-01", "antiguedad": "6 años y 4 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "182973", "nombre": "Luis Zamora Letelier", "ingreso": "2019-11-20", "antiguedad": "6 años y 6 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "124904", "nombre": "Borja Sala Baucells", "ingreso": "2014-11-17", "antiguedad": "11 años y 6 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "279632", "nombre": "Lukas Pavez Bahamondes", "ingreso": "2025-05-12", "antiguedad": "1 años y 0 meses", "jobRol": "Analyst"}, {"nroEmpleado": "181749", "nombre": "Julio Corvalan Kiefer", "ingreso": "2019-10-14", "antiguedad": "6 años y 7 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "260086", "nombre": "Alexander Cols Mijares", "ingreso": "2024-05-02", "antiguedad": "2 años y 1 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "294716", "nombre": "Jorge Andres Acuña Roldan", "ingreso": "2026-01-01", "antiguedad": "0 años y 5 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "278655", "nombre": "Danilo Avila Carcamo", "ingreso": "2025-04-23", "antiguedad": "1 años y 1 meses", "jobRol": "Expert Analyst"}, {"nroEmpleado": "257721", "nombre": "Ivan Sepulveda Masferrer", "ingreso": "2024-03-04", "antiguedad": "2 años y 3 meses", "jobRol": "Expert Analyst"}, {"nroEmpleado": "284863", "nombre": "Vicente Villegas Quezada", "ingreso": "2025-08-13", "antiguedad": "0 años y 9 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "221172", "nombre": "Matias Bustamante Farias", "ingreso": "2022-04-04", "antiguedad": "4 años y 2 meses", "jobRol": "Analyst"}, {"nroEmpleado": "257932", "nombre": "Nicolas Sandoval Hernandez", "ingreso": "2024-03-08", "antiguedad": "2 años y 2 meses", "jobRol": "Expert Analyst"}, {"nroEmpleado": "214803", "nombre": "Alfonso Vargas Guerra", "ingreso": "2022-01-03", "antiguedad": "4 años y 5 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "259916", "nombre": "Alejandro Rojas Fuentes", "ingreso": "2024-04-24", "antiguedad": "2 años y 1 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "260258", "nombre": "Carlos González Moreno", "ingreso": "2024-05-02", "antiguedad": "2 años y 1 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "289342", "nombre": "Katherine Escudero Flores", "ingreso": "2025-10-20", "antiguedad": "0 años y 7 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "283549", "nombre": "Marcelo Rojas Hernandez", "ingreso": "2025-07-21", "antiguedad": "0 años y 10 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "285068", "nombre": "Bryan Gutierrez Mundaca", "ingreso": "2025-08-18", "antiguedad": "0 años y 9 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "221185", "nombre": "Daniela De Quevedo", "ingreso": "2022-04-04", "antiguedad": "4 años y 2 meses", "jobRol": "Analyst"}, {"nroEmpleado": "221175", "nombre": "Kevin Valencia Martinez", "ingreso": "2022-04-04", "antiguedad": "4 años y 2 meses", "jobRol": "Engineer"}, {"nroEmpleado": "221180", "nombre": "Fernando Vergara Ramirez", "ingreso": "2022-04-04", "antiguedad": "4 años y 2 meses", "jobRol": "Engineer"}, {"nroEmpleado": "264748", "nombre": "Gabriel Diaz Herrera", "ingreso": "2025-01-02", "antiguedad": "1 años y 5 meses", "jobRol": "Junior Engineer"}, {"nroEmpleado": "268532", "nombre": "Katterina Palma Vallejos", "ingreso": "2024-10-21", "antiguedad": "1 años y 7 meses", "jobRol": "Analyst"}, {"nroEmpleado": "259918", "nombre": "Jean Pierre Cid Bustos", "ingreso": "2024-04-24", "antiguedad": "2 años y 1 meses", "jobRol": "Expert Analyst"}, {"nroEmpleado": "276999", "nombre": "Ramon Eduardo Alvarez Ponce", "ingreso": "2025-04-01", "antiguedad": "1 años y 2 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "293476", "nombre": "Guillermo Cardenas Cardenas", "ingreso": "2026-02-18", "antiguedad": "0 años y 3 meses", "jobRol": "Junior Engineer"}, {"nroEmpleado": "293417", "nombre": "Joey Jerez Sepulveda", "ingreso": "2026-02-13", "antiguedad": "0 años y 3 meses", "jobRol": "Junior Engineer"}, {"nroEmpleado": "293477", "nombre": "Tania Castro Prado", "ingreso": "2026-02-18", "antiguedad": "0 años y 3 meses", "jobRol": "Junior Engineer"}, {"nroEmpleado": "292191", "nombre": "Moises Quiroz Diaz", "ingreso": "2025-11-24", "antiguedad": "0 años y 6 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "282666", "nombre": "Nicolas Irribarra Zúñiga", "ingreso": "2025-07-07", "antiguedad": "0 años y 10 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "264217", "nombre": "Diego Carreño Montenegro", "ingreso": "2024-08-05", "antiguedad": "1 años y 10 meses", "jobRol": "Expert Analyst"}, {"nroEmpleado": "267366", "nombre": "Cassidy Allendes Venegas", "ingreso": "2025-03-17", "antiguedad": "1 años y 2 meses", "jobRol": "Junior Analyst"}, {"nroEmpleado": "271410", "nombre": "Ivan Guajardo Arias", "ingreso": "2025-04-09", "antiguedad": "1 años y 1 meses", "jobRol": "Junior Analyst"}, {"nroEmpleado": "298817", "nombre": "Fabiola Pizarro Fuentes", "ingreso": "2026-03-02", "antiguedad": "0 años y 3 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "296692", "nombre": "Ignacio Barrera Gutierrez", "ingreso": "2026-02-09", "antiguedad": "0 años y 3 meses", "jobRol": "Analyst"}, {"nroEmpleado": "289687", "nombre": "Joseph Flores Antezana", "ingreso": "2025-10-20", "antiguedad": "0 años y 7 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "296687", "nombre": "Martin Campos Donoso", "ingreso": "2026-02-09", "antiguedad": "0 años y 3 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "296992", "nombre": "Vanessa Gonzalez Arriagada", "ingreso": "2026-02-09", "antiguedad": "0 años y 3 meses", "jobRol": "Analyst"}, {"nroEmpleado": "304033", "nombre": "Alondra Araya Araya", "ingreso": "2026-04-06", "antiguedad": "0 años y 1 meses", "jobRol": "Analyst"}, {"nroEmpleado": "296685", "nombre": "Angelo Olivares Canto", "ingreso": "2026-02-09", "antiguedad": "0 años y 3 meses", "jobRol": "Analyst"}, {"nroEmpleado": "296990", "nombre": "Jonas Oviedo Morales", "ingreso": "2026-02-09", "antiguedad": "0 años y 3 meses", "jobRol": "Analyst"}, {"nroEmpleado": "289348", "nombre": "Cristian Oyarzo Moraga", "ingreso": "2025-10-20", "antiguedad": "0 años y 7 meses", "jobRol": "Junior Analyst"}, {"nroEmpleado": "296966", "nombre": "Fernanda Saavedra Donoso", "ingreso": "2026-02-02", "antiguedad": "0 años y 4 meses", "jobRol": "Junior Analyst"}, {"nroEmpleado": "295139", "nombre": "Joaquin Torres Cornejo", "ingreso": "2026-01-05", "antiguedad": "0 años y 5 meses", "jobRol": "Junior Engineer"}, {"nroEmpleado": "294887", "nombre": "Aylin Rodriguez Berrios", "ingreso": "2026-01-05", "antiguedad": "0 años y 5 meses", "jobRol": "Junior Engineer"}, {"nroEmpleado": "126462", "nombre": "Raul Andres Marambio Merida", "ingreso": "2017-02-01", "antiguedad": "9 años y 4 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "260493", "nombre": "Deyssi Vargas Briceño", "ingreso": "2024-05-08", "antiguedad": "2 años y 0 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "214806", "nombre": "Fernanda Medina Guerra", "ingreso": "2022-01-03", "antiguedad": "4 años y 5 meses", "jobRol": "Engineer"}, {"nroEmpleado": "125809", "nombre": "Carlos Alberto Contreras Huaracan", "ingreso": "2010-11-29", "antiguedad": "15 años y 6 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "195370", "nombre": "Eduardo Jimenez Mourgues", "ingreso": "2021-01-11", "antiguedad": "5 años y 4 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "156914", "nombre": "Katherine Andrea Torres Aguirre", "ingreso": "2017-12-11", "antiguedad": "8 años y 5 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "198985", "nombre": "Ligia Barrios Bracho", "ingreso": "2021-04-05", "antiguedad": "5 años y 2 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "129387", "nombre": "Daniel Henriquez Calabriano", "ingreso": "2015-06-15", "antiguedad": "10 años y 11 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "218923", "nombre": "Pedro Carrasco Aravena", "ingreso": "2022-03-07", "antiguedad": "4 años y 2 meses", "jobRol": "Chief Architect"}, {"nroEmpleado": "183035", "nombre": "Felipe Castro Aros", "ingreso": "2019-11-25", "antiguedad": "6 años y 6 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "105233", "nombre": "Carlos Hernan Salinas Adasme", "ingreso": "2010-11-29", "antiguedad": "15 años y 6 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "218977", "nombre": "Daniel Navarrete Navarrete", "ingreso": "2022-03-07", "antiguedad": "4 años y 2 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "212283", "nombre": "Gonzalo Lizama Valencia", "ingreso": "2022-02-01", "antiguedad": "4 años y 4 meses", "jobRol": "Engineer"}, {"nroEmpleado": "259244", "nombre": "Kevin Nuñez Herrera", "ingreso": "2024-04-01", "antiguedad": "2 años y 2 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "213774", "nombre": "Ruben Painenao Nahuelpi", "ingreso": "2021-12-13", "antiguedad": "4 años y 5 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "259102", "nombre": "Pedro Valderrama Mendez", "ingreso": "2024-04-01", "antiguedad": "2 años y 2 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "283306", "nombre": "Susana Muñoz Hidalgo", "ingreso": "2025-07-14", "antiguedad": "0 años y 10 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "284746", "nombre": "Felipe Avila Carcamo", "ingreso": "2025-08-18", "antiguedad": "0 años y 9 meses", "jobRol": "Evangelist"}, {"nroEmpleado": "282495", "nombre": "Andres Medina Sanhueza", "ingreso": "2025-07-01", "antiguedad": "0 años y 11 meses", "jobRol": "Expert Analyst"}, {"nroEmpleado": "204814", "nombre": "Claudio Collao", "ingreso": "2021-07-07", "antiguedad": "4 años y 10 meses", "jobRol": "Evangelist"}, {"nroEmpleado": "290394", "nombre": "Jose Corti Badia", "ingreso": "2025-11-03", "antiguedad": "0 años y 7 meses", "jobRol": "Evangelist"}, {"nroEmpleado": "298824", "nombre": "Camilo Menares Menares", "ingreso": "2026-03-11", "antiguedad": "0 años y 2 meses", "jobRol": "Senior Technical Project Leader"}, {"nroEmpleado": "212284", "nombre": "Agustin Sepulveda Berrios", "ingreso": "2022-02-01", "antiguedad": "4 años y 4 meses", "jobRol": "Engineer"}, {"nroEmpleado": "257826", "nombre": "Ian Laurel Pastene", "ingreso": "2024-03-05", "antiguedad": "2 años y 3 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "289345", "nombre": "Catherine Benavides Mena", "ingreso": "2025-10-20", "antiguedad": "0 años y 7 meses", "jobRol": "Junior Analyst"}, {"nroEmpleado": "284533", "nombre": "Leonardo Villarreal Tobon", "ingreso": "2025-08-06", "antiguedad": "0 años y 9 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "221188", "nombre": "Cesar Ramirez Herrera", "ingreso": "2022-04-04", "antiguedad": "4 años y 2 meses", "jobRol": "Engineer"}, {"nroEmpleado": "218761", "nombre": "Fabian Mesias Gomez", "ingreso": "2022-06-01", "antiguedad": "4 años y 0 meses", "jobRol": "Engineer"}, {"nroEmpleado": "179689", "nombre": "Antonio Sanhueza Rosas", "ingreso": "2019-08-16", "antiguedad": "6 años y 9 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "265927", "nombre": "Pablo Rivas Fuenzalida", "ingreso": "2024-09-02", "antiguedad": "1 años y 9 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "270382", "nombre": "Ariel Paz Gonzalez", "ingreso": "2024-11-25", "antiguedad": "1 años y 6 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "295250", "nombre": "Alvaro Gallardo Alvarado", "ingreso": "2026-01-12", "antiguedad": "0 años y 4 meses", "jobRol": "Junior Analyst"}, {"nroEmpleado": "232459", "nombre": "Ana Lincolao Ojeda", "ingreso": "2022-11-14", "antiguedad": "3 años y 6 meses", "jobRol": "Analyst"}, {"nroEmpleado": "218763", "nombre": "Nicolas Segovia Urtubia", "ingreso": "2022-06-01", "antiguedad": "4 años y 0 meses", "jobRol": "Engineer"}, {"nroEmpleado": "285686", "nombre": "Roger Williams Gutierrez Romero", "ingreso": "2025-08-25", "antiguedad": "0 años y 9 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "232864", "nombre": "Cecilia Rojas Vega", "ingreso": "2022-11-14", "antiguedad": "3 años y 6 meses", "jobRol": "Engineer"}, {"nroEmpleado": "209690", "nombre": "Krisler Abello Peñaloza", "ingreso": "2021-10-12", "antiguedad": "4 años y 7 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "158485", "nombre": "Oriel Hernandez Vera", "ingreso": "2018-02-01", "antiguedad": "8 años y 4 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "148971", "nombre": "Claudio Faundez Perez", "ingreso": "2022-10-01", "antiguedad": "3 años y 8 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "266007", "nombre": "Fernando Bravo Riquelme", "ingreso": "2024-09-02", "antiguedad": "1 años y 9 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "259920", "nombre": "Cristian Huenuqueo Arias", "ingreso": "2024-04-24", "antiguedad": "2 años y 1 meses", "jobRol": "Expert Analyst"}, {"nroEmpleado": "15313", "nombre": "Carlos Patricio Alexis Gomez Flores", "ingreso": "2006-08-01", "antiguedad": "19 años y 10 meses", "jobRol": "Chief Architect"}, {"nroEmpleado": "202675", "nombre": "Katherine Ferreira Puigmarti", "ingreso": "2021-06-07", "antiguedad": "4 años y 11 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "271839", "nombre": "Antonia Marambio Miranda", "ingreso": "2025-12-15", "antiguedad": "0 años y 5 meses", "jobRol": "Junior Engineer"}, {"nroEmpleado": "144326", "nombre": "Francois Siegfried Bertrand", "ingreso": "2016-11-11", "antiguedad": "9 años y 6 meses", "jobRol": "Chief Designer"}, {"nroEmpleado": "262465", "nombre": "Ivania Silva Moscoso", "ingreso": "2024-06-24", "antiguedad": "1 años y 11 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "259728", "nombre": "Enrique Guerra Aguilar", "ingreso": "2024-04-15", "antiguedad": "2 años y 1 meses", "jobRol": "Expert Analyst"}, {"nroEmpleado": "257090", "nombre": "Andres Fuentes Lagos", "ingreso": "2024-02-19", "antiguedad": "2 años y 3 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "232457", "nombre": "Alejandra Silva Silva", "ingreso": "2022-11-14", "antiguedad": "3 años y 6 meses", "jobRol": "Engineer"}, {"nroEmpleado": "126652", "nombre": "Luis Silva Nuñez", "ingreso": "2022-02-02", "antiguedad": "4 años y 4 meses", "jobRol": "Lead Engineer"}];
+
+// Runtime equipo list — initialized from seed, persisted in localStorage
+function loadEquipoData() {
+  try {
+    const stored = localStorage.getItem('equipoData_v1');
+    if(stored) return JSON.parse(stored);
+  } catch(e) {}
+  return JSON.parse(JSON.stringify(EQUIPO_SEED));
+}
+function saveEquipoData() {
+  try { localStorage.setItem('equipoData_v1', JSON.stringify(equipoData)); } catch(e) {}
+}
+let equipoData = loadEquipoData();
+let equipoEditIdx = null; // null = add, number = edit index
+
+function showEquipo() {
+  currentId = null;
+  activeView = 'equipo';
+  ['emptyState','profileView','overviewView','methodologyView','roleCompView','homeView','manualView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  document.getElementById('equipoView').style.display = 'block';
+  ['nav-overview-mine','nav-overview-all','nav-methodology','nav-role-comp','nav-home','nav-manual'].forEach(id=>{document.getElementById(id)?.classList.remove('active');});
+  document.getElementById('nav-equipo')?.classList.add('active');
+  renderSidebar();
+  renderEquipoTable();
+}
+
+function renderEquipoTable() {
+  const q = (document.getElementById('equipo-search')?.value || '').toLowerCase();
+  const filtered = equipoData.filter(m =>
+    m.nombre.toLowerCase().includes(q) ||
+    m.nroEmpleado.includes(q) ||
+    (m.jobRol||'').toLowerCase().includes(q)
+  ).sort((a,b) => a.nombre.localeCompare(b.nombre));
+
+  const sub = document.getElementById('equipo-subtitle');
+  if(sub) sub.textContent = `${filtered.length} de ${equipoData.length} integrantes · Data & AI NTT DATA`;
+
+  const tbody = document.getElementById('equipo-tbody');
+  if(!tbody) return;
+  if(!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--gray-400)">Sin resultados para la búsqueda</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map((m, fi) => {
+    const idx = equipoData.indexOf(m);
+    return `<tr>
+      <td style="font-family:var(--mono,monospace);font-size:11px">${m.nroEmpleado}</td>
+      <td style="font-weight:500">${m.nombre}</td>
+      <td><span style="font-size:11px;padding:2px 7px;border-radius:4px;background:var(--gray-100);color:var(--gray-700)">${m.jobRol||'—'}</span></td>
+      <td style="font-size:12px;color:var(--gray-600)">${m.ingreso||'—'}</td>
+      <td style="font-size:12px;color:var(--gray-600)">${m.antiguedad||'—'}</td>
+      <td style="text-align:center">
+        <button onclick="editEquipoMember(${idx})" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 5px;color:var(--blue)" title="Editar">✏️</button>
+        <button onclick="deleteEquipoMember(${idx})" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 5px;color:var(--red)" title="Eliminar">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openEquipoAddModal() {
+  equipoEditIdx = null;
+  document.getElementById('equipoModalTitle').textContent = 'Agregar integrante';
+  ['nroEmpleado','nombre','ingreso','antiguedad'].forEach(f => {
+    const el = document.getElementById('eq-'+f);
+    if(el) el.value = '';
+  });
+  document.getElementById('eq-jobRol').value = '';
+  document.getElementById('equipoModal').classList.add('open');
+}
+
+function editEquipoMember(idx) {
+  equipoEditIdx = idx;
+  const m = equipoData[idx];
+  document.getElementById('equipoModalTitle').textContent = 'Editar integrante';
+  document.getElementById('eq-nroEmpleado').value = m.nroEmpleado || '';
+  document.getElementById('eq-nombre').value = m.nombre || '';
+  document.getElementById('eq-ingreso').value = m.ingreso || '';
+  document.getElementById('eq-antiguedad').value = m.antiguedad || '';
+  document.getElementById('eq-jobRol').value = m.jobRol || '';
+  document.getElementById('equipoModal').classList.add('open');
+}
+
+function deleteEquipoMember(idx) {
+  if(!confirm(`¿Eliminar a ${equipoData[idx].nombre} del directorio?`)) return;
+  equipoData.splice(idx, 1);
+  saveEquipoData();
+  renderEquipoTable();
+}
+
+function closeEquipoModal() {
+  document.getElementById('equipoModal').classList.remove('open');
+  equipoEditIdx = null;
+}
+
+function saveEquipoMember() {
+  const nro = document.getElementById('eq-nroEmpleado').value.trim();
+  const nom = document.getElementById('eq-nombre').value.trim();
+  const job = document.getElementById('eq-jobRol').value;
+  if(!nro || !nom || !job) {
+    alert('N° Empleado, Nombre y Job Rol son obligatorios.');
+    return;
+  }
+  const member = {
+    nroEmpleado: nro,
+    nombre: nom,
+    ingreso: document.getElementById('eq-ingreso').value || '',
+    antiguedad: document.getElementById('eq-antiguedad').value.trim() || '',
+    jobRol: job
+  };
+  if(equipoEditIdx !== null) {
+    equipoData[equipoEditIdx] = member;
+  } else {
+    equipoData.push(member);
+  }
+  saveEquipoData();
+  closeEquipoModal();
+  renderEquipoTable();
+}
+
+// ─── Modal equipo selector (for new profile) ───
+let selectedEquipoMember = null;
+
+function renderModalEquipoList() {
+  const q = (document.getElementById('modal-equipo-search')?.value || '').toLowerCase();
+  const container = document.getElementById('modal-equipo-list');
+  if(!container) return;
+  if(!q) { container.innerHTML = '<div style="padding:8px 12px;font-size:12px;color:var(--gray-400)">Escribe para buscar…</div>'; return; }
+  const hits = equipoData.filter(m =>
+    m.nombre.toLowerCase().includes(q) || m.nroEmpleado.includes(q)
+  ).slice(0, 10);
+  if(!hits.length) { container.innerHTML = '<div style="padding:8px 12px;font-size:12px;color:var(--gray-400)">Sin resultados</div>'; return; }
+  container.innerHTML = hits.map((m,i) => `
+    <div onclick="selectModalEquipoMember(${equipoData.indexOf(m)})" style="padding:7px 12px;cursor:pointer;border-bottom:1px solid var(--gray-100);font-size:12px" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='white'">
+      <span style="font-weight:500">${m.nombre}</span>
+      <span style="color:var(--gray-400);margin-left:8px">${m.nroEmpleado}</span>
+      <span style="float:right;font-size:11px;color:var(--teal)">${m.jobRol||''}</span>
+    </div>`).join('');
+}
+
+function selectModalEquipoMember(idx) {
+  selectedEquipoMember = equipoData[idx];
+  const m = selectedEquipoMember;
+  // Fill manual fields
+  document.getElementById('modal-nombre').value = m.nombre;
+  // Try to set seniority to matching job rol
+  const sel = document.getElementById('modal-seniority');
+  let matched = false;
+  for(let opt of sel.options) { if(opt.value === m.jobRol) { sel.value = m.jobRol; matched = true; break; } }
+  if(!matched) sel.value = '';
+  // Show selected badge
+  const badge = document.getElementById('modal-equipo-selected');
+  badge.style.display = 'flex';
+  document.getElementById('modal-equipo-selected-name').textContent = `✓ ${m.nombre} · ${m.jobRol}`;
+  // Clear search list
+  document.getElementById('modal-equipo-list').innerHTML = '';
+  document.getElementById('modal-equipo-search').value = '';
+}
+
+function clearModalEquipoSelection() {
+  selectedEquipoMember = null;
+  document.getElementById('modal-equipo-selected').style.display = 'none';
+  document.getElementById('modal-nombre').value = '';
+  document.getElementById('modal-seniority').value = '';
+}
+
+// ─── Override openAddModal to reset equipo selection ───
+const _origOpenAddModal = typeof openAddModal === 'function' ? openAddModal : null;
+
+// ─── Auto-fill General after profile creation from equipo ───
+function autoFillGeneralFromEquipo(profileId) {
+  if(!selectedEquipoMember) return;
+  const m = selectedEquipoMember;
+  const p = profiles[profileId];
+  if(!p) return;
+  p.general.nombre = m.nombre;
+  p.general.nroEmpleado = m.nroEmpleado;
+  p.general.ingreso = m.ingreso || '';
+  p.general.antiguedad = m.antiguedad || '';
+  if(m.jobRol) p.general.seniority = m.jobRol;
+  p.nombre = m.nombre;
+  selectedEquipoMember = null;
 }
 
 // ═══════════════════════════════════════════════════════════════
