@@ -275,7 +275,16 @@ textarea { resize: vertical; min-height: 60px; }
 .section-tab.active { background: var(--navy); color: white; border-color: var(--navy); }
 .section-content { display: none; }
 .section-content.active { display: block; }
-/* ─── TEAM OVERVIEW ─── */
+/* ─── SECTION TAB PROGRESS ─── */
+.section-tab { position: relative; }
+.tab-progress-bar {
+  position: absolute; bottom: 0; left: 4px; right: 4px; height: 2px;
+  border-radius: 1px; background: var(--gray-200); overflow: hidden;
+}
+.tab-progress-bar .fill {
+  height: 100%; border-radius: 1px; transition: width 0.3s;
+}
+/* ─── OVERVIEW FILTER ─── */
 .team-table { width: 100%; border-collapse: collapse; }
 .team-table th {
   font-size: 10px; font-weight: 600; color: var(--gray-400);
@@ -643,21 +652,21 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
       </div>
 
       <div class="home-stats" id="home-stats">
-        <div class="home-stat">
+        <div class="home-stat" style="cursor:pointer" onclick="showOverview('mine')">
           <div class="hs-val" id="hs-total" style="color:var(--navy)">—</div>
-          <div class="hs-lbl">Perfiles totales</div>
+          <div class="hs-lbl">Mis perfiles</div>
         </div>
-        <div class="home-stat">
-          <div class="hs-val" id="hs-complete" style="color:var(--green)">—</div>
-          <div class="hs-lbl">Completos (100%)</div>
+        <div class="home-stat" style="cursor:pointer;border-color:#86efac" onclick="showOverview('mine')">
+          <div class="hs-val" id="hs-ready" style="color:var(--green)">—</div>
+          <div class="hs-lbl">Listos para cerrar</div>
         </div>
-        <div class="home-stat">
+        <div class="home-stat" style="cursor:pointer;border-color:#fca5a5" onclick="showOverview('all')">
           <div class="hs-val" id="hs-risk" style="color:var(--red)">—</div>
           <div class="hs-lbl">Riesgo Alto</div>
         </div>
-        <div class="home-stat">
-          <div class="hs-val" id="hs-pending" style="color:var(--amber)">—</div>
-          <div class="hs-lbl">Pendientes cierre</div>
+        <div class="home-stat" style="cursor:pointer;border-color:#fcd34d" onclick="showOverview('mine')">
+          <div class="hs-val" id="hs-inprogress" style="color:var(--amber)">—</div>
+          <div class="hs-lbl">En progreso</div>
         </div>
       </div>
 
@@ -729,15 +738,24 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
       </div>
       <!-- SECTION TABS -->
       <div class="section-tabs">
-        <div class="section-tab active" onclick="switchTab('general',this)">Datos generales</div>
-        <div class="section-tab" onclick="switchTab('performance',this)">Performance</div>
-        <div class="section-tab" onclick="switchTab('potencial',this)">Potencial</div>
-        <div class="section-tab" onclick="switchTab('skills',this)">Madurez técnica</div>
-        <div class="section-tab" onclick="switchTab('madurez',this)">Madurez profesional</div>
-        <div class="section-tab" onclick="switchTab('ninebox',this)">9-Box</div>
-        <div class="section-tab" onclick="switchTab('risk',this)">Flight risk</div>
-        <div class="section-tab" onclick="switchTab('idp',this)">IDP</div>
-        <div class="section-tab" onclick="switchTab('resumen',this)">Resumen</div>
+        <div style="display:flex;flex-direction:column;gap:6px;width:100%">
+          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+            <span style="font-size:9px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.08em;padding:0 6px 0 2px;white-space:nowrap">① Diagnóstico</span>
+            <div class="section-tab active" onclick="switchTab('general',this)" data-section="general">Datos generales</div>
+            <div class="section-tab" onclick="switchTab('performance',this)" data-section="performance">Performance</div>
+            <div class="section-tab" onclick="switchTab('potencial',this)" data-section="potencial">Potencial</div>
+            <div class="section-tab" onclick="switchTab('ninebox',this)" data-section="ninebox">9-Box</div>
+            <div style="width:1px;height:24px;background:var(--gray-200);margin:0 4px"></div>
+            <span style="font-size:9px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.08em;padding:0 6px 0 2px;white-space:nowrap">② Evaluación</span>
+            <div class="section-tab" onclick="switchTab('skills',this)" data-section="skills">Madurez técnica</div>
+            <div class="section-tab" onclick="switchTab('madurez',this)" data-section="madurez">Madurez profesional</div>
+            <div style="width:1px;height:24px;background:var(--gray-200);margin:0 4px"></div>
+            <span style="font-size:9px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.08em;padding:0 6px 0 2px;white-space:nowrap">③ Decisión</span>
+            <div class="section-tab" onclick="switchTab('risk',this)" data-section="risk">Flight risk</div>
+            <div class="section-tab" onclick="switchTab('idp',this)" data-section="idp">IDP</div>
+            <div class="section-tab" onclick="switchTab('resumen',this)" data-section="resumen">Resumen</div>
+          </div>
+        </div>
       </div>
 
       <!-- ═══ SECCIÓN GENERAL ═══ -->
@@ -952,7 +970,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
                 <textarea id="ninebox-comment" rows="2" oninput="autoSave()"></textarea>
               </div>
               <div style="background:var(--blue-light);border:1px solid #bfdbfe;border-radius:8px;padding:12px 14px;margin-top:10px">
-                <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:8px">✅ Validación del manager (admin)</div>
+                <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:8px">✅ Validación del manager</div>
                 <div class="form-grid" style="gap:10px">
                   <div class="form-group" style="margin-bottom:0">
                     <label style="font-size:11px">Cuadrante validado</label>
@@ -1020,7 +1038,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
             <div class="form-grid">
               <div class="form-group">
                 <label>Nivel de riesgo de fuga</label>
-                <select id="risk-global" onchange="autoSave()">
+                <select id="risk-global" onchange="onRiskGlobalChange();autoSave()">
                   <option value="">— Seleccionar —</option>
                   <option>🔴 Alto — acción inmediata</option>
                   <option>🟡 Medio — monitorear</option>
@@ -1028,7 +1046,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
                 </select>
               </div>
               <div class="form-group">
-                <label>Próxima revisión de riesgo</label>
+                <label id="risk-nextrev-label">Próxima revisión de riesgo</label>
                 <input type="date" id="risk-nextrev" onchange="autoSave()">
               </div>
               <div class="form-group full"><label>Acción prioritaria de retención</label><textarea id="risk-accion" rows="2" oninput="autoSave()"></textarea></div>
@@ -1123,7 +1141,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
 
     <!-- TEAM OVERVIEW -->
     <div id="overviewView" style="display:none">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
         <div>
           <div style="font-size:18px;font-weight:600" id="overviewTitle">Vista consolidada</div>
           <div style="font-size:12px;color:var(--gray-400)" id="overviewSubtitle">Todos los perfiles</div>
@@ -1132,6 +1150,41 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
           <button class="btn btn-ghost btn-sm" id="ov-btn-mine" onclick="showOverview('mine')" style="font-size:12px">👤 Mis perfiles</button>
           <button class="btn btn-ghost btn-sm" id="ov-btn-all" onclick="showOverview('all')" style="font-size:12px">📊 Vista Consolidada</button>
         </div>
+      </div>
+      <!-- FILTER BAR -->
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:1rem;padding:10px 14px;background:var(--white);border:1px solid var(--gray-200);border-radius:10px">
+        <span style="font-size:11px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.06em;flex-shrink:0">Filtrar:</span>
+        <select id="filter-seniority" onchange="renderOverview()" style="font-size:12px;padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;color:var(--gray-700)">
+          <option value="">Seniority</option>
+          <option>Junior</option><option>Semi Senior</option><option>Senior</option><option>Staff</option><option>Principal / Lead</option>
+        </select>
+        <select id="filter-ninebox" onchange="renderOverview()" style="font-size:12px;padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;color:var(--gray-700)">
+          <option value="">9-Box</option>
+          <option>⭐ Top talent</option>
+          <option>🚀 High performer</option>
+          <option>💡 Alto potencial</option>
+          <option>✅ Core contributor</option>
+          <option>📈 En desarrollo</option>
+          <option>⚠️ Under review</option>
+        </select>
+        <select id="filter-risk" onchange="renderOverview()" style="font-size:12px;padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;color:var(--gray-700)">
+          <option value="">Risk</option>
+          <option value="Alto">🔴 Alto</option>
+          <option value="Medio">🟡 Medio</option>
+          <option value="Bajo">🟢 Bajo</option>
+        </select>
+        <select id="filter-decision" onchange="renderOverview()" style="font-size:12px;padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;color:var(--gray-700)">
+          <option value="">Decisión</option>
+          <option>Promoción inmediata</option>
+          <option>Promoción en 6 meses (condicional)</option>
+          <option>Retener y desarrollar</option>
+          <option>Movimiento lateral</option>
+          <option>PIP — Plan de mejora</option>
+          <option>En observación</option>
+        </select>
+        <input id="filter-search" type="text" placeholder="🔍 Buscar por nombre…" oninput="renderOverview()" style="font-size:12px;padding:4px 10px;border:1px solid var(--gray-200);border-radius:6px;color:var(--gray-700);min-width:160px">
+        <button onclick="clearOverviewFilters()" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--gray-200);background:var(--gray-100);cursor:pointer;color:var(--gray-600)">✕ Limpiar</button>
+        <span id="filter-count" style="font-size:11px;color:var(--gray-400);margin-left:auto"></span>
       </div>
       <div class="card">
         <div class="card-body" style="padding:0;overflow-x:auto">
@@ -2589,6 +2642,7 @@ function loadProfileToUI() {
   document.getElementById('risk-global').value  = p.risk.global || '';
   document.getElementById('risk-nextrev') && (document.getElementById('risk-nextrev').value = p.risk.nextrev || '');
   document.getElementById('risk-accion').value  = p.risk.accion || '';
+  onRiskGlobalChange();
   // IDP
   renderIDPTable();
   // Resumen
@@ -2605,6 +2659,29 @@ function loadProfileToUI() {
   updateNinebox();
   updateSummaryMetrics();
   updateSectionAlerts();
+  updateTabProgress();
+}
+
+
+function getEvidencePlaceholder(prefix, i) {
+  const perf = [
+    'Ej: Entregó migración de pipeline sin supervisión y en plazo.',
+    'Ej: Resolvió incidente crítico en prod en <2h con documentación.',
+    'Ej: Mantuvo velocity estable en 3 sprints consecutivos.',
+    'Ej: Comunicó bloqueantes al cliente sin intervención del manager.',
+    'Ej: Propuso mejora que redujo latencia un 40% en producción.',
+    'Ej: Aprendió stack nuevo en 1 semana y formó al equipo.',
+  ];
+  const pot = [
+    'Ej: Aplicó feedback de PR al día siguiente sin repetir el error.',
+    'Ej: Buscó mentoring proactivamente y lo aplicó en el siguiente sprint.',
+    'Ej: Propuso solución alternativa fuera del alcance del ticket.',
+    'Ej: Aprendió stack de cliente en 3 semanas sin soporte externo.',
+    'Ej: Coordinó handoff con otro squad sin que el manager lo solicitara.',
+  ];
+  if(prefix === 'perf') return perf[i] || 'Ej: Comportamiento observado con resultado concreto…';
+  if(prefix === 'pot')  return pot[i]  || 'Ej: Evidencia de capacidad o potencial observado…';
+  return 'Evidencia…';
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2631,7 +2708,7 @@ function buildScoreTable(tbodyId, dims, scores, evidence, prefix, avgId) {
       </td>
       <td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;color:var(--gray-500)">${benchLabel}</td>
       <td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:${gapColor}">${gapLabel}</td>
-      <td><textarea class="evidence-input" rows="1" placeholder="Evidencia…" onchange="setEvidence('${prefix}',${i},this.value)">${evidence[i]||''}</textarea></td>`;
+      <td><textarea class="evidence-input" rows="1" placeholder="${getEvidencePlaceholder(prefix,i)}" onchange="setEvidence('${prefix}',${i},this.value)">${evidence[i]||''}</textarea></td>`;
     tbody.appendChild(tr);
   });
   updateAvgDisplay(prefix, avgId);
@@ -2818,7 +2895,30 @@ function buildRiskTable() {
     tbody.appendChild(tr);
   });
 }
-function setRiskEstado(i,v){if(!currentId)return;profiles[currentId].risk.items[i].estado=v;buildRiskTable();autoSave();}
+function onRiskGlobalChange() {
+  const val = document.getElementById('risk-global')?.value || '';
+  const isAlto = val.includes('Alto');
+  const isMedio = val.includes('Medio');
+  const label = document.getElementById('risk-nextrev-label');
+  const input = document.getElementById('risk-nextrev');
+  if(label && input) {
+    if(isAlto) {
+      label.innerHTML = 'Próxima revisión de riesgo <span style="color:var(--red)">*</span>';
+      input.style.borderColor = input.value ? '' : 'var(--red)';
+      input.style.background  = input.value ? '' : '#fff5f5';
+    } else if(isMedio) {
+      label.innerHTML = 'Próxima revisión de riesgo <span style="color:var(--amber)">*</span>';
+      input.style.borderColor = '';
+      input.style.background  = '';
+    } else {
+      label.innerHTML = 'Próxima revisión de riesgo';
+      input.style.borderColor = '';
+      input.style.background  = '';
+    }
+  }
+}
+
+
 function setRiskObs(i,v){if(!currentId)return;profiles[currentId].risk.items[i].obs=v;autoSave();}
 function setRiskAccion(i,v){if(!currentId)return;profiles[currentId].risk.items[i].accion=v;autoSave();}
 
@@ -3046,6 +3146,7 @@ function autoSave() {
   renderSidebar();
   showSaveIndicator();
   updateSectionAlerts();
+  updateTabProgress();
   // Update completeness bar
   const pct2 = calcCompleteness(p);
   const col2 = completenessColor(pct2);
@@ -3546,6 +3647,48 @@ function renderMethodologyBenchmarkTable() {
 
 let overviewFilter = 'all';
 
+function clearOverviewFilters() {
+  ['filter-seniority','filter-ninebox','filter-risk','filter-decision','filter-search'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  renderOverview();
+}
+
+function getOverviewFilters() {
+  return {
+    seniority: document.getElementById('filter-seniority')?.value || '',
+    ninebox:   document.getElementById('filter-ninebox')?.value || '',
+    risk:      document.getElementById('filter-risk')?.value || '',
+    decision:  document.getElementById('filter-decision')?.value || '',
+    search:    (document.getElementById('filter-search')?.value || '').toLowerCase().trim(),
+  };
+}
+
+function applyOverviewFilters(ids) {
+  const f = getOverviewFilters();
+  return ids.filter(id => {
+    const p = profiles[id];
+    if(!p) return false;
+    if(f.seniority && p.general?.seniority !== f.seniority) return false;
+    if(f.ninebox) {
+      const perf = getAvg(p.perf?.scores||{}), pot = getAvg(p.pot?.scores||{});
+      let nb = '';
+      if(perf>=4&&pot>=4) nb='⭐ Top talent';
+      else if(perf>=4&&pot>=2) nb='🚀 High performer';
+      else if(perf>=2&&pot>=4) nb='💡 Alto potencial';
+      else if(perf>=3&&pot>=3) nb='✅ Core contributor';
+      else if(perf<3&&pot<3&&perf>0) nb='⚠️ Under review';
+      else if(perf>0||pot>0) nb='📈 En desarrollo';
+      if(!nb.startsWith(f.ninebox.split(' ')[0])) return false;
+    }
+    if(f.risk && !(p.risk?.global||'').includes(f.risk)) return false;
+    if(f.decision && p.resumen?.decision !== f.decision) return false;
+    if(f.search && !(p.nombre||'').toLowerCase().includes(f.search)) return false;
+    return true;
+  });
+}
+
 function showOverview(filter) {
   overviewFilter = filter || 'all';
   currentId = null;
@@ -3589,8 +3732,13 @@ function renderOverview() {
     ids = ids.filter(id => profiles[id]._closed && canSeeProfile(profiles[id]));
   }
 
+  // Apply filters
+  ids = applyOverviewFilters(ids);
+  const countEl = document.getElementById('filter-count');
+  if(countEl) countEl.textContent = ids.length ? `${ids.length} perfil${ids.length>1?'es':''}` : '';
+
   if(!ids.length) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--gray-400)">${
+    tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:2rem;color:var(--gray-400)">${
       overviewFilter === 'mine'
         ? 'No tienes perfiles asignados. Crea un nuevo perfil para comenzar.'
         : 'No hay perfiles cerrados aún. Los perfiles aparecen en Vista Consolidada cuando el manager los cierra al 100%.'
@@ -3791,15 +3939,15 @@ function renderHomeView() {
   const ids = Object.keys(profiles);
   const myIds = getFilteredIds ? getFilteredIds() : ids;
 
-  const total = myIds.length;
-  const complete = myIds.filter(id => calcCompleteness(profiles[id]) >= 100).length;
-  const risk = myIds.filter(id => (profiles[id].risk?.global || '').includes('Alto')).length;
-  const pending = myIds.filter(id => !profiles[id]._closed).length;
+  const total      = myIds.length;
+  const ready      = myIds.filter(id => calcCompleteness(profiles[id]) >= 100 && !profiles[id]._closed).length;
+  const risk       = myIds.filter(id => (profiles[id].risk?.global || '').includes('Alto')).length;
+  const inProgress = myIds.filter(id => { const pct = calcCompleteness(profiles[id]); return pct > 0 && pct < 100; }).length;
 
-  document.getElementById('hs-total').textContent   = total;
-  document.getElementById('hs-complete').textContent = complete;
-  document.getElementById('hs-risk').textContent    = risk;
-  document.getElementById('hs-pending').textContent  = pending;
+  document.getElementById('hs-total').textContent     = total;
+  document.getElementById('hs-ready').textContent     = ready;
+  document.getElementById('hs-risk').textContent      = risk;
+  document.getElementById('hs-inprogress').textContent = inProgress;
 
   // Recent profiles (last 5)
   const recentIds = myIds
@@ -4341,7 +4489,99 @@ function getMissingFields(p) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// GENERATE FORTALEZAS & MEJORAS FROM DATA
+// SECTION TAB PROGRESS BARS
+// ═══════════════════════════════════════════════════════════════
+function calcSectionProgress() {
+  if(!currentId) return {};
+  const p = profiles[currentId];
+  const g = p.general || {};
+  const results = {};
+
+  // General
+  const genFields = ['nombre','rol','nivel','ingreso','seniority','tiempo','lasteval','proyectos','entrevistador'];
+  const genFilled = genFields.filter(f => g[f] && String(g[f]).trim()).length;
+  results.general = Math.round((genFilled / genFields.length) * 100);
+
+  // Performance
+  const perfScores = Object.values(p.perf?.scores || {});
+  const perfFilled = perfScores.filter(s => s > 0).length;
+  results.performance = perfScores.length ? Math.round((perfFilled / perfScores.length) * 100) : 0;
+
+  // Potencial
+  const potScores = Object.values(p.pot?.scores || {});
+  const potFilled = potScores.filter(s => s > 0).length;
+  results.potencial = potScores.length ? Math.round((potFilled / potScores.length) * 100) : 0;
+
+  // 9-Box (auto-calculated, just needs perf+pot)
+  const perfAvg = perfScores.length ? perfScores.reduce((a,b)=>a+b,0)/perfScores.length : 0;
+  const potAvg  = potScores.length  ? potScores.reduce((a,b)=>a+b,0)/potScores.length   : 0;
+  results.ninebox = (perfAvg > 0 && potAvg > 0) ? 100 : (perfAvg > 0 || potAvg > 0 ? 50 : 0);
+
+  // Skills — planActivo=Sí requires plan
+  const skillEntries = Object.values(p.skills || {});
+  let skillTotal = 0, skillFilled = 0;
+  skillEntries.forEach(d => {
+    skillTotal += 2; // actual + target
+    if(d.actual > 0) skillFilled++;
+    if(d.target > 0) skillFilled++;
+    if(d.planActivo === 'Sí') { skillTotal++; if(d.plan?.trim()) skillFilled++; }
+  });
+  results.skills = skillTotal ? Math.round((skillFilled / skillTotal) * 100) : 0;
+
+  // Madurez profesional
+  const matDims = Object.values(p.madurez?.dims || {});
+  const matFilled = matDims.filter(d => d.nivel).length;
+  const matHasFinal = p.madurez?.final ? 1 : 0;
+  const matTotal = matDims.length + 1;
+  results.madurez = matTotal ? Math.round(((matFilled + matHasFinal) / matTotal) * 100) : 0;
+
+  // Flight Risk
+  const riskItems = Object.values(p.risk?.items || {});
+  let rTotal = 0, rFilled = 0;
+  riskItems.forEach(d => {
+    rTotal++;
+    if(d.estado) rFilled++;
+    if(d.estado === 'Alto') {
+      rTotal += 2;
+      if(d.obs?.trim()) rFilled++;
+      if(d.accion?.trim()) rFilled++;
+    }
+  });
+  rTotal++; if(p.risk?.global) rFilled++; // global
+  results.risk = rTotal ? Math.round((rFilled / rTotal) * 100) : 0;
+
+  // IDP — optional but show how many items have data
+  const idpItems = p.idp || [];
+  results.idp = idpItems.length > 0 ? Math.min(100, idpItems.length * 25) : 0;
+
+  // Resumen
+  const resFields = ['decision'];
+  const resFilled = resFields.filter(f => p.resumen?.[f]).length;
+  results.resumen = Math.round((resFilled / resFields.length) * 100);
+
+  return results;
+}
+
+function updateTabProgress() {
+  const sectionPcts = calcSectionProgress();
+  document.querySelectorAll('.section-tab[data-section]').forEach(tab => {
+    const sec = tab.dataset.section;
+    const pct = sectionPcts[sec] ?? 0;
+    let bar = tab.querySelector('.tab-progress-bar');
+    if(!bar) {
+      bar = document.createElement('div');
+      bar.className = 'tab-progress-bar';
+      bar.innerHTML = '<div class="fill"></div>';
+      tab.style.paddingBottom = '10px';
+      tab.appendChild(bar);
+    }
+    const fill = bar.querySelector('.fill');
+    fill.style.width = pct + '%';
+    fill.style.background = pct >= 100 ? 'var(--green)' : pct >= 50 ? 'var(--teal)' : pct > 0 ? 'var(--amber)' : 'var(--gray-200)';
+  });
+}
+
+
 // ═══════════════════════════════════════════════════════════════
 function generateFortalezas() {
   if(!currentId) return;
