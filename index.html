@@ -1962,10 +1962,11 @@ function isProfileOwner(id) {
 
 function canSeeProfile(p) {
   const role = getUserRole();
-  if(role === 'admin' || role === 'director') return true;
   const nivel = (p.general?.nivel || '').toLowerCase().trim();
-  if(role === 'manager') return nivel === 'staff' || nivel === 'líder' || nivel === 'lider' || nivel === '';
-  if(role === 'lider')   return nivel === 'staff' || nivel === '';
+  if(role === 'admin')    return true;
+  if(role === 'director') return nivel === 'staff' || nivel === 'líder' || nivel === 'lider' || nivel === 'manager' || nivel === '';
+  if(role === 'manager')  return nivel === 'staff' || nivel === 'líder' || nivel === 'lider' || nivel === '';
+  if(role === 'lider')    return nivel === 'staff' || nivel === '';
   return false;
 }
 
@@ -4162,13 +4163,8 @@ function renderOverview() {
       return p._createdByName === uname || p._updatedByName === uname;
     });
   } else {
-    // 'all' — closed profiles: own always visible + others filtered by hierarchy
-    ids = ids.filter(id => {
-      const p = profiles[id];
-      if(!p._closed) return false;
-      if(p._createdByName === uname) return true; // siempre ve los propios
-      return canSeeProfile(p);
-    });
+    // 'all' — solo perfiles cerrados, visibles según jerarquía estricta
+    ids = ids.filter(id => profiles[id]._closed && canSeeProfile(profiles[id]));
   }
 
   // Apply filters
@@ -5330,7 +5326,7 @@ function updateTabProgress() {
     if(pct >= 100) {
       tab.innerHTML = `${label} <span class="tab-status-icon" style="font-size:10px;margin-left:3px;color:var(--green);font-weight:700">✓</span>`;
     } else {
-      tab.innerHTML = `${label} <span class="tab-status-icon" style="font-size:10px;margin-left:3px;color:${pct>0?'var(--amber)':'var(--gray-300)'};font-weight:700">⚠</span>`;
+      tab.innerHTML = `${label} <span class="tab-status-icon" style="font-size:10px;margin-left:3px;color:var(--amber);font-weight:700">⚠</span>`;
     }
   });
 }
