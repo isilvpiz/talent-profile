@@ -989,6 +989,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
 
       <!-- ═══ 9-BOX ═══ -->
       <div class="section-content" id="sec-ninebox">
+        <div id="alert-ninebox" class="section-alert"></div>
         <div class="card">
           <div class="card-header">
             <div class="card-header-dot" style="background:var(--green)"></div>
@@ -5362,69 +5363,84 @@ function updateSectionAlerts() {
   const p = profiles[currentId];
   const g = p.general || {};
 
-  // General
+  // ── General ──
   const genMissing = [];
-  if(!g.nombre) genMissing.push('Nombre');
-  if(!g.rol) genMissing.push('Rol / Cargo');
-  if(!g.nivel) genMissing.push('Nivel jerárquico');
-  if(!g.ingreso) genMissing.push('Fecha de ingreso');
-  if(!g.seniority) genMissing.push('Job Rol');
-  if(!g.nroEmpleado) genMissing.push('N° Empleado');
-  if(!g.antiguedad) genMissing.push('Antigüedad en NTT');
-  if(!g.lasteval) genMissing.push('Última evaluación');
-  if(!g.proyectos) genMissing.push('Proyectos');
+  if(!g.nombre)       genMissing.push('Nombre completo');
+  if(!g.rol)          genMissing.push('Rol / Cargo');
+  if(!g.nivel)        genMissing.push('Nivel jerárquico');
+  if(!g.ingreso)      genMissing.push('Fecha de ingreso');
+  if(!g.seniority)    genMissing.push('Job Rol');
+  if(!g.nroEmpleado)  genMissing.push('N° Empleado');
+  if(!g.antiguedad)   genMissing.push('Antigüedad en NTT');
+  if(!g.lasteval)     genMissing.push('Fecha última evaluación');
+  if(!g.proyectos)    genMissing.push('Squads / Proyectos');
   if(!g.entrevistador) genMissing.push('Entrevistador');
   showSectionAlert('alert-general', genMissing);
 
-  // Performance
-  const perfScores = Object.values(p.perf?.scores || {});
-  const perfMissing = PERF_DIMS
-    .map((dim, i) => (!p.perf?.scores[i] ? dim : null))
-    .filter(Boolean);
-  showSectionAlert('alert-performance', perfMissing.length ? [`Scores pendientes: ${perfMissing.join(', ')}`] : []);
+  // ── Performance ──
+  const perfMissing = [];
+  PERF_DIMS.forEach((dim, i) => {
+    if(!p.perf?.scores[i]) perfMissing.push(`Score: ${dim}`);
+    if(!p.perf?.evidence[i]?.trim()) perfMissing.push(`Evidencia: ${dim}`);
+  });
+  if(!p.perf?.feedbackScore) perfMissing.push('Valoración feedback de cliente / stakeholder');
+  showSectionAlert('alert-performance', perfMissing);
 
-  // Potencial
-  const potMissing = POT_DIMS
-    .map((dim, i) => (!p.pot?.scores[i] ? dim : null))
-    .filter(Boolean);
-  showSectionAlert('alert-potencial', potMissing.length ? [`Scores pendientes: ${potMissing.join(', ')}`] : []);
+  // ── Potencial ──
+  const potMissing = [];
+  POT_DIMS.forEach((dim, i) => {
+    if(!p.pot?.scores[i]) potMissing.push(`Score: ${dim}`);
+    if(!p.pot?.evidence[i]?.trim()) potMissing.push(`Evidencia: ${dim}`);
+  });
+  showSectionAlert('alert-potencial', potMissing);
 
-  // Skills
+  // ── Mad. Técnica ──
   const skillsMissing = Object.entries(p.skills||{})
     .filter(([,d]) => !d.na && d.planActivo==='Sí' && !d.plan?.trim())
-    .map(([skill]) => skill);
-  showSectionAlert('alert-skills', skillsMissing.length ? [`Plan obligatorio sin completar: ${skillsMissing.join(', ')}`] : []);
+    .map(([skill]) => `Plan obligatorio: ${skill}`);
+  showSectionAlert('alert-skills', skillsMissing);
 
-  // Madurez
+  // ── Mad. Profesional ──
   const matMissing = [];
-  if(!p.madurez?.final) matMissing.push('Nivel final asignado');
+  MAT_DIMS.forEach((dim, i) => {
+    const d = p.madurez?.dims?.[i];
+    if(!d?.nivel)        matMissing.push(`Nivel: ${dim}`);
+    if(!d?.justif?.trim()) matMissing.push(`Justificación: ${dim}`);
+  });
+  if(!p.madurez?.final)        matMissing.push('Nivel final de madurez');
+  if(!p.madurez?.justif?.trim()) matMissing.push('Justificación global del manager');
   showSectionAlert('alert-madurez', matMissing);
 
-  // Risk
+  // ── 9-Box ──
+  const nbMissing = [];
+  if(!p.ninebox?.validated)    nbMissing.push('Cuadrante validado');
+  if(!p.ninebox?.aspiraciones) nbMissing.push('Aspiraciones declaradas');
+  showSectionAlert('alert-ninebox', nbMissing);
+
+  // ── Flight Risk ──
   const riskMissing = [];
   Object.entries(p.risk?.items||{}).forEach(([i, d]) => {
-    if(!d.estado) riskMissing.push(`${RISK_ITEMS[i]}: estado`);
-    else if(d.estado==='Alto'||d.estado==='Medio') {
-      if(!d.obs?.trim())    riskMissing.push(`${RISK_ITEMS[i]}: obs`);
-      if(!d.accion?.trim()) riskMissing.push(`${RISK_ITEMS[i]}: acción`);
+    const name = RISK_ITEMS[i] || `Indicador ${+i+1}`;
+    if(!d.estado) riskMissing.push(`Estado: ${name}`);
+    else if(d.estado==='Alto' || d.estado==='Medio') {
+      if(!d.obs?.trim())    riskMissing.push(`Observación (${d.estado}): ${name}`);
+      if(!d.accion?.trim()) riskMissing.push(`Acción (${d.estado}): ${name}`);
     }
   });
-  if(!p.risk?.global)        riskMissing.push('Riesgo global');
-  if(!p.risk?.accion?.trim()) riskMissing.push('Acción de retención');
-  if(!p.risk?.nextrev)       riskMissing.push('Próxima revisión');
+  if(!p.risk?.global)         riskMissing.push('Nivel de riesgo global');
+  if(!p.risk?.accion?.trim()) riskMissing.push('Acción prioritaria de retención');
+  if(!p.risk?.nextrev)        riskMissing.push('Fecha próxima revisión de riesgo');
   showSectionAlert('alert-risk', riskMissing);
 
-  // Resumen
+  // ── Resumen ──
   const resMissing = [];
-  if(!p.resumen?.fortalezas?.trim()) resMissing.push('Fortalezas clave');
-  if(!p.resumen?.mejoras?.trim())    resMissing.push('Áreas de mejora');
+  if(!p.resumen?.fortalezas?.trim()) resMissing.push('Fortalezas clave (top 3)');
+  if(!p.resumen?.mejoras?.trim())    resMissing.push('Áreas de mejora prioritarias (top 3)');
   if(!p.resumen?.decision)           resMissing.push('Decisión recomendada');
-  if(!p.resumen?.justif?.trim())     resMissing.push('Justificación decisión');
-  if(!p.resumen?.hito?.trim())       resMissing.push('Próximo hito');
-  if(!document.getElementById('alert-resumen')) {
-    // Insert alert element if missing (resumen section)
-  }
+  if(!p.resumen?.justif?.trim())     resMissing.push('Justificación de la decisión');
+  if(!p.resumen?.hito?.trim())       resMissing.push('Próximo hito / Checkpoint');
   showSectionAlert('alert-resumen', resMissing);
+
   updateGlobalAlertPanel();
 }
 
@@ -5542,13 +5558,14 @@ function updateGlobalAlertPanel() {
 function showSectionAlert(alertId, missingArr) {
   const el = document.getElementById(alertId);
   if(!el) return;
-  if(missingArr.length === 0) {
+  if(!missingArr.length) {
     el.classList.remove('show');
-    el.textContent = '';
-  } else {
-    el.innerHTML = `⚠ Pendiente: ${missingArr.map(m=>`<strong>${m}</strong>`).join(', ')}`;
-    el.classList.add('show');
+    el.innerHTML = '';
+    return;
   }
+  const items = missingArr.map(m => `<span style="display:inline-block;background:rgba(220,38,38,0.08);border-radius:4px;padding:1px 7px;margin:2px 3px 2px 0;white-space:nowrap">⚠ ${m}</span>`).join('');
+  el.innerHTML = `<div style="font-weight:600;margin-bottom:5px;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--red)">Campos pendientes (${missingArr.length})</div><div style="line-height:2">${items}</div>`;
+  el.classList.add('show');
 }
 
 // ═══════════════════════════════════════════════════════════════
