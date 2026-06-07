@@ -376,6 +376,8 @@ textarea { resize: vertical; min-height: 60px; }
   background: var(--red-light); border: 1px solid #fca5a5;
   border-radius: 7px; padding: 8px 12px; font-size: 12px; color: var(--red);
   margin-bottom: 10px; display: none;
+  position: sticky; top: 0; z-index: 10;
+  box-shadow: 0 2px 8px rgba(220,38,38,0.08);
 }
 .section-alert.show { display: block; }
 /* ─── SAVE MODAL ─── */
@@ -729,9 +731,16 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
         </div>
         <div style="display:flex;gap:8px" id="profileActionButtons">
           <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" id="profileHistoryBtn" onclick="openHistoryModal(currentId)" style="display:none">📋 Historial</button>
-          <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="deleteCurrent()">Eliminar perfil</button>
           <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="saveAndContinue()">💾 Guardar</button>
           <button class="btn btn-teal btn-sm" onclick="closeProfile()">✓ Cerrar perfil</button>
+          <div style="position:relative;display:inline-block" id="profileMenuWrapper">
+            <button class="btn btn-ghost btn-sm" style="color:var(--gray-400);background:var(--gray-100);border:1px solid var(--gray-200);padding:5px 9px" onclick="toggleProfileMenu()" title="Más opciones">⋯</button>
+            <div id="profileMenu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:white;border:1px solid var(--gray-200);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.10);z-index:100;min-width:160px;overflow:hidden">
+              <div onclick="deleteCurrent();closeProfileMenu()" style="padding:9px 14px;font-size:12px;color:#dc2626;cursor:pointer;display:flex;align-items:center;gap:7px;border-top:1px solid var(--gray-100)" onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background='white'">
+                🗑 Eliminar perfil
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <!-- CLOSED BANNER — shown when profile is _closed -->
@@ -773,6 +782,9 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
             <span class="card-title">Datos generales</span>
           </div>
           <div class="card-body">
+            <div style="display:flex;align-items:center;gap:7px;padding:7px 11px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:7px;margin-bottom:12px;font-size:11px;color:#0369a1">
+              🔒 <span><strong>Nombre, N° Empleado, Fecha de ingreso y Antigüedad</strong> se completan automáticamente al seleccionar el integrante desde la lista de equipo y no pueden editarse manualmente.</span>
+            </div>
             <div class="form-grid">
               <div class="form-group"><label>Nombre completo <span style="color:var(--red)">*</span></label><input type="text" id="g-nombre" readonly style="background:var(--gray-100);color:var(--gray-600);cursor:not-allowed"></div>
               <div class="form-group"><label>N° Empleado <span style="color:var(--red)">*</span></label><input type="text" id="g-nroEmpleado" placeholder="ej: 100234" readonly style="background:var(--gray-100);color:var(--gray-600);cursor:not-allowed"></div>
@@ -846,8 +858,10 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
               <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--blue-light);color:var(--blue);font-size:11px">🤝</span>
               Feedback externo — Cliente / Stakeholder
               <span style="font-size:10px;font-weight:400;color:var(--gray-400);margin-left:4px">Evidencia observable desde fuera del equipo</span>
+              <button id="feedbackGuideBtn" onclick="var g=document.getElementById('feedbackGuide');var open=g.style.display!=='none';g.style.display=open?'none':'block';this.textContent=open?'💡 Ver guía':'💡 Ocultar guía'"
+                style="margin-left:auto;font-size:10px;padding:2px 8px;border:1px solid #bfdbfe;border-radius:5px;background:#eff6ff;color:#1e40af;cursor:pointer;font-weight:500;flex-shrink:0">💡 Ver guía</button>
             </div>
-            <div style="padding:8px 11px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;margin-bottom:10px;font-size:11px;color:#1e40af;line-height:1.6">
+            <div id="feedbackGuide" style="display:none;padding:8px 11px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;margin-bottom:10px;font-size:11px;color:#1e40af;line-height:1.6">
               <strong>💡 Cómo usar este campo:</strong> Este dato <strong>no afecta el cálculo automático del 9-Box</strong> — es un input de calibración para el evaluador. Úsalo para ajustar los scores de dimensiones relacionadas (especialmente <em>Orientación al valor del cliente</em>) y, si el feedback es significativamente distinto al resultado calculado, utiliza el campo <em>Cuadrante validado</em> en 9-Box con su justificación.
             </div>
             <div style="display:grid;grid-template-columns:160px 1fr;gap:12px;align-items:start">
@@ -910,7 +924,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
             <table class="score-table">
               <thead><tr>
                 <th style="width:22%">Skill</th>
-                <th style="width:44px;text-align:center" title="Marcar como No Aplica para este rol">N/A</th>
+                <th style="width:54px;text-align:center;font-size:10px" title="Marcar si esta habilidad no aplica para el rol de esta persona">No<br>aplica</th>
                 <th style="width:90px">Actual</th>
                 <th style="width:90px">Target 6m</th>
                 <th style="width:55px">Gap</th>
@@ -956,7 +970,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
           <div class="card-body">
             <div class="form-grid">
               <div class="form-group">
-                <label>Nivel final asignado</label>
+                <label>Nivel final asignado <span style="color:var(--red)">*</span></label>
                 <select id="mat-final" onchange="updateMatGap();autoSave()">
                   <option value="">— Seleccionar nivel final —</option>
                   <option>1 — Ejecutor guiado (Junior)</option>
@@ -1073,7 +1087,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
           <div class="card-body">
             <div class="form-grid">
               <div class="form-group">
-                <label>Nivel de riesgo de fuga</label>
+                <label>Nivel de riesgo de fuga <span style="color:var(--red)">*</span></label>
                 <select id="risk-global" onchange="onRiskGlobalChange();autoSave()">
                   <option value="">— Seleccionar —</option>
                   <option>🔴 Alto — acción inmediata</option>
@@ -1169,7 +1183,15 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
           </div>
           <div class="card-body">
             <div id="idp-gaps-summary" style="font-size:13px;color:var(--gray-500);margin-bottom:10px">Completa Madurez Técnica para ver los gaps.</div>
-            <button class="btn btn-ghost btn-sm" style="border:1px solid var(--blue);color:var(--blue)" onclick="suggestIDPFromGaps()">⚡ Sugerir acciones en IDP desde gaps</button>
+            <div id="idp-connection-actions" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" style="border:1px solid var(--blue);color:var(--blue)" onclick="suggestIDPFromGaps()">⚡ Sugerir acciones en IDP desde gaps</button>
+              <span id="idp-empty-nudge" style="display:none;font-size:11px;color:var(--amber);background:var(--amber-light);border:1px solid #fcd34d;border-radius:6px;padding:4px 10px;cursor:pointer" onclick="switchTab('idp', document.querySelector('[data-section=idp]'))">
+                ⚠ IDP vacío — <strong>ir a completar →</strong>
+              </span>
+              <span id="idp-filled-badge" style="display:none;font-size:11px;color:var(--green);background:var(--green-light);border:1px solid #86efac;border-radius:6px;padding:4px 10px;cursor:pointer" onclick="switchTab('idp', document.querySelector('[data-section=idp]'))">
+                ✓ <span id="idp-filled-count"></span> objetivo(s) en IDP →
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -1577,11 +1599,17 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
     </div>
     <div id="modal-equipo-required-msg" style="display:none;font-size:11px;color:var(--red);text-align:center;margin-bottom:8px;font-weight:500">⚠ Debes seleccionar un integrante del equipo para continuar</div>
     <div class="form-group" style="margin-bottom:12px">
-      <label>Nombre completo</label>
-      <input type="text" id="modal-nombre" placeholder="Selecciona desde equipo" readonly style="background:var(--gray-100);color:var(--gray-400);cursor:not-allowed">
+      <label style="display:flex;align-items:center;justify-content:space-between">
+        Nombre completo
+        <span style="font-size:10px;font-weight:400;color:var(--gray-400)">↑ Se completa al seleccionar</span>
+      </label>
+      <input type="text" id="modal-nombre" placeholder="Busca y selecciona desde el equipo ↑" readonly style="background:var(--gray-100);color:var(--gray-400);cursor:not-allowed">
     </div>
     <div class="form-group" style="margin-bottom:12px">
-      <label>Job Rol</label>
+      <label style="display:flex;align-items:center;justify-content:space-between">
+        Job Rol
+        <span style="font-size:10px;font-weight:400;color:var(--gray-400)">↑ Se completa al seleccionar</span>
+      </label>
       <select id="modal-seniority" disabled style="background:var(--gray-100);color:var(--gray-400);cursor:not-allowed">
         <option value="">— Seleccionar —</option>
         <optgroup label="Track Técnico">
@@ -2803,6 +2831,20 @@ function loadProfileToUI() {
     const el = document.getElementById('g-'+f);
     if(el) el.value = p.general[f] || '';
   });
+  // Lock Job Rol once set — changing it would reset all dimensions silently
+  const seniorityEl = document.getElementById('g-seniority');
+  if(seniorityEl && p.general?.seniority) {
+    seniorityEl.disabled = true;
+    seniorityEl.style.background = 'var(--gray-100)';
+    seniorityEl.style.color = 'var(--gray-600)';
+    seniorityEl.style.cursor = 'not-allowed';
+    seniorityEl.title = 'El Job Rol se asigna al crear el perfil desde el equipo. Contacta al admin para cambiar.';
+  } else if(seniorityEl) {
+    seniorityEl.disabled = false;
+    seniorityEl.style.background = '';
+    seniorityEl.style.color = '';
+    seniorityEl.style.cursor = '';
+  }
 
   // Performance
   buildScoreTable('perf-tbody', PERF_DIMS, p.perf.scores, p.perf.evidence, 'perf', 'avg-perf');
@@ -3028,9 +3070,12 @@ function buildSkillTable() {
       tr.innerHTML = `
         <td style="font-size:12px">${skill}</td>
         <td style="text-align:center">
-          <input type="checkbox" ${isNA?'checked':''} title="No aplica para este rol"
-            style="width:15px;height:15px;cursor:pointer;accent-color:var(--gray-400)"
-            onchange="setSkillNA('${skill}',this.checked)">
+          <label style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;font-size:9px;color:${isNA?'var(--gray-600)':'var(--gray-400)'};font-weight:500">
+            <input type="checkbox" ${isNA?'checked':''} title="Esta habilidad no aplica para el rol de esta persona"
+              style="width:15px;height:15px;cursor:pointer;accent-color:var(--gray-500)"
+              onchange="setSkillNA('${skill}',this.checked)">
+            ${isNA?'N/A':''}
+          </label>
         </td>
         <td><div class="score-stars" style="${isNA?'pointer-events:none':''}">
           ${[1,2,3,4,5].map(n=>`<div class="star ${!isNA&&d.actual>=n?'active-'+n:''}" onclick="${isNA?'':''}"
@@ -3374,14 +3419,43 @@ function updateSummaryMetrics() {
 // ═══════════════════════════════════════════════════════════════
 // TABS
 // ═══════════════════════════════════════════════════════════════
+function toggleProfileMenu() {
+  const m = document.getElementById('profileMenu');
+  if(!m) return;
+  const isOpen = m.style.display !== 'none';
+  m.style.display = isOpen ? 'none' : 'block';
+  if(!isOpen) {
+    setTimeout(() => document.addEventListener('click', closeProfileMenuOnOutside), 0);
+  }
+}
+function closeProfileMenu() {
+  const m = document.getElementById('profileMenu');
+  if(m) m.style.display = 'none';
+  document.removeEventListener('click', closeProfileMenuOnOutside);
+}
+function closeProfileMenuOnOutside(e) {
+  if(!document.getElementById('profileMenuWrapper')?.contains(e.target)) {
+    closeProfileMenu();
+  }
+}
+
 function switchTab(name, el) {
   document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
   if(el) el.classList.add('active');
-  else document.querySelector(`.section-tab[onclick*="${name}"]`)?.classList.add('active');
+  else document.querySelector(`.section-tab[data-section="${name}"]`)?.classList.add('active');
   document.getElementById('sec-'+name)?.classList.add('active');
   if(name === 'ninebox') updateNinebox();
   if(name === 'resumen') updateSummaryMetrics();
+  // Scroll to section alert if it has pending fields
+  requestAnimationFrame(() => {
+    const alertEl = document.getElementById('alert-'+name);
+    if(alertEl?.classList.contains('show')) {
+      alertEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      document.getElementById('sec-'+name)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -3519,6 +3593,15 @@ function updateResumenGapSummary() {
   gaps.sort((a,b) => b.gap - a.gap);
   if(!gaps.length) {
     el.textContent = 'Sin gaps detectados — completa Madurez Técnica con niveles objetivo.';
+    const nudge = document.getElementById('idp-empty-nudge');
+    const badge = document.getElementById('idp-filled-badge');
+    const idpItems = (profiles[currentId]?.idp || []).filter(r => r.objetivo?.trim());
+    if(nudge && badge) {
+      nudge.style.display = idpItems.length === 0 ? 'inline-flex' : 'none';
+      badge.style.display = idpItems.length > 0 ? 'inline-flex' : 'none';
+      const count = document.getElementById('idp-filled-count');
+      if(count) count.textContent = idpItems.length;
+    }
     return;
   }
   el.innerHTML = gaps.slice(0,5).map(g =>
@@ -3528,6 +3611,22 @@ function updateResumenGapSummary() {
       <span style="font-size:10px;color:var(--gray-400)">${g.group}</span>
     </div>`
   ).join('');
+
+  // IDP nudge: show link if IDP is empty, badge if filled
+  const idpItems = (profiles[currentId]?.idp || []).filter(r => r.objetivo?.trim());
+  const nudge  = document.getElementById('idp-empty-nudge');
+  const badge  = document.getElementById('idp-filled-badge');
+  const count  = document.getElementById('idp-filled-count');
+  if(nudge && badge) {
+    if(idpItems.length === 0) {
+      nudge.style.display = 'inline-flex';
+      badge.style.display = 'none';
+    } else {
+      nudge.style.display = 'none';
+      badge.style.display = 'inline-flex';
+      if(count) count.textContent = idpItems.length;
+    }
+  }
 }
 
 function suggestIDPFromGaps() {
@@ -5236,7 +5335,7 @@ function updateTabProgress() {
     } else if(pct > 0) {
       tab.innerHTML = `${label} <span class="tab-status-icon" style="font-size:10px;margin-left:3px;color:var(--amber);font-weight:700">⚠</span>`;
     } else {
-      tab.innerHTML = `${label} <span class="tab-status-icon" style="font-size:10px;margin-left:3px;color:var(--gray-300);font-weight:700">⚠</span>`;
+      tab.innerHTML = label; // sin ícono si no se ha tocado
     }
   });
 }
@@ -5550,13 +5649,22 @@ function updateGlobalAlertPanel() {
 
   list.innerHTML = sections.map(s => `
     <div style="background:white;border:1px solid #fde68a;border-radius:6px;padding:7px 10px;cursor:pointer"
-         onclick="switchTab('${s.tab}', document.querySelector('.section-tab[data-section=\\'${s.tab}\\']'))"
+         data-goto-tab="${s.tab}"
          title="Ir a ${s.label}">
       <div style="font-size:11px;font-weight:700;color:#92400e;margin-bottom:3px">
         ${s.label} <span style="font-weight:400;color:#b45309">(${s.items.length})</span>
       </div>
       <div style="font-size:10px;color:#b45309;line-height:1.5">${s.items.slice(0,4).join(' · ')}${s.items.length>4?' · +'+(s.items.length-4)+' más':''}</div>
     </div>`).join('');
+
+  // Delegated click handler — avoids quote-escaping issues
+  list.querySelectorAll('[data-goto-tab]').forEach(card => {
+    card.addEventListener('click', () => {
+      const tabName = card.dataset.gotoTab;
+      const tabEl = document.querySelector(`.section-tab[data-section="${tabName}"]`);
+      switchTab(tabName, tabEl);
+    });
+  });
 }
 
 function showSectionAlert(alertId, missingArr) {
