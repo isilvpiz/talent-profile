@@ -764,20 +764,6 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
         <div class="section-tab" onclick="switchTab('resumen',this)" data-section="resumen" style="white-space:nowrap">Resumen</div>
       </div>
 
-      <!-- ═══ PANEL GLOBAL DE COMPLETITUD ═══ -->
-      <div id="global-alert-panel" style="display:none;margin:8px 0 4px;border-radius:9px;border:1px solid #fcd34d;background:#fffbeb;overflow:hidden">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;cursor:pointer;user-select:none" onclick="toggleGlobalAlertPanel()">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:14px">⚠️</span>
-            <span id="global-alert-summary" style="font-size:12px;font-weight:600;color:#92400e"></span>
-          </div>
-          <span id="global-alert-chevron" style="font-size:11px;color:#b45309;transition:transform 0.2s">▼</span>
-        </div>
-        <div id="global-alert-detail" style="display:none;border-top:1px solid #fcd34d;padding:8px 12px 10px">
-          <div id="global-alert-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px"></div>
-        </div>
-      </div>
-
       <!-- ═══ SECCIÓN GENERAL ═══ -->
       <div class="section-content active" id="sec-general">
         <div id="alert-general" class="section-alert"></div>
@@ -2666,9 +2652,11 @@ function calcCompleteness(p) {
   chk(!!p.resumen?.justif?.trim());
   chk(!!p.resumen?.hito?.trim());
 
-  // 9-Box — cuadrante validado y aspiraciones obligatorios
-  chk(!!p.ninebox?.validated);
-  chk(!!p.ninebox?.aspiraciones);
+  // 9-Box — cuadrante validado y aspiraciones obligatorios solo para manager/admin
+  if(getUserRole() === 'manager' || getUserRole() === 'admin') {
+    chk(!!p.ninebox?.validated);
+    chk(!!p.ninebox?.aspiraciones);
+  }
 
   // Risk global — acción y próxima revisión obligatorios
   chk(!!p.risk?.accion?.trim());
@@ -5206,12 +5194,13 @@ function calcSectionProgress() {
   results.idp = idpItems.length > 0 ? Math.min(100, idpItems.length * 25) : 0;
 
   // 9-Box — include validated and aspiraciones
-  let nbTotal = 4, nbFilled = 0;
+  const _isManagerRole = (getUserRole() === 'manager' || getUserRole() === 'admin');
+  let nbTotal = _isManagerRole ? 4 : 2, nbFilled = 0;
   if(perfAvg > 0) nbFilled++;
   if(potAvg > 0) nbFilled++;
-  if(p.ninebox?.validated) nbFilled++;
-  if(p.ninebox?.aspiraciones) nbFilled++;
-  results.ninebox = Math.round((nbFilled / nbTotal) * 100);
+  if(_isManagerRole && p.ninebox?.validated) nbFilled++;
+  if(_isManagerRole && p.ninebox?.aspiraciones) nbFilled++;
+  results.ninebox = nbTotal ? Math.round((nbFilled / nbTotal) * 100) : 0;
 
   // Resumen
   const resFields = ['decision','fortalezas','mejoras','justif','hito'];
@@ -5226,17 +5215,29 @@ function updateTabProgress() {
   document.querySelectorAll('.section-tab[data-section]').forEach(tab => {
     const sec = tab.dataset.section;
     const pct = sectionPcts[sec] ?? 0;
-    let bar = tab.querySelector('.tab-progress-bar');
-    if(!bar) {
-      bar = document.createElement('div');
-      bar.className = 'tab-progress-bar';
-      bar.innerHTML = '<div class="fill"></div>';
-      tab.style.paddingBottom = '10px';
-      tab.appendChild(bar);
+
+    // Remove old bar if exists
+    tab.querySelector('.tab-progress-bar')?.remove();
+    tab.style.paddingBottom = '';
+
+    // Remove old status badge
+    tab.querySelector('.tab-status-icon')?.remove();
+
+    // Get original label (strip any previous badge)
+    let label = tab.dataset.label;
+    if(!label) {
+      // Store original text on first run
+      tab.dataset.label = tab.textContent.trim();
+      label = tab.dataset.label;
     }
-    const fill = bar.querySelector('.fill');
-    fill.style.width = pct + '%';
-    fill.style.background = pct >= 100 ? 'var(--green)' : pct >= 50 ? 'var(--teal)' : pct > 0 ? 'var(--amber)' : 'var(--gray-200)';
+
+    if(pct >= 100) {
+      tab.innerHTML = `${label} <span class="tab-status-icon" style="font-size:10px;margin-left:3px;color:var(--green);font-weight:700">✓</span>`;
+    } else if(pct > 0) {
+      tab.innerHTML = `${label} <span class="tab-status-icon" style="font-size:10px;margin-left:3px;color:var(--amber);font-weight:700">⚠</span>`;
+    } else {
+      tab.innerHTML = `${label} <span class="tab-status-icon" style="font-size:10px;margin-left:3px;color:var(--gray-300);font-weight:700">⚠</span>`;
+    }
   });
 }
 
@@ -5413,8 +5414,11 @@ function updateSectionAlerts() {
 
   // ── 9-Box ──
   const nbMissing = [];
-  if(!p.ninebox?.validated)    nbMissing.push('Cuadrante validado');
-  if(!p.ninebox?.aspiraciones) nbMissing.push('Aspiraciones declaradas');
+  const isManagerOrAdmin = (getUserRole() === 'manager' || getUserRole() === 'admin');
+  if(isManagerOrAdmin) {
+    if(!p.ninebox?.validated)    nbMissing.push('Cuadrante validado');
+    if(!p.ninebox?.aspiraciones) nbMissing.push('Aspiraciones declaradas');
+  }
   showSectionAlert('alert-ninebox', nbMissing);
 
   // ── Flight Risk ──
@@ -5440,8 +5444,6 @@ function updateSectionAlerts() {
   if(!p.resumen?.justif?.trim())     resMissing.push('Justificación de la decisión');
   if(!p.resumen?.hito?.trim())       resMissing.push('Próximo hito / Checkpoint');
   showSectionAlert('alert-resumen', resMissing);
-
-  updateGlobalAlertPanel();
 }
 
 function toggleGlobalAlertPanel() {
@@ -5505,8 +5507,10 @@ function updateGlobalAlertPanel() {
 
   // 9-Box
   const nbM = [];
-  if(!p.ninebox?.validated) nbM.push('Cuadrante validado');
-  if(!p.ninebox?.aspiraciones) nbM.push('Aspiraciones');
+  if(getUserRole() === 'manager' || getUserRole() === 'admin') {
+    if(!p.ninebox?.validated) nbM.push('Cuadrante validado');
+    if(!p.ninebox?.aspiraciones) nbM.push('Aspiraciones');
+  }
   if(nbM.length) sections.push({label:'9-Box', items: nbM, tab:'ninebox'});
 
   // Flight Risk
