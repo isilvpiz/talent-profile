@@ -4162,8 +4162,13 @@ function renderOverview() {
       return p._createdByName === uname || p._updatedByName === uname;
     });
   } else {
-    // 'all' — ONLY closed profiles visible to the user by hierarchy
-    ids = ids.filter(id => profiles[id]._closed && canSeeProfile(profiles[id]));
+    // 'all' — closed profiles: own always visible + others filtered by hierarchy
+    ids = ids.filter(id => {
+      const p = profiles[id];
+      if(!p._closed) return false;
+      if(p._createdByName === uname) return true; // siempre ve los propios
+      return canSeeProfile(p);
+    });
   }
 
   // Apply filters
@@ -5309,33 +5314,23 @@ function calcSectionProgress() {
   return results;
 }
 
+const TAB_LABELS = {
+  general: 'General', performance: 'Performance', potencial: 'Potencial',
+  ninebox: '9-Box', skills: 'Mad. Técnica', madurez: 'Mad. Profesional',
+  risk: 'Flight risk', idp: 'IDP', resumen: 'Resumen'
+};
+
 function updateTabProgress() {
   const sectionPcts = calcSectionProgress();
   document.querySelectorAll('.section-tab[data-section]').forEach(tab => {
     const sec = tab.dataset.section;
     const pct = sectionPcts[sec] ?? 0;
-
-    // Remove old bar if exists
-    tab.querySelector('.tab-progress-bar')?.remove();
-    tab.style.paddingBottom = '';
-
-    // Remove old status badge
-    tab.querySelector('.tab-status-icon')?.remove();
-
-    // Get original label (strip any previous badge)
-    let label = tab.dataset.label;
-    if(!label) {
-      // Store original text on first run
-      tab.dataset.label = tab.textContent.trim();
-      label = tab.dataset.label;
-    }
+    const label = TAB_LABELS[sec] || sec;
 
     if(pct >= 100) {
       tab.innerHTML = `${label} <span class="tab-status-icon" style="font-size:10px;margin-left:3px;color:var(--green);font-weight:700">✓</span>`;
-    } else if(pct > 0) {
-      tab.innerHTML = `${label} <span class="tab-status-icon" style="font-size:10px;margin-left:3px;color:var(--amber);font-weight:700">⚠</span>`;
     } else {
-      tab.innerHTML = label; // sin ícono si no se ha tocado
+      tab.innerHTML = `${label} <span class="tab-status-icon" style="font-size:10px;margin-left:3px;color:${pct>0?'var(--amber)':'var(--gray-300)'};font-weight:700">⚠</span>`;
     }
   });
 }
@@ -5675,8 +5670,17 @@ function showSectionAlert(alertId, missingArr) {
     el.innerHTML = '';
     return;
   }
-  const items = missingArr.map(m => `<span style="display:inline-block;background:rgba(220,38,38,0.08);border-radius:4px;padding:1px 7px;margin:2px 3px 2px 0;white-space:nowrap">⚠ ${m}</span>`).join('');
-  el.innerHTML = `<div style="font-weight:600;margin-bottom:5px;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--red)">Campos pendientes (${missingArr.length})</div><div style="line-height:2">${items}</div>`;
+  const items = missingArr.map(m =>
+    `<span style="display:inline-block;background:rgba(220,38,38,0.08);border-radius:4px;padding:1px 7px;margin:2px 3px 2px 0;white-space:nowrap">⚠ ${m}</span>`
+  ).join('');
+  const uid = alertId + '-detail';
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none"
+         onclick="var d=document.getElementById('${uid}');var open=d.style.display!=='none';d.style.display=open?'none':'block';this.querySelector('.alert-chevron').style.transform=open?'':'rotate(180deg)'">
+      <span style="font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.04em">Campos pendientes (${missingArr.length})</span>
+      <span class="alert-chevron" style="font-size:10px;transition:transform 0.2s">▼</span>
+    </div>
+    <div id="${uid}" style="display:none;margin-top:6px;line-height:2">${items}</div>`;
   el.classList.add('show');
 }
 
