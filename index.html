@@ -1954,11 +1954,16 @@ function getCurrentUserName() {
 function isProfileOwner(id) {
   const p = profiles[id];
   if(!p) return false;
-  // Si _createdByName está vacío (perfil local recién creado o dato incompleto),
-  // se asume propiedad del usuario actual para evitar falsos bloqueos
   if(!p._createdByName) return true;
   const uname = getCurrentUserName();
-  return p._createdByName === uname;
+  if(p._createdByName === uname) return true;
+  // Legacy: profile saved with raw email, current name is humanized — check email too
+  const email = currentUser?.email || '';
+  if(p._createdByName === email) return true;
+  // Also check reverse: stored name vs email first-part variations
+  const emailName = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  if(p._createdByName === emailName) return true;
+  return false;
 }
 
 
@@ -4220,7 +4225,6 @@ function renderOverview() {
 
     const tr = document.createElement('tr');
     const isOwned = isProfileOwner(id);
-    if(p._closed) tr.style.background = '#f0fdf4'; // subtle closed tint
     if(overviewFilter === 'mine' && isOwned) {
       tr.style.cursor = 'pointer';
       tr.onclick = () => openProfile(id);
