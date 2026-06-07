@@ -726,6 +726,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
               </div>
               <span id="complPct" style="font-size:11px;font-family:'DM Mono',monospace;font-weight:600"></span>
             </div>
+          </div>
         </div>
         <div style="display:flex;gap:8px" id="profileActionButtons">
           <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" id="profileHistoryBtn" onclick="openHistoryModal(currentId)" style="display:none">📋 Historial</button>
@@ -1944,7 +1945,10 @@ function getUserRole() {
 }
 
 function getCurrentUserName() {
-  return currentUser?.user_metadata?.full_name || currentUser?.email || '';
+  const fullName = currentUser?.user_metadata?.full_name || '';
+  if(fullName) return fullName;
+  const email = currentUser?.email || '';
+  return email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || email;
 }
 
 function isProfileOwner(id) {
@@ -4317,7 +4321,9 @@ function createProfile() {
   const now = new Date().toISOString();
   profiles[id]._updatedAt = now;
   profiles[id]._createdAt = now;
-  const uname = currentUser?.user_metadata?.full_name || currentUser?.email || '';
+  const rawName = currentUser?.user_metadata?.full_name || '';
+  const emailName = (currentUser?.email || '').split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const uname = rawName || emailName || currentUser?.email || '';
   if(currentUser) {
     profiles[id]._createdByName = uname;
     profiles[id]._updatedByName = uname;
@@ -4957,7 +4963,11 @@ function autoFillGeneralFromEquipo(profileId) {
   p.general.nroEmpleado = m.nroEmpleado;
   p.general.ingreso = m.ingreso || '';
   p.general.antiguedad = m.antiguedad || '';
-  if(m.jobRol) p.general.seniority = m.jobRol;
+  if(m.jobRol) {
+    p.general.seniority = m.jobRol;
+    // Pre-fill Rol/Cargo with jobRol if empty — user can refine
+    if(!p.general.rol) p.general.rol = m.jobRol;
+  }
   p.nombre = m.nombre;
   selectedEquipoMember = null;
 }
