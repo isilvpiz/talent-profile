@@ -2833,6 +2833,7 @@ function loadProfileToUI() {
   document.getElementById('ninebox-aspiraciones').value = p.ninebox.aspiraciones || '';
   document.getElementById('ninebox-justif-valid').value = p.ninebox.justifValid  || '';
   updateResumenGapSummary();
+  updateResumenValidation();
   updateNinebox();
   updateSummaryMetrics();
   updateSectionAlerts();
@@ -3073,7 +3074,9 @@ function buildMatTable() {
   tbody.innerHTML = '';
   const p = profiles[currentId];
   MAT_DIMS.forEach((dim, i) => {
-    const d = p.madurez.dims[i] || {nivel:'',justif:''};
+    // Ensure the slot always exists in the profile data
+    if(!p.madurez.dims[i]) p.madurez.dims[i] = {nivel:'', justif:''};
+    const d = p.madurez.dims[i];
     const missingNivel = !d.nivel;
     const missingJustif = !d.justif?.trim();
     const tr = document.createElement('tr');
@@ -3089,12 +3092,13 @@ function buildMatTable() {
           <option ${d.nivel==='5'?'selected':''} value="5">5 — Líder estratégico (Chief/Evangelist)</option>
         </select>
       </td>
-      <td><textarea class="evidence-input" rows="1" placeholder="${missingJustif ? '⚠ Obligatorio…' : 'Justificación…'}" style="${missingJustif ? 'border-color:var(--amber);background:#fffbeb' : ''}" onchange="setMatJustif(${i},this.value)">${d.justif||''}</textarea></td>`;
+      <td><textarea class="evidence-input" rows="1" placeholder="${missingJustif ? '⚠ Obligatorio…' : 'Justificación…'}" style="${missingJustif ? 'border-color:var(--amber);background:#fffbeb' : ''}" oninput="setMatJustifSilent(${i},this.value)" onblur="setMatJustif(${i},this.value)">${d.justif||''}</textarea></td>`;
     tbody.appendChild(tr);
   });
 }
-function setMatNivel(i, val) { if(!currentId) return; profiles[currentId].madurez.dims[i].nivel = val; buildMatTable(); autoSave(); }
-function setMatJustif(i, val) { if(!currentId) return; profiles[currentId].madurez.dims[i].justif = val; buildMatTable(); autoSave(); }
+function setMatNivel(i, val) { if(!currentId) return; if(!profiles[currentId].madurez.dims[i]) profiles[currentId].madurez.dims[i]={nivel:'',justif:''}; profiles[currentId].madurez.dims[i].nivel = val; buildMatTable(); autoSave(); }
+function setMatJustifSilent(i, val) { if(!currentId) return; if(!profiles[currentId].madurez.dims[i]) profiles[currentId].madurez.dims[i]={nivel:'',justif:''}; profiles[currentId].madurez.dims[i].justif = val; autoSave(); }
+function setMatJustif(i, val) { if(!currentId) return; if(!profiles[currentId].madurez.dims[i]) profiles[currentId].madurez.dims[i]={nivel:'',justif:''}; profiles[currentId].madurez.dims[i].justif = val; buildMatTable(); autoSave(); }
 
 // Expected maturity level per role (1-5 scale)
 const ROLE_MATURITY_EXPECTED = {
@@ -3387,6 +3391,7 @@ function autoSave() {
     const el = document.getElementById('res-'+f);
     if(el) p.resumen[f] = el.value;
   });
+  updateResumenValidation();
   p._updatedAt = new Date().toISOString();
   saveLocalState();
   renderSidebar();
@@ -3443,6 +3448,30 @@ function skillMatuLabel(p) {
 // ═══════════════════════════════════════════════════════════════
 // IDP GAP SUGGESTION
 // ═══════════════════════════════════════════════════════════════
+function updateResumenValidation() {
+  if(!currentId) return;
+  const p = profiles[currentId];
+  // Fields: [elementId, getValue fn]
+  const checks = [
+    { id: 'res-fortalezas', empty: () => !p.resumen?.fortalezas?.trim() },
+    { id: 'res-mejoras',    empty: () => !p.resumen?.mejoras?.trim() },
+    { id: 'res-decision',   empty: () => !p.resumen?.decision },
+    { id: 'res-justif',     empty: () => !p.resumen?.justif?.trim() },
+    { id: 'res-hito',       empty: () => !p.resumen?.hito?.trim() },
+  ];
+  checks.forEach(({ id, empty }) => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    if(empty()) {
+      el.style.borderColor = 'var(--amber)';
+      el.style.background  = '#fffbeb';
+    } else {
+      el.style.borderColor = '';
+      el.style.background  = '';
+    }
+  });
+}
+
 function updateResumenGapSummary() {
   if(!currentId) return;
   const p = profiles[currentId];
