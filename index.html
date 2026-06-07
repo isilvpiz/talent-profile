@@ -2609,20 +2609,26 @@ function calcCompleteness(p) {
   chk(!!p.general?.proyectos);
   chk(!!p.general?.entrevistador);
 
-  // Performance — todos los scores obligatorios
+  // Performance — todos los scores y evidencias obligatorios
   const perfScores = Object.values(p.perf?.scores || {});
   perfScores.forEach(s => chk(s > 0));
+  Object.values(p.perf?.evidence || {}).forEach(e => chk(!!e?.trim()));
 
-  // Potencial — todos los scores obligatorios
+  // Potencial — todos los scores y evidencias obligatorios
   const potScores = Object.values(p.pot?.scores || {});
   potScores.forEach(s => chk(s > 0));
+  Object.values(p.pot?.evidence || {}).forEach(e => chk(!!e?.trim()));
 
   // Madurez técnica — planActivo=Sí → plan obligatorio
   Object.values(p.skills || {}).forEach(d => {
     if(d.planActivo === 'Sí') chk(!!d.plan?.trim());
   });
 
-  // Madurez profesional — nivel final obligatorio
+  // Madurez profesional — nivel y justif por dimensión + nivel final + justif global
+  Object.values(p.madurez?.dims || {}).forEach(d => {
+    chk(!!d.nivel);
+    chk(!!d.justif?.trim());
+  });
   chk(!!p.madurez?.final);
 
   // Flight risk — estado por cada ítem obligatorio; obs+acción si Alto o Medio
@@ -2953,7 +2959,7 @@ function buildScoreTable(tbodyId, dims, scores, evidence, prefix, avgId) {
       </td>
       <td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;color:var(--gray-500)">${benchLabel}</td>
       <td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:${gapColor}">${gapLabel}</td>
-      <td><textarea class="evidence-input" rows="1" placeholder="${getEvidencePlaceholder(prefix,i)}" onchange="setEvidence('${prefix}',${i},this.value)">${evidence[i]||''}</textarea></td>`;
+      <td><textarea class="evidence-input" rows="1" placeholder="${getEvidencePlaceholder(prefix,i)}" style="${!evidence[i]?.trim() ? 'border-color:var(--amber);background:#fffbeb' : ''}" onchange="setEvidence('${prefix}',${i},this.value)">${evidence[i]||''}</textarea></td>`;
     tbody.appendChild(tr);
   });
   updateAvgDisplay(prefix, avgId);
@@ -2974,7 +2980,11 @@ function setScore(prefix, idx, val, avgId) {
 
 function setEvidence(prefix, idx, val) {
   if(!currentId) return;
-  profiles[currentId][prefix].evidence[idx] = val;
+  const p = profiles[currentId];
+  p[prefix].evidence[idx] = val;
+  // Rebuild so the amber border clears when value is entered
+  if(prefix === 'perf') buildScoreTable('perf-tbody', PERF_DIMS, p.perf.scores, p.perf.evidence, 'perf', 'avg-perf');
+  else                   buildScoreTable('pot-tbody',  POT_DIMS,  p.pot.scores,  p.pot.evidence,  'pot',  'avg-pot');
   autoSave();
 }
 
@@ -3024,7 +3034,7 @@ function buildSkillTable() {
             <option ${d.planActivo==='No'?'selected':''}>No</option>
           </select>
         </td>
-        <td><textarea class="evidence-input" rows="1" placeholder="${planReq?'⚠ Obligatorio…':'Plan…'}" style="${planReq?'border-color:var(--orange);background:#fff7ed':''}" onchange="setSkillPlan('${skill}',this.value)">${d.plan||''}</textarea></td>`;
+        <td><textarea class="evidence-input" rows="1" placeholder="${planReq && !d.plan?.trim() ? '⚠ Obligatorio…' : 'Plan…'}" style="${planReq && !d.plan?.trim() ? 'border-color:var(--orange);background:#fff7ed' : ''}" onchange="setSkillPlan('${skill}',this.value)">${d.plan||''}</textarea></td>`;
       tbody.appendChild(tr);
     });
   });
@@ -3051,6 +3061,7 @@ function setSkillPlanActivo(skill, val) {
 function setSkillPlan(skill, val) {
   if(!currentId) return;
   profiles[currentId].skills[skill].plan = val;
+  buildSkillTable();
   autoSave();
 }
 
@@ -3063,11 +3074,13 @@ function buildMatTable() {
   const p = profiles[currentId];
   MAT_DIMS.forEach((dim, i) => {
     const d = p.madurez.dims[i] || {nivel:'',justif:''};
+    const missingNivel = !d.nivel;
+    const missingJustif = !d.justif?.trim();
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td style="font-size:12px">${dim}</td>
       <td>
-        <select class="risk-select" style="font-size:12px;width:100%" onchange="setMatNivel(${i},this.value)">
+        <select class="risk-select" style="font-size:12px;width:100%;${missingNivel ? 'border-color:var(--amber);background:#fffbeb' : ''}" onchange="setMatNivel(${i},this.value)">
           <option value="">— Seleccionar —</option>
           <option ${d.nivel==='1'?'selected':''} value="1">1 — Ejecutor guiado (Junior)</option>
           <option ${d.nivel==='2'?'selected':''} value="2">2 — Ejecutor independiente (Engineer/Analyst)</option>
@@ -3076,12 +3089,12 @@ function buildMatTable() {
           <option ${d.nivel==='5'?'selected':''} value="5">5 — Líder estratégico (Chief/Evangelist)</option>
         </select>
       </td>
-      <td><textarea class="evidence-input" rows="1" placeholder="Justificación…" onchange="setMatJustif(${i},this.value)">${d.justif||''}</textarea></td>`;
+      <td><textarea class="evidence-input" rows="1" placeholder="${missingJustif ? '⚠ Obligatorio…' : 'Justificación…'}" style="${missingJustif ? 'border-color:var(--amber);background:#fffbeb' : ''}" onchange="setMatJustif(${i},this.value)">${d.justif||''}</textarea></td>`;
     tbody.appendChild(tr);
   });
 }
-function setMatNivel(i, val) { if(!currentId) return; profiles[currentId].madurez.dims[i].nivel = val; autoSave(); }
-function setMatJustif(i, val) { if(!currentId) return; profiles[currentId].madurez.dims[i].justif = val; autoSave(); }
+function setMatNivel(i, val) { if(!currentId) return; profiles[currentId].madurez.dims[i].nivel = val; buildMatTable(); autoSave(); }
+function setMatJustif(i, val) { if(!currentId) return; profiles[currentId].madurez.dims[i].justif = val; buildMatTable(); autoSave(); }
 
 // Expected maturity level per role (1-5 scale)
 const ROLE_MATURITY_EXPECTED = {
@@ -3126,7 +3139,11 @@ function buildRiskTable() {
     const isAlto = d.estado === 'Alto';
     const isMedio = d.estado === 'Medio';
     const needsObs = isAlto || isMedio;
-    const obsStyle = needsObs ? `border-color:${isAlto?'var(--red)':'var(--amber)'};background:${isAlto?'#fff5f5':'#fffbeb'}` : '';
+    const color = isAlto ? 'var(--red)' : 'var(--amber)';
+    const bgObs    = needsObs && !d.obs?.trim()    ? `border-color:${color};background:${isAlto?'#fff5f5':'#fffbeb'}` : '';
+    const bgAccion = needsObs && !d.accion?.trim() ? `border-color:${color};background:${isAlto?'#fff5f5':'#fffbeb'}` : '';
+    const phObs    = needsObs && !d.obs?.trim()    ? '⚠ Obligatorio…' : 'Obs…';
+    const phAccion = needsObs && !d.accion?.trim() ? '⚠ Obligatorio…' : 'Acción…';
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td style="font-size:12px">${item}</td>
@@ -3138,8 +3155,8 @@ function buildRiskTable() {
           <option ${d.estado==='Bajo'?'selected':''} style="color:#16a34a">Bajo</option>
         </select>
       </td>
-      <td><textarea class="evidence-input" rows="1" placeholder="${needsObs?'⚠ Obligatorio…':'Obs…'}" style="${obsStyle}" onchange="setRiskObs(${i},this.value)">${d.obs||''}</textarea></td>
-      <td><textarea class="evidence-input" rows="1" placeholder="${needsObs?'⚠ Obligatorio…':'Acción…'}" style="${obsStyle}" onchange="setRiskAccion(${i},this.value)">${d.accion||''}</textarea></td>`;
+      <td><textarea class="evidence-input" rows="1" placeholder="${phObs}" style="${bgObs}" onchange="setRiskObs(${i},this.value)">${d.obs||''}</textarea></td>
+      <td><textarea class="evidence-input" rows="1" placeholder="${phAccion}" style="${bgAccion}" onchange="setRiskAccion(${i},this.value)">${d.accion||''}</textarea></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -3167,8 +3184,8 @@ function onRiskGlobalChange() {
 }
 
 
-function setRiskObs(i,v){if(!currentId)return;profiles[currentId].risk.items[i].obs=v;autoSave();}
-function setRiskAccion(i,v){if(!currentId)return;profiles[currentId].risk.items[i].accion=v;autoSave();}
+function setRiskObs(i,v){if(!currentId)return;profiles[currentId].risk.items[i].obs=v;buildRiskTable();autoSave();}
+function setRiskAccion(i,v){if(!currentId)return;profiles[currentId].risk.items[i].accion=v;buildRiskTable();autoSave();}
 function setRiskEstado(i,v){if(!currentId)return;profiles[currentId].risk.items[i].estado=v;autoSave();buildRiskTable();updateSectionAlerts();updateTabProgress();}
 
 // ═══════════════════════════════════════════════════════════════
@@ -5017,10 +5034,16 @@ function getMissingFields(p) {
   if(!g.proyectos) missing.push('Proyectos');
   if(!g.entrevistador) missing.push('Entrevistador');
   const perfScores = Object.values(p.perf?.scores || {});
-  if(perfScores.some(s => !s)) missing.push('Performance incompleto');
+  if(perfScores.some(s => !s)) missing.push('Performance — scores incompletos');
+  const perfEvMissing = Object.values(p.perf?.evidence || {}).filter(e => !e?.trim()).length;
+  if(perfEvMissing) missing.push(`Performance — ${perfEvMissing} evidencia(s) vacía`);
   const potScores = Object.values(p.pot?.scores || {});
-  if(potScores.some(s => !s)) missing.push('Potencial incompleto');
-  if(!p.madurez?.final) missing.push('Madurez final');
+  if(potScores.some(s => !s)) missing.push('Potencial — scores incompletos');
+  const potEvMissing = Object.values(p.pot?.evidence || {}).filter(e => !e?.trim()).length;
+  if(potEvMissing) missing.push(`Potencial — ${potEvMissing} evidencia(s) vacía`);
+  if(!p.madurez?.final) missing.push('Madurez — nivel final');
+  const matDimsMissing = Object.values(p.madurez?.dims || {}).filter(d => !d.nivel || !d.justif?.trim()).length;
+  if(matDimsMissing) missing.push(`Mad. Profesional — ${matDimsMissing} dim(s) incompleta`);
   if(!p.risk?.global) missing.push('Risk global');
   if(!p.resumen?.decision) missing.push('Decisión');
   if(!p.resumen?.fortalezas?.trim()) missing.push('Fortalezas clave');
@@ -5054,15 +5077,19 @@ function calcSectionProgress() {
   const genFilled = genFields.filter(f => g[f] && String(g[f]).trim()).length;
   results.general = Math.round((genFilled / genFields.length) * 100);
 
-  // Performance
+  // Performance — scores + evidence
   const perfScores = Object.values(p.perf?.scores || {});
-  const perfFilled = perfScores.filter(s => s > 0).length;
-  results.performance = perfScores.length ? Math.round((perfFilled / perfScores.length) * 100) : 0;
+  const perfEvidence = Object.values(p.perf?.evidence || {});
+  const perfFilled = perfScores.filter(s => s > 0).length + perfEvidence.filter(e => e?.trim()).length;
+  const perfTotal = perfScores.length * 2;
+  results.performance = perfTotal ? Math.round((perfFilled / perfTotal) * 100) : 0;
 
-  // Potencial
+  // Potencial — scores + evidence
   const potScores = Object.values(p.pot?.scores || {});
-  const potFilled = potScores.filter(s => s > 0).length;
-  results.potencial = potScores.length ? Math.round((potFilled / potScores.length) * 100) : 0;
+  const potEvidence = Object.values(p.pot?.evidence || {});
+  const potFilled = potScores.filter(s => s > 0).length + potEvidence.filter(e => e?.trim()).length;
+  const potTotal = potScores.length * 2;
+  results.potencial = potTotal ? Math.round((potFilled / potTotal) * 100) : 0;
 
   // perfAvg/potAvg used later for 9-Box section progress
   const perfAvg = perfScores.length ? perfScores.reduce((a,b)=>a+b,0)/perfScores.length : 0;
@@ -5079,13 +5106,14 @@ function calcSectionProgress() {
   });
   results.skills = skillTotal ? Math.round((skillFilled / skillTotal) * 100) : 0;
 
-  // Madurez profesional
+  // Madurez profesional — nivel + justif por dimensión + final + justif global
   const matDims = Object.values(p.madurez?.dims || {});
-  const matFilled = matDims.filter(d => d.nivel).length;
-  const matHasFinal = p.madurez?.final ? 1 : 0;
+  const matFilledNivel  = matDims.filter(d => d.nivel).length;
+  const matFilledJustif = matDims.filter(d => d.justif?.trim()).length;
+  const matHasFinal  = p.madurez?.final ? 1 : 0;
   const matHasJustif = p.madurez?.justif?.trim() ? 1 : 0;
-  const matTotal = matDims.length + 2;
-  results.madurez = matTotal ? Math.round(((matFilled + matHasFinal + matHasJustif) / matTotal) * 100) : 0;
+  const matTotal = matDims.length * 2 + 2;
+  results.madurez = matTotal ? Math.round(((matFilledNivel + matFilledJustif + matHasFinal + matHasJustif) / matTotal) * 100) : 0;
 
   // Flight Risk
   const riskItems = Object.values(p.risk?.items || {});
