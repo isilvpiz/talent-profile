@@ -764,6 +764,20 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
         <div class="section-tab" onclick="switchTab('resumen',this)" data-section="resumen" style="white-space:nowrap">Resumen</div>
       </div>
 
+      <!-- ═══ PANEL GLOBAL DE COMPLETITUD ═══ -->
+      <div id="global-alert-panel" style="display:none;margin:8px 0 4px;border-radius:9px;border:1px solid #fcd34d;background:#fffbeb;overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;cursor:pointer;user-select:none" onclick="toggleGlobalAlertPanel()">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:14px">⚠️</span>
+            <span id="global-alert-summary" style="font-size:12px;font-weight:600;color:#92400e"></span>
+          </div>
+          <span id="global-alert-chevron" style="font-size:11px;color:#b45309;transition:transform 0.2s">▼</span>
+        </div>
+        <div id="global-alert-detail" style="display:none;border-top:1px solid #fcd34d;padding:8px 12px 10px">
+          <div id="global-alert-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px"></div>
+        </div>
+      </div>
+
       <!-- ═══ SECCIÓN GENERAL ═══ -->
       <div class="section-content active" id="sec-general">
         <div id="alert-general" class="section-alert"></div>
@@ -910,6 +924,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
             <table class="score-table">
               <thead><tr>
                 <th style="width:22%">Skill</th>
+                <th style="width:44px;text-align:center" title="Marcar como No Aplica para este rol">N/A</th>
                 <th style="width:90px">Actual</th>
                 <th style="width:90px">Target 6m</th>
                 <th style="width:55px">Gap</th>
@@ -1118,6 +1133,7 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
 
       <!-- ═══ RESUMEN ═══ -->
       <div class="section-content" id="sec-resumen">
+        <div id="alert-resumen" class="section-alert"></div>
         <div class="summary-grid" id="summary-metrics"></div>
         <div class="card">
           <div class="card-header">
@@ -2565,7 +2581,7 @@ function newProfileData(id, nombre, rol, color) {
   const potScores = {}, potEvidence = {};
   POT_DIMS.forEach((_, i) => { potScores[i] = 0; potEvidence[i] = ""; });
   const skillData = {};
-  Object.values(SKILL_GROUPS).flat().forEach(s => { skillData[s] = {actual:0, target:0, plan:"", prioridad:"", planActivo:""}; });
+  Object.values(SKILL_GROUPS).flat().forEach(s => { skillData[s] = {actual:0, target:0, plan:"", prioridad:"", planActivo:"", na:false}; });
   const matData = {};
   MAT_DIMS.forEach((_, i) => { matData[i] = {nivel:"", justif:""}; });
   const riskData = {};
@@ -2619,8 +2635,9 @@ function calcCompleteness(p) {
   potScores.forEach(s => chk(s > 0));
   Object.values(p.pot?.evidence || {}).forEach(e => chk(!!e?.trim()));
 
-  // Madurez técnica — planActivo=Sí → plan obligatorio
+  // Madurez técnica — planActivo=Sí → plan obligatorio (skip NA skills)
   Object.values(p.skills || {}).forEach(d => {
+    if(d.na) return;
     if(d.planActivo === 'Sí') chk(!!d.plan?.trim());
   });
 
@@ -3007,21 +3024,36 @@ function buildSkillTable() {
   const p = profiles[currentId];
   Object.entries(SKILL_GROUPS).forEach(([group, skills]) => {
     const groupRow = document.createElement('tr');
-    groupRow.innerHTML = `<td colspan="6" class="skill-group-header">▸ ${group}</td>`;
+    groupRow.innerHTML = `<td colspan="7" class="skill-group-header">▸ ${group}</td>`;
     tbody.appendChild(groupRow);
     skills.forEach(skill => {
-      const d = p.skills[skill] || {actual:0,target:0,plan:'',prioridad:'',planActivo:''};
-      const gap = d.target && d.actual ? d.target - d.actual : '';
+      const d = p.skills[skill] || {actual:0,target:0,plan:'',prioridad:'',planActivo:'',na:false};
+      if(!p.skills[skill]) p.skills[skill] = d;
+      const isNA = !!d.na;
+      const gap = !isNA && d.target && d.actual ? d.target - d.actual : '';
       const gapClass = gap > 0 ? 'gap-pos' : gap < 0 ? 'gap-neg' : gap === 0 ? 'gap-zero' : '';
-      const planReq = d.planActivo === 'Sí';
+      const planReq = !isNA && d.planActivo === 'Sí';
+      const rowOpacity = isNA ? 'opacity:0.35;' : '';
       const tr = document.createElement('tr');
+      tr.style.cssText = rowOpacity;
       tr.innerHTML = `
         <td style="font-size:12px">${skill}</td>
-        <td><div class="score-stars">${[1,2,3,4,5].map(n=>`<div class="star ${d.actual>=n?'active-'+n:''}" onclick="setSkillScore('${skill}','actual',${n})">${n}</div>`).join('')}</div></td>
-        <td><div class="score-stars">${[1,2,3,4,5].map(n=>`<div class="star ${d.target>=n?'active-'+n:''}" onclick="setSkillScore('${skill}','target',${n})">${n}</div>`).join('')}</div></td>
+        <td style="text-align:center">
+          <input type="checkbox" ${isNA?'checked':''} title="No aplica para este rol"
+            style="width:15px;height:15px;cursor:pointer;accent-color:var(--gray-400)"
+            onchange="setSkillNA('${skill}',this.checked)">
+        </td>
+        <td><div class="score-stars" style="${isNA?'pointer-events:none':''}">
+          ${[1,2,3,4,5].map(n=>`<div class="star ${!isNA&&d.actual>=n?'active-'+n:''}" onclick="${isNA?'':''}"
+            ${isNA?'':'onclick="setSkillScore(\''+skill+'\',\'actual\','+n+')"'}>${n}</div>`).join('')}
+        </div></td>
+        <td><div class="score-stars" style="${isNA?'pointer-events:none':''}">
+          ${[1,2,3,4,5].map(n=>`<div class="star ${!isNA&&d.target>=n?'active-'+n:''}"
+            ${isNA?'':'onclick="setSkillScore(\''+skill+'\',\'target\','+n+')"'}>${n}</div>`).join('')}
+        </div></td>
         <td>${gap !== '' ? `<span class="gap-badge ${gapClass}">${gap > 0 ? '+'+gap : gap}</span>` : '<span style="color:var(--gray-400);font-size:12px">—</span>'}</td>
         <td>
-          <select class="risk-select" style="font-size:11px;padding:3px 5px" onchange="setSkillPrio('${skill}',this.value)">
+          <select class="risk-select" style="font-size:11px;padding:3px 5px" ${isNA?'disabled':''} onchange="setSkillPrio('${skill}',this.value)">
             <option value="">—</option>
             <option ${d.prioridad==='Alta'?'selected':''}>Alta</option>
             <option ${d.prioridad==='Media'?'selected':''}>Media</option>
@@ -3029,18 +3061,25 @@ function buildSkillTable() {
           </select>
         </td>
         <td>
-          <select class="risk-select" style="font-size:11px;padding:3px 5px" onchange="setSkillPlanActivo('${skill}',this.value)">
+          <select class="risk-select" style="font-size:11px;padding:3px 5px" ${isNA?'disabled':''} onchange="setSkillPlanActivo('${skill}',this.value)">
             <option value="">—</option>
             <option ${d.planActivo==='Sí'?'selected':''}>Sí</option>
             <option ${d.planActivo==='No'?'selected':''}>No</option>
           </select>
         </td>
-        <td><textarea class="evidence-input" rows="1" placeholder="${planReq && !d.plan?.trim() ? '⚠ Obligatorio…' : 'Plan…'}" style="${planReq && !d.plan?.trim() ? 'border-color:var(--orange);background:#fff7ed' : ''}" onchange="setSkillPlan('${skill}',this.value)">${d.plan||''}</textarea></td>`;
+        <td><textarea class="evidence-input" rows="1" ${isNA?'disabled':''} placeholder="${planReq && !d.plan?.trim() ? '⚠ Obligatorio…' : 'Plan…'}" style="${planReq && !d.plan?.trim() ? 'border-color:var(--orange);background:#fff7ed' : ''}" onchange="setSkillPlan('${skill}',this.value)">${d.plan||''}</textarea></td>`;
       tbody.appendChild(tr);
     });
   });
 }
 
+function setSkillNA(skill, val) {
+  if(!currentId) return;
+  if(!profiles[currentId].skills[skill]) profiles[currentId].skills[skill] = {actual:0,target:0,plan:'',prioridad:'',planActivo:'',na:false};
+  profiles[currentId].skills[skill].na = val;
+  buildSkillTable();
+  autoSave();
+}
 function setSkillScore(skill, type, val) {
   if(!currentId) return;
   const d = profiles[currentId].skills[skill];
@@ -5124,11 +5163,11 @@ function calcSectionProgress() {
   const perfAvg = perfScores.length ? perfScores.reduce((a,b)=>a+b,0)/perfScores.length : 0;
   const potAvg  = potScores.length  ? potScores.reduce((a,b)=>a+b,0)/potScores.length   : 0;
 
-  // Skills — planActivo=Sí requires plan
-  const skillEntries = Object.values(p.skills || {});
+  // Skills — planActivo=Sí requires plan; skip NA
+  const skillEntries = Object.values(p.skills || {}).filter(d => !d.na);
   let skillTotal = 0, skillFilled = 0;
   skillEntries.forEach(d => {
-    skillTotal += 2; // actual + target
+    skillTotal += 2;
     if(d.actual > 0) skillFilled++;
     if(d.target > 0) skillFilled++;
     if(d.planActivo === 'Sí') { skillTotal++; if(d.plan?.trim()) skillFilled++; }
@@ -5352,7 +5391,7 @@ function updateSectionAlerts() {
 
   // Skills
   const skillsMissing = Object.entries(p.skills||{})
-    .filter(([,d]) => d.planActivo==='Sí' && !d.plan?.trim())
+    .filter(([,d]) => !d.na && d.planActivo==='Sí' && !d.plan?.trim())
     .map(([skill]) => skill);
   showSectionAlert('alert-skills', skillsMissing.length ? [`Plan obligatorio sin completar: ${skillsMissing.join(', ')}`] : []);
 
@@ -5364,19 +5403,140 @@ function updateSectionAlerts() {
   // Risk
   const riskMissing = [];
   Object.entries(p.risk?.items||{}).forEach(([i, d]) => {
-    if(!d.estado) riskMissing.push(`${RISK_ITEMS[i]}: falta estado`);
-    else if(d.estado==='Alto') {
-      if(!d.obs?.trim())    riskMissing.push(`${RISK_ITEMS[i]}: falta observación (Alto)`);
-      if(!d.accion?.trim()) riskMissing.push(`${RISK_ITEMS[i]}: falta acción (Alto)`);
+    if(!d.estado) riskMissing.push(`${RISK_ITEMS[i]}: estado`);
+    else if(d.estado==='Alto'||d.estado==='Medio') {
+      if(!d.obs?.trim())    riskMissing.push(`${RISK_ITEMS[i]}: obs`);
+      if(!d.accion?.trim()) riskMissing.push(`${RISK_ITEMS[i]}: acción`);
     }
   });
-  if(!p.risk?.global) riskMissing.push('Nivel de riesgo global');
+  if(!p.risk?.global)        riskMissing.push('Riesgo global');
+  if(!p.risk?.accion?.trim()) riskMissing.push('Acción de retención');
+  if(!p.risk?.nextrev)       riskMissing.push('Próxima revisión');
   showSectionAlert('alert-risk', riskMissing);
 
   // Resumen
   const resMissing = [];
-  if(!p.resumen?.decision) resMissing.push('Decisión recomendada');
+  if(!p.resumen?.fortalezas?.trim()) resMissing.push('Fortalezas clave');
+  if(!p.resumen?.mejoras?.trim())    resMissing.push('Áreas de mejora');
+  if(!p.resumen?.decision)           resMissing.push('Decisión recomendada');
+  if(!p.resumen?.justif?.trim())     resMissing.push('Justificación decisión');
+  if(!p.resumen?.hito?.trim())       resMissing.push('Próximo hito');
+  if(!document.getElementById('alert-resumen')) {
+    // Insert alert element if missing (resumen section)
+  }
   showSectionAlert('alert-resumen', resMissing);
+  updateGlobalAlertPanel();
+}
+
+function toggleGlobalAlertPanel() {
+  const detail = document.getElementById('global-alert-detail');
+  const chevron = document.getElementById('global-alert-chevron');
+  if(!detail) return;
+  const open = detail.style.display !== 'none';
+  detail.style.display = open ? 'none' : 'block';
+  if(chevron) chevron.style.transform = open ? '' : 'rotate(180deg)';
+}
+
+function updateGlobalAlertPanel() {
+  if(!currentId) return;
+  const p = profiles[currentId];
+  const g = p.general || {};
+
+  const sections = [];
+
+  // General
+  const genM = [];
+  if(!g.nombre) genM.push('Nombre');
+  if(!g.rol) genM.push('Rol');
+  if(!g.nivel) genM.push('Nivel');
+  if(!g.ingreso) genM.push('Ingreso');
+  if(!g.seniority) genM.push('Job Rol');
+  if(!g.nroEmpleado) genM.push('N° Empleado');
+  if(!g.antiguedad) genM.push('Antigüedad');
+  if(!g.lasteval) genM.push('Última eval.');
+  if(!g.proyectos) genM.push('Proyectos');
+  if(!g.entrevistador) genM.push('Entrevistador');
+  if(genM.length) sections.push({label:'General', items: genM, tab:'general'});
+
+  // Performance
+  const perfM = [];
+  PERF_DIMS.forEach((dim, i) => { if(!p.perf?.scores[i]) perfM.push(dim); });
+  Object.values(p.perf?.evidence || {}).forEach((e, i) => { if(!e?.trim()) perfM.push(`Evidencia dim.${i+1}`); });
+  if(!p.perf?.feedbackScore) perfM.push('Score feedback');
+  if(perfM.length) sections.push({label:'Performance', items: perfM, tab:'performance'});
+
+  // Potencial
+  const potM = [];
+  POT_DIMS.forEach((dim, i) => { if(!p.pot?.scores[i]) potM.push(dim); });
+  Object.values(p.pot?.evidence || {}).forEach((e, i) => { if(!e?.trim()) potM.push(`Evidencia dim.${i+1}`); });
+  if(potM.length) sections.push({label:'Potencial', items: potM, tab:'potencial'});
+
+  // Skills
+  const skillM = Object.entries(p.skills||{})
+    .filter(([,d]) => !d.na && d.planActivo==='Sí' && !d.plan?.trim())
+    .map(([s]) => `Plan: ${s}`);
+  if(skillM.length) sections.push({label:'Mad. Técnica', items: skillM, tab:'skills'});
+
+  // Madurez profesional
+  const matM = [];
+  Object.values(p.madurez?.dims || {}).forEach((d, i) => {
+    if(!d.nivel) matM.push(`Nivel dim.${i+1}`);
+    if(!d.justif?.trim()) matM.push(`Justif. dim.${i+1}`);
+  });
+  if(!p.madurez?.final) matM.push('Nivel final');
+  if(!p.madurez?.justif?.trim()) matM.push('Justif. global');
+  if(matM.length) sections.push({label:'Mad. Profesional', items: matM, tab:'madurez'});
+
+  // 9-Box
+  const nbM = [];
+  if(!p.ninebox?.validated) nbM.push('Cuadrante validado');
+  if(!p.ninebox?.aspiraciones) nbM.push('Aspiraciones');
+  if(nbM.length) sections.push({label:'9-Box', items: nbM, tab:'ninebox'});
+
+  // Flight Risk
+  const riskM = [];
+  Object.entries(p.risk?.items||{}).forEach(([i, d]) => {
+    if(!d.estado) riskM.push(`${RISK_ITEMS[i]}: estado`);
+    if((d.estado==='Alto'||d.estado==='Medio') && !d.obs?.trim()) riskM.push(`${RISK_ITEMS[i]}: obs`);
+    if((d.estado==='Alto'||d.estado==='Medio') && !d.accion?.trim()) riskM.push(`${RISK_ITEMS[i]}: acción`);
+  });
+  if(!p.risk?.global) riskM.push('Riesgo global');
+  if(!p.risk?.accion?.trim()) riskM.push('Acción retención');
+  if(!p.risk?.nextrev) riskM.push('Próxima revisión');
+  if(riskM.length) sections.push({label:'Flight Risk', items: riskM, tab:'risk'});
+
+  // Resumen
+  const resM = [];
+  if(!p.resumen?.fortalezas?.trim()) resM.push('Fortalezas');
+  if(!p.resumen?.mejoras?.trim()) resM.push('Áreas de mejora');
+  if(!p.resumen?.decision) resM.push('Decisión');
+  if(!p.resumen?.justif?.trim()) resM.push('Justificación');
+  if(!p.resumen?.hito?.trim()) resM.push('Próximo hito');
+  if(resM.length) sections.push({label:'Resumen', items: resM, tab:'resumen'});
+
+  const panel = document.getElementById('global-alert-panel');
+  const summary = document.getElementById('global-alert-summary');
+  const list = document.getElementById('global-alert-list');
+  if(!panel) return;
+
+  if(!sections.length) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  const totalItems = sections.reduce((a, s) => a + s.items.length, 0);
+  panel.style.display = 'block';
+  summary.textContent = `${sections.length} sección${sections.length>1?'es':''} incompleta${sections.length>1?'s':''} · ${totalItems} campo${totalItems>1?'s':''} pendiente${totalItems>1?'s':''}`;
+
+  list.innerHTML = sections.map(s => `
+    <div style="background:white;border:1px solid #fde68a;border-radius:6px;padding:7px 10px;cursor:pointer"
+         onclick="switchTab('${s.tab}', document.querySelector('.section-tab[data-section=\\'${s.tab}\\']'))"
+         title="Ir a ${s.label}">
+      <div style="font-size:11px;font-weight:700;color:#92400e;margin-bottom:3px">
+        ${s.label} <span style="font-weight:400;color:#b45309">(${s.items.length})</span>
+      </div>
+      <div style="font-size:10px;color:#b45309;line-height:1.5">${s.items.slice(0,4).join(' · ')}${s.items.length>4?' · +'+(s.items.length-4)+' más':''}</div>
+    </div>`).join('');
 }
 
 function showSectionAlert(alertId, missingArr) {
