@@ -726,8 +726,6 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
               </div>
               <span id="complPct" style="font-size:11px;font-family:'DM Mono',monospace;font-weight:600"></span>
             </div>
-          </div>
-          <div id="profileAlert" style="display:none;margin-top:6px;font-size:12px;color:var(--amber);background:var(--amber-light);padding:4px 10px;border-radius:6px;border:1px solid #fcd34d"></div>
         </div>
         <div style="display:flex;gap:8px" id="profileActionButtons">
           <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" id="profileHistoryBtn" onclick="openHistoryModal(currentId)" style="display:none">📋 Historial</button>
@@ -2745,11 +2743,14 @@ function renderSidebar() {
       <div style="min-width:0;flex:1">
         <div class="person-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre || '(sin nombre)'}</div>
         <div style="display:flex;align-items:center;gap:5px;margin-top:2px">
-          <div style="flex:1;height:3px;background:var(--gray-200);border-radius:2px;overflow:hidden">
-            <div style="width:${pct}%;height:100%;background:${col};border-radius:2px;transition:width 0.3s"></div>
-          </div>
-          <span style="font-size:10px;font-family:'DM Mono',monospace;color:${col};font-weight:600;flex-shrink:0">${pct}%</span>
-          ${pct < 100 ? '<span style="font-size:10px;color:var(--amber)">⚠</span>' : '<span style="font-size:10px">✓</span>'}
+          ${p._closed
+            ? '<span style="font-size:9px;padding:1px 6px;background:var(--green-light);color:var(--green);border-radius:4px;font-weight:700;letter-spacing:0.02em">✓ Cerrado</span>'
+            : `<div style="flex:1;height:3px;background:var(--gray-200);border-radius:2px;overflow:hidden">
+                <div style="width:${pct}%;height:100%;background:${col};border-radius:2px;transition:width 0.3s"></div>
+               </div>
+               <span style="font-size:10px;font-family:'DM Mono',monospace;color:${col};font-weight:600;flex-shrink:0">${pct}%</span>
+               <span style="font-size:10px;color:var(--amber)">⚠</span>`
+          }
         </div>
       </div>`;
     chip.onclick = () => openProfile(id);
@@ -2823,10 +2824,6 @@ function loadProfileToUI() {
   document.getElementById('complBar').style.background = col;
   document.getElementById('complPct').textContent = pct + '%';
   document.getElementById('complPct').style.color = col;
-  // Hide the old grouped alert — section alerts handle this now
-  const alertDiv = document.getElementById('profileAlert');
-  if(alertDiv) alertDiv.style.display = 'none';
-
   // General
   ['nombre','rol','nivel','ingreso','seniority','nroEmpleado','antiguedad','lasteval','proyectos','entrevistador','notas'].forEach(f => {
     const el = document.getElementById('g-'+f);
@@ -2962,6 +2959,10 @@ function loadProfileToUI() {
       el.title = '';
     }
   });
+
+  // ── Actualizar alertas e íconos de tabs al cargar ──
+  updateSectionAlerts();
+  updateTabProgress();
 }
 
 function getEvidencePlaceholder(prefix, i) {
@@ -3448,13 +3449,11 @@ function switchTab(name, el) {
   document.getElementById('sec-'+name)?.classList.add('active');
   if(name === 'ninebox') updateNinebox();
   if(name === 'resumen') updateSummaryMetrics();
-  // Scroll to section alert if it has pending fields
+  // Scroll to pending alert if present — otherwise stay put
   requestAnimationFrame(() => {
     const alertEl = document.getElementById('alert-'+name);
     if(alertEl?.classList.contains('show')) {
-      alertEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
-      document.getElementById('sec-'+name)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      alertEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   });
 }
@@ -4217,6 +4216,7 @@ function renderOverview() {
 
     const tr = document.createElement('tr');
     const isOwned = isProfileOwner(id);
+    if(p._closed) tr.style.background = '#f0fdf4'; // subtle closed tint
     if(overviewFilter === 'mine' && isOwned) {
       tr.style.cursor = 'pointer';
       tr.onclick = () => openProfile(id);
@@ -5666,17 +5666,20 @@ function showSectionAlert(alertId, missingArr) {
     el.innerHTML = '';
     return;
   }
+  const uid = alertId + '-detail';
+  // Preserve open/closed state across re-renders
+  const wasOpen = !!document.getElementById(uid) &&
+                  document.getElementById(uid).style.display !== 'none';
   const items = missingArr.map(m =>
     `<span style="display:inline-block;background:rgba(220,38,38,0.08);border-radius:4px;padding:1px 7px;margin:2px 3px 2px 0;white-space:nowrap">⚠ ${m}</span>`
   ).join('');
-  const uid = alertId + '-detail';
   el.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none"
          onclick="var d=document.getElementById('${uid}');var open=d.style.display!=='none';d.style.display=open?'none':'block';this.querySelector('.alert-chevron').style.transform=open?'':'rotate(180deg)'">
       <span style="font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.04em">Campos pendientes (${missingArr.length})</span>
-      <span class="alert-chevron" style="font-size:10px;transition:transform 0.2s">▼</span>
+      <span class="alert-chevron" style="font-size:10px;transition:transform 0.2s${wasOpen?';transform:rotate(180deg)':''}">▼</span>
     </div>
-    <div id="${uid}" style="display:none;margin-top:6px;line-height:2">${items}</div>`;
+    <div id="${uid}" style="display:${wasOpen?'block':'none'};margin-top:6px;line-height:2">${items}</div>`;
   el.classList.add('show');
 }
 
