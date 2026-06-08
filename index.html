@@ -3088,13 +3088,11 @@ function buildSkillTable() {
             ${isNA?'N/A':''}
           </label>
         </td>
-        <td><div class="score-stars" style="${isNA?'pointer-events:none':''}">
-          ${[1,2,3,4,5].map(n=>`<div class="star ${!isNA&&d.actual>=n?'active-'+n:''}" onclick="${isNA?'':''}"
-            ${isNA?'':'onclick="setSkillScore(\''+skill+'\',\'actual\','+n+')"'}>${n}</div>`).join('')}
+        <td><div class="score-stars" style="${isNA?'pointer-events:none;opacity:0.4':''}">
+          ${[1,2,3,4,5].map(n=>`<div class="star ${!isNA&&d.actual>=n?'active-'+n:''}" onclick="${isNA?'':'setSkillScore(\''+skill+'\',\'actual\','+n+')'}">${n}</div>`).join('')}
         </div></td>
-        <td><div class="score-stars" style="${isNA?'pointer-events:none':''}">
-          ${[1,2,3,4,5].map(n=>`<div class="star ${!isNA&&d.target>=n?'active-'+n:''}"
-            ${isNA?'':'onclick="setSkillScore(\''+skill+'\',\'target\','+n+')"'}>${n}</div>`).join('')}
+        <td><div class="score-stars" style="${isNA?'pointer-events:none;opacity:0.4':''}">
+          ${[1,2,3,4,5].map(n=>`<div class="star ${!isNA&&d.target>=n?'active-'+n:''}" onclick="${isNA?'':'setSkillScore(\''+skill+'\',\'target\','+n+')'}">${n}</div>`).join('')}
         </div></td>
         <td>${gap !== '' ? `<span class="gap-badge ${gapClass}">${gap > 0 ? '+'+gap : gap}</span>` : '<span style="color:var(--gray-400);font-size:12px">—</span>'}</td>
         <td>
@@ -3937,7 +3935,7 @@ const RC_PILLAR_CONFIG = {
 function showRoleCompetencies() {
   currentId = null;
   activeView = 'rolecomp';
-  ['emptyState','profileView','overviewView','methodologyView','homeView','equipoView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  ['emptyState','profileView','overviewView','methodologyView','homeView','equipoView','manualView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   document.getElementById('roleCompView').style.display = 'block';
   document.getElementById('nav-overview-mine').classList.remove('active');
   document.getElementById('nav-overview-all').classList.remove('active');
