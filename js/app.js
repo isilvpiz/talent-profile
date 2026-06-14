@@ -214,10 +214,13 @@ function onAuthSuccess(user) {
     document.body.classList.add('is-admin');
     document.getElementById('benchmarkBtn').style.display = '';
   }
-  loadBenchmarks().then(() => loadDimensions()).then(() => pullFromSupabase().then(() => {
+  loadBenchmarks().then(() => loadDimensions()).then(async () => {
+    // Load equipo from Supabase
+    equipoData = await loadEquipoData();
+    await pullFromSupabase();
     // After data loads, show home if no view is active
     if(activeView === 'empty' || activeView === 'home') showHome();
-  }));
+  });
 }
 
 function isAdmin() {
@@ -3005,21 +3008,62 @@ function getManualHtml(role) {
 // EQUIPO — Directorio de integrantes
 // ═══════════════════════════════════════════════════════════════
 
-// Seed data from Excel upload — editable at runtime via CRUD
-const EQUIPO_SEED = [{"nroEmpleado": "291594", "nombre": "Nicolas Cerna Araya", "ingreso": "2025-11-12", "antiguedad": "0 años y 6 meses", "jobRol": "Senior Technical Project Leader"}, {"nroEmpleado": "218978", "nombre": "Antonio Varas Curin", "ingreso": "2022-03-07", "antiguedad": "4 años y 2 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "102831", "nombre": "Cristian Alejandro Chandia Poblete", "ingreso": "2010-06-29", "antiguedad": "15 años y 11 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "279634", "nombre": "Giuseppe Lavarello Osorio", "ingreso": "2025-05-12", "antiguedad": "1 años y 0 meses", "jobRol": "Junior Engineer"}, {"nroEmpleado": "133785", "nombre": "Cristian Zuñiga Meza", "ingreso": "2018-06-01", "antiguedad": "8 años y 0 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "131129", "nombre": "Cristian Ahumada Bustos", "ingreso": "2020-02-01", "antiguedad": "6 años y 4 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "182973", "nombre": "Luis Zamora Letelier", "ingreso": "2019-11-20", "antiguedad": "6 años y 6 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "124904", "nombre": "Borja Sala Baucells", "ingreso": "2014-11-17", "antiguedad": "11 años y 6 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "279632", "nombre": "Lukas Pavez Bahamondes", "ingreso": "2025-05-12", "antiguedad": "1 años y 0 meses", "jobRol": "Analyst"}, {"nroEmpleado": "181749", "nombre": "Julio Corvalan Kiefer", "ingreso": "2019-10-14", "antiguedad": "6 años y 7 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "260086", "nombre": "Alexander Cols Mijares", "ingreso": "2024-05-02", "antiguedad": "2 años y 1 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "294716", "nombre": "Jorge Andres Acuña Roldan", "ingreso": "2026-01-01", "antiguedad": "0 años y 5 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "278655", "nombre": "Danilo Avila Carcamo", "ingreso": "2025-04-23", "antiguedad": "1 años y 1 meses", "jobRol": "Expert Analyst"}, {"nroEmpleado": "257721", "nombre": "Ivan Sepulveda Masferrer", "ingreso": "2024-03-04", "antiguedad": "2 años y 3 meses", "jobRol": "Expert Analyst"}, {"nroEmpleado": "284863", "nombre": "Vicente Villegas Quezada", "ingreso": "2025-08-13", "antiguedad": "0 años y 9 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "221172", "nombre": "Matias Bustamante Farias", "ingreso": "2022-04-04", "antiguedad": "4 años y 2 meses", "jobRol": "Analyst"}, {"nroEmpleado": "257932", "nombre": "Nicolas Sandoval Hernandez", "ingreso": "2024-03-08", "antiguedad": "2 años y 2 meses", "jobRol": "Expert Analyst"}, {"nroEmpleado": "214803", "nombre": "Alfonso Vargas Guerra", "ingreso": "2022-01-03", "antiguedad": "4 años y 5 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "259916", "nombre": "Alejandro Rojas Fuentes", "ingreso": "2024-04-24", "antiguedad": "2 años y 1 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "260258", "nombre": "Carlos González Moreno", "ingreso": "2024-05-02", "antiguedad": "2 años y 1 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "289342", "nombre": "Katherine Escudero Flores", "ingreso": "2025-10-20", "antiguedad": "0 años y 7 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "283549", "nombre": "Marcelo Rojas Hernandez", "ingreso": "2025-07-21", "antiguedad": "0 años y 10 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "285068", "nombre": "Bryan Gutierrez Mundaca", "ingreso": "2025-08-18", "antiguedad": "0 años y 9 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "221185", "nombre": "Daniela De Quevedo", "ingreso": "2022-04-04", "antiguedad": "4 años y 2 meses", "jobRol": "Analyst"}, {"nroEmpleado": "221175", "nombre": "Kevin Valencia Martinez", "ingreso": "2022-04-04", "antiguedad": "4 años y 2 meses", "jobRol": "Engineer"}, {"nroEmpleado": "221180", "nombre": "Fernando Vergara Ramirez", "ingreso": "2022-04-04", "antiguedad": "4 años y 2 meses", "jobRol": "Engineer"}, {"nroEmpleado": "264748", "nombre": "Gabriel Diaz Herrera", "ingreso": "2025-01-02", "antiguedad": "1 años y 5 meses", "jobRol": "Junior Engineer"}, {"nroEmpleado": "268532", "nombre": "Katterina Palma Vallejos", "ingreso": "2024-10-21", "antiguedad": "1 años y 7 meses", "jobRol": "Analyst"}, {"nroEmpleado": "259918", "nombre": "Jean Pierre Cid Bustos", "ingreso": "2024-04-24", "antiguedad": "2 años y 1 meses", "jobRol": "Expert Analyst"}, {"nroEmpleado": "276999", "nombre": "Ramon Eduardo Alvarez Ponce", "ingreso": "2025-04-01", "antiguedad": "1 años y 2 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "293476", "nombre": "Guillermo Cardenas Cardenas", "ingreso": "2026-02-18", "antiguedad": "0 años y 3 meses", "jobRol": "Junior Engineer"}, {"nroEmpleado": "293417", "nombre": "Joey Jerez Sepulveda", "ingreso": "2026-02-13", "antiguedad": "0 años y 3 meses", "jobRol": "Junior Engineer"}, {"nroEmpleado": "293477", "nombre": "Tania Castro Prado", "ingreso": "2026-02-18", "antiguedad": "0 años y 3 meses", "jobRol": "Junior Engineer"}, {"nroEmpleado": "292191", "nombre": "Moises Quiroz Diaz", "ingreso": "2025-11-24", "antiguedad": "0 años y 6 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "282666", "nombre": "Nicolas Irribarra Zúñiga", "ingreso": "2025-07-07", "antiguedad": "0 años y 10 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "264217", "nombre": "Diego Carreño Montenegro", "ingreso": "2024-08-05", "antiguedad": "1 años y 10 meses", "jobRol": "Expert Analyst"}, {"nroEmpleado": "267366", "nombre": "Cassidy Allendes Venegas", "ingreso": "2025-03-17", "antiguedad": "1 años y 2 meses", "jobRol": "Junior Analyst"}, {"nroEmpleado": "271410", "nombre": "Ivan Guajardo Arias", "ingreso": "2025-04-09", "antiguedad": "1 años y 1 meses", "jobRol": "Junior Analyst"}, {"nroEmpleado": "298817", "nombre": "Fabiola Pizarro Fuentes", "ingreso": "2026-03-02", "antiguedad": "0 años y 3 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "296692", "nombre": "Ignacio Barrera Gutierrez", "ingreso": "2026-02-09", "antiguedad": "0 años y 3 meses", "jobRol": "Analyst"}, {"nroEmpleado": "289687", "nombre": "Joseph Flores Antezana", "ingreso": "2025-10-20", "antiguedad": "0 años y 7 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "296687", "nombre": "Martin Campos Donoso", "ingreso": "2026-02-09", "antiguedad": "0 años y 3 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "296992", "nombre": "Vanessa Gonzalez Arriagada", "ingreso": "2026-02-09", "antiguedad": "0 años y 3 meses", "jobRol": "Analyst"}, {"nroEmpleado": "304033", "nombre": "Alondra Araya Araya", "ingreso": "2026-04-06", "antiguedad": "0 años y 1 meses", "jobRol": "Analyst"}, {"nroEmpleado": "296685", "nombre": "Angelo Olivares Canto", "ingreso": "2026-02-09", "antiguedad": "0 años y 3 meses", "jobRol": "Analyst"}, {"nroEmpleado": "296990", "nombre": "Jonas Oviedo Morales", "ingreso": "2026-02-09", "antiguedad": "0 años y 3 meses", "jobRol": "Analyst"}, {"nroEmpleado": "289348", "nombre": "Cristian Oyarzo Moraga", "ingreso": "2025-10-20", "antiguedad": "0 años y 7 meses", "jobRol": "Junior Analyst"}, {"nroEmpleado": "296966", "nombre": "Fernanda Saavedra Donoso", "ingreso": "2026-02-02", "antiguedad": "0 años y 4 meses", "jobRol": "Junior Analyst"}, {"nroEmpleado": "295139", "nombre": "Joaquin Torres Cornejo", "ingreso": "2026-01-05", "antiguedad": "0 años y 5 meses", "jobRol": "Junior Engineer"}, {"nroEmpleado": "294887", "nombre": "Aylin Rodriguez Berrios", "ingreso": "2026-01-05", "antiguedad": "0 años y 5 meses", "jobRol": "Junior Engineer"}, {"nroEmpleado": "126462", "nombre": "Raul Andres Marambio Merida", "ingreso": "2017-02-01", "antiguedad": "9 años y 4 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "260493", "nombre": "Deyssi Vargas Briceño", "ingreso": "2024-05-08", "antiguedad": "2 años y 0 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "214806", "nombre": "Fernanda Medina Guerra", "ingreso": "2022-01-03", "antiguedad": "4 años y 5 meses", "jobRol": "Engineer"}, {"nroEmpleado": "125809", "nombre": "Carlos Alberto Contreras Huaracan", "ingreso": "2010-11-29", "antiguedad": "15 años y 6 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "195370", "nombre": "Eduardo Jimenez Mourgues", "ingreso": "2021-01-11", "antiguedad": "5 años y 4 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "156914", "nombre": "Katherine Andrea Torres Aguirre", "ingreso": "2017-12-11", "antiguedad": "8 años y 5 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "198985", "nombre": "Ligia Barrios Bracho", "ingreso": "2021-04-05", "antiguedad": "5 años y 2 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "129387", "nombre": "Daniel Henriquez Calabriano", "ingreso": "2015-06-15", "antiguedad": "10 años y 11 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "218923", "nombre": "Pedro Carrasco Aravena", "ingreso": "2022-03-07", "antiguedad": "4 años y 2 meses", "jobRol": "Chief Architect"}, {"nroEmpleado": "183035", "nombre": "Felipe Castro Aros", "ingreso": "2019-11-25", "antiguedad": "6 años y 6 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "105233", "nombre": "Carlos Hernan Salinas Adasme", "ingreso": "2010-11-29", "antiguedad": "15 años y 6 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "218977", "nombre": "Daniel Navarrete Navarrete", "ingreso": "2022-03-07", "antiguedad": "4 años y 2 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "212283", "nombre": "Gonzalo Lizama Valencia", "ingreso": "2022-02-01", "antiguedad": "4 años y 4 meses", "jobRol": "Engineer"}, {"nroEmpleado": "259244", "nombre": "Kevin Nuñez Herrera", "ingreso": "2024-04-01", "antiguedad": "2 años y 2 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "213774", "nombre": "Ruben Painenao Nahuelpi", "ingreso": "2021-12-13", "antiguedad": "4 años y 5 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "259102", "nombre": "Pedro Valderrama Mendez", "ingreso": "2024-04-01", "antiguedad": "2 años y 2 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "283306", "nombre": "Susana Muñoz Hidalgo", "ingreso": "2025-07-14", "antiguedad": "0 años y 10 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "284746", "nombre": "Felipe Avila Carcamo", "ingreso": "2025-08-18", "antiguedad": "0 años y 9 meses", "jobRol": "Evangelist"}, {"nroEmpleado": "282495", "nombre": "Andres Medina Sanhueza", "ingreso": "2025-07-01", "antiguedad": "0 años y 11 meses", "jobRol": "Expert Analyst"}, {"nroEmpleado": "204814", "nombre": "Claudio Collao", "ingreso": "2021-07-07", "antiguedad": "4 años y 10 meses", "jobRol": "Evangelist"}, {"nroEmpleado": "290394", "nombre": "Jose Corti Badia", "ingreso": "2025-11-03", "antiguedad": "0 años y 7 meses", "jobRol": "Evangelist"}, {"nroEmpleado": "298824", "nombre": "Camilo Menares Menares", "ingreso": "2026-03-11", "antiguedad": "0 años y 2 meses", "jobRol": "Senior Technical Project Leader"}, {"nroEmpleado": "212284", "nombre": "Agustin Sepulveda Berrios", "ingreso": "2022-02-01", "antiguedad": "4 años y 4 meses", "jobRol": "Engineer"}, {"nroEmpleado": "257826", "nombre": "Ian Laurel Pastene", "ingreso": "2024-03-05", "antiguedad": "2 años y 3 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "289345", "nombre": "Catherine Benavides Mena", "ingreso": "2025-10-20", "antiguedad": "0 años y 7 meses", "jobRol": "Junior Analyst"}, {"nroEmpleado": "284533", "nombre": "Leonardo Villarreal Tobon", "ingreso": "2025-08-06", "antiguedad": "0 años y 9 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "221188", "nombre": "Cesar Ramirez Herrera", "ingreso": "2022-04-04", "antiguedad": "4 años y 2 meses", "jobRol": "Engineer"}, {"nroEmpleado": "218761", "nombre": "Fabian Mesias Gomez", "ingreso": "2022-06-01", "antiguedad": "4 años y 0 meses", "jobRol": "Engineer"}, {"nroEmpleado": "179689", "nombre": "Antonio Sanhueza Rosas", "ingreso": "2019-08-16", "antiguedad": "6 años y 9 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "265927", "nombre": "Pablo Rivas Fuenzalida", "ingreso": "2024-09-02", "antiguedad": "1 años y 9 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "270382", "nombre": "Ariel Paz Gonzalez", "ingreso": "2024-11-25", "antiguedad": "1 años y 6 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "295250", "nombre": "Alvaro Gallardo Alvarado", "ingreso": "2026-01-12", "antiguedad": "0 años y 4 meses", "jobRol": "Junior Analyst"}, {"nroEmpleado": "232459", "nombre": "Ana Lincolao Ojeda", "ingreso": "2022-11-14", "antiguedad": "3 años y 6 meses", "jobRol": "Analyst"}, {"nroEmpleado": "218763", "nombre": "Nicolas Segovia Urtubia", "ingreso": "2022-06-01", "antiguedad": "4 años y 0 meses", "jobRol": "Engineer"}, {"nroEmpleado": "285686", "nombre": "Roger Williams Gutierrez Romero", "ingreso": "2025-08-25", "antiguedad": "0 años y 9 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "232864", "nombre": "Cecilia Rojas Vega", "ingreso": "2022-11-14", "antiguedad": "3 años y 6 meses", "jobRol": "Engineer"}, {"nroEmpleado": "209690", "nombre": "Krisler Abello Peñaloza", "ingreso": "2021-10-12", "antiguedad": "4 años y 7 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "158485", "nombre": "Oriel Hernandez Vera", "ingreso": "2018-02-01", "antiguedad": "8 años y 4 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "148971", "nombre": "Claudio Faundez Perez", "ingreso": "2022-10-01", "antiguedad": "3 años y 8 meses", "jobRol": "Lead Engineer"}, {"nroEmpleado": "266007", "nombre": "Fernando Bravo Riquelme", "ingreso": "2024-09-02", "antiguedad": "1 años y 9 meses", "jobRol": "Expert Engineer"}, {"nroEmpleado": "259920", "nombre": "Cristian Huenuqueo Arias", "ingreso": "2024-04-24", "antiguedad": "2 años y 1 meses", "jobRol": "Expert Analyst"}, {"nroEmpleado": "15313", "nombre": "Carlos Patricio Alexis Gomez Flores", "ingreso": "2006-08-01", "antiguedad": "19 años y 10 meses", "jobRol": "Chief Architect"}, {"nroEmpleado": "202675", "nombre": "Katherine Ferreira Puigmarti", "ingreso": "2021-06-07", "antiguedad": "4 años y 11 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "271839", "nombre": "Antonia Marambio Miranda", "ingreso": "2025-12-15", "antiguedad": "0 años y 5 meses", "jobRol": "Junior Engineer"}, {"nroEmpleado": "144326", "nombre": "Francois Siegfried Bertrand", "ingreso": "2016-11-11", "antiguedad": "9 años y 6 meses", "jobRol": "Chief Designer"}, {"nroEmpleado": "262465", "nombre": "Ivania Silva Moscoso", "ingreso": "2024-06-24", "antiguedad": "1 años y 11 meses", "jobRol": "Project Leader"}, {"nroEmpleado": "259728", "nombre": "Enrique Guerra Aguilar", "ingreso": "2024-04-15", "antiguedad": "2 años y 1 meses", "jobRol": "Expert Analyst"}, {"nroEmpleado": "257090", "nombre": "Andres Fuentes Lagos", "ingreso": "2024-02-19", "antiguedad": "2 años y 3 meses", "jobRol": "Lead Analyst"}, {"nroEmpleado": "232457", "nombre": "Alejandra Silva Silva", "ingreso": "2022-11-14", "antiguedad": "3 años y 6 meses", "jobRol": "Engineer"}, {"nroEmpleado": "126652", "nombre": "Luis Silva Nuñez", "ingreso": "2022-02-02", "antiguedad": "4 años y 4 meses", "jobRol": "Lead Engineer"}];
+// Seed data removed — equipo now loaded from Supabase table `talent_equipo`
+const EQUIPO_SEED = []; // Fallback vacío si Supabase no está disponible
 
-// Runtime equipo list — initialized from seed, persisted in localStorage
-function loadEquipoData() {
+// Runtime equipo list — synced with Supabase
+async function loadEquipoData() {
+  // Try Supabase first
+  if(supabaseClient && currentUser) {
+    const { data, error } = await supabaseClient
+      .from('talent_equipo')
+      .select('nro_empleado, nombre, ingreso, antiguedad, job_rol')
+      .order('nombre');
+    if(!error && data && data.length) {
+      const mapped = data.map(r => ({
+        nroEmpleado: r.nro_empleado,
+        nombre: r.nombre,
+        ingreso: r.ingreso || '',
+        antiguedad: r.antiguedad || '',
+        jobRol: r.job_rol || ''
+      }));
+      try { localStorage.setItem('equipoData_v1', JSON.stringify(mapped)); } catch(e) {}
+      return mapped;
+    }
+  }
+  // Fallback to localStorage cache
   try {
     const stored = localStorage.getItem('equipoData_v1');
     if(stored) return JSON.parse(stored);
   } catch(e) {}
-  return JSON.parse(JSON.stringify(EQUIPO_SEED));
+  return [];
 }
-function saveEquipoData() {
+
+async function saveEquipoData() {
   try { localStorage.setItem('equipoData_v1', JSON.stringify(equipoData)); } catch(e) {}
+  // Sync to Supabase if admin
+  if(supabaseClient && currentUser && isAdmin()) {
+    const rows = equipoData.map(m => ({
+      nro_empleado: m.nroEmpleado,
+      nombre: m.nombre,
+      ingreso: m.ingreso || null,
+      antiguedad: m.antiguedad || '',
+      job_rol: m.jobRol || '',
+      updated_at: new Date().toISOString()
+    }));
+    const { error } = await supabaseClient
+      .from('talent_equipo')
+      .upsert(rows, { onConflict: 'nro_empleado' });
+    if(error) console.error('Error syncing equipo:', error);
+  }
 }
-let equipoData = loadEquipoData();
+
+async function deleteEquipoFromSupabase(nroEmpleado) {
+  if(!supabaseClient || !isAdmin()) return;
+  await supabaseClient.from('talent_equipo').delete().eq('nro_empleado', nroEmpleado);
+}
+
+let equipoData = [];
 let equipoEditIdx = null; // null = add, number = edit index
 
 function showEquipo() {
@@ -3145,8 +3189,10 @@ function editEquipoMember(idx) {
 
 function deleteEquipoMember(idx) {
   if(!confirm(`¿Eliminar a ${equipoData[idx].nombre} del directorio?`)) return;
+  const nro = equipoData[idx].nroEmpleado;
   equipoData.splice(idx, 1);
   saveEquipoData();
+  deleteEquipoFromSupabase(nro);
   renderEquipoTable();
 }
 
