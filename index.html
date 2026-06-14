@@ -23,7 +23,7 @@
     <div id="auth-login-form">
       <div class="form-group" style="margin-bottom:12px">
         <label>Email</label>
-        <input type="text" id="login-email" placeholder="tu@nttdata.com" onkeydown="if(event.key==='Enter')doLogin()">
+        <input type="email" id="login-email" placeholder="tu@nttdata.com" autocomplete="email" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
       <div class="form-group" style="margin-bottom:16px">
         <label>Contraseña</label>
@@ -39,7 +39,7 @@
       <p style="font-size:12px;color:var(--gray-400);margin-bottom:16px">Por seguridad, elige una contraseña personal antes de continuar.</p>
       <div class="form-group" style="margin-bottom:12px">
         <label>Nueva contraseña</label>
-        <input type="password" id="firstlogin-pass" placeholder="mínimo 6 caracteres">
+        <input type="password" id="firstlogin-pass" placeholder="mínimo 8 caracteres (mayúscula + número)">
       </div>
       <div class="form-group" style="margin-bottom:16px">
         <label>Confirmar contraseña</label>
@@ -52,7 +52,7 @@
       <p style="font-size:13px;color:var(--gray-600);margin-bottom:16px">Elige tu nueva contraseña.</p>
       <div class="form-group" style="margin-bottom:12px">
         <label>Nueva contraseña</label>
-        <input type="password" id="reset-pass" placeholder="mínimo 6 caracteres">
+        <input type="password" id="reset-pass" placeholder="mínimo 8 caracteres (mayúscula + número)">
       </div>
       <div class="form-group" style="margin-bottom:16px">
         <label>Confirmar contraseña</label>
@@ -69,7 +69,9 @@
   🚧 En desarrollo — Los perfiles y sus resultados son de prueba y no representan evaluaciones reales
 </div>
 
-<div class="topbar">
+<a href="#mainContent" class="skip-link" style="position:absolute;top:-40px;left:0;background:var(--navy);color:white;padding:8px 16px;z-index:1000;font-size:13px;transition:top 0.2s" onfocus="this.style.top='0'" onblur="this.style.top='-40px'">Saltar al contenido</a>
+
+<header class="topbar" role="banner">
   <div class="topbar-brand">
     <div class="dot"></div>
     <div>
@@ -94,11 +96,11 @@
     <button class="btn btn-ghost btn-sm" onclick="exportJSON()">Exportar JSON</button>
     <button class="btn btn-teal btn-sm" onclick="openAddModal()">+ Nuevo perfil</button>
   </div>
-</div>
+</header>
 
 <div class="layout">
   <!-- SIDEBAR -->
-  <div class="sidebar" id="sidebar">
+  <nav class="sidebar" id="sidebar" role="navigation" aria-label="Navegación principal">
     <!-- Perfiles — zona scrolleable -->
     <div style="flex:1;overflow-y:auto;padding:1.25rem 0 0.5rem">
       <div class="sidebar-section">
@@ -110,39 +112,39 @@
     </div>
     <!-- Navegación — fija abajo -->
     <div style="border-top:1px solid var(--gray-200);padding:0.75rem 0;flex-shrink:0;background:var(--white)">
-      <div class="sidebar-nav-item" onclick="showHome()" id="nav-home">
+      <div class="sidebar-nav-item" onclick="showHome()" id="nav-home" role="button" tabindex="0" onkeydown="if(event.key==='Enter')showHome()">
         <div class="sidebar-dot"></div>
-        🏠 Inicio
+        <span aria-hidden="true">🏠</span> Inicio
       </div>
-      <div class="sidebar-nav-item" onclick="showOverview('mine')" id="nav-overview-mine" style="margin-top:2px">
+      <div class="sidebar-nav-item" onclick="showOverview('mine')" id="nav-overview-mine" style="margin-top:2px" role="button" tabindex="0" onkeydown="if(event.key==='Enter')showOverview('mine')">
         <div class="sidebar-dot"></div>
-        👤 Mis perfiles
+        <span aria-hidden="true">👤</span> Mis perfiles
       </div>
-      <div class="sidebar-nav-item" onclick="showOverview('all')" id="nav-overview-all" style="margin-top:2px">
+      <div class="sidebar-nav-item" onclick="showOverview('all')" id="nav-overview-all" style="margin-top:2px" role="button" tabindex="0" onkeydown="if(event.key==='Enter')showOverview('all')">
         <div class="sidebar-dot"></div>
-        📊 Vista Consolidada
+        <span aria-hidden="true">📊</span> Vista Consolidada
       </div>
-      <div class="sidebar-nav-item" onclick="showMethodology()" id="nav-methodology" style="margin-top:2px">
+      <div class="sidebar-nav-item" onclick="showMethodology()" id="nav-methodology" style="margin-top:2px" role="button" tabindex="0" onkeydown="if(event.key==='Enter')showMethodology()">
         <div class="sidebar-dot"></div>
-        📖 Guía metodológica
+        <span aria-hidden="true">📖</span> Guía metodológica
       </div>
-      <div class="sidebar-nav-item" onclick="showManual()" id="nav-manual" style="margin-top:2px">
+      <div class="sidebar-nav-item" onclick="showManual()" id="nav-manual" style="margin-top:2px" role="button" tabindex="0" onkeydown="if(event.key==='Enter')showManual()">
         <div class="sidebar-dot"></div>
-        📘 Manual de usuario
+        <span aria-hidden="true">📘</span> Manual de usuario
       </div>
-      <div class="sidebar-nav-item" onclick="showRoleCompetencies()" id="nav-role-comp" style="margin-top:2px">
+      <div class="sidebar-nav-item" onclick="showRoleCompetencies()" id="nav-role-comp" style="margin-top:2px" role="button" tabindex="0" onkeydown="if(event.key==='Enter')showRoleCompetencies()">
         <div class="sidebar-dot"></div>
-        🎯 Competencias por Rol
+        <span aria-hidden="true">🎯</span> Competencias por Rol
       </div>
-      <div class="sidebar-nav-item" onclick="showEquipo()" id="nav-equipo" style="margin-top:2px">
+      <div class="sidebar-nav-item" onclick="showEquipo()" id="nav-equipo" style="margin-top:2px" role="button" tabindex="0" onkeydown="if(event.key==='Enter')showEquipo()">
         <div class="sidebar-dot"></div>
-        👥 Equipo
+        <span aria-hidden="true">👥</span> Equipo
       </div>
     </div>
-  </div>
+  </nav>
 
   <!-- MAIN -->
-  <div class="main" id="mainContent">
+  <main class="main" id="mainContent" role="main">
     <div class="empty-state" id="emptyState" style="display:none">
       <div class="icon">◎</div>
       <h3>Sin perfiles aún</h3>
@@ -254,21 +256,21 @@
         </div>
       </div>
       <!-- SECTION TABS -->
-      <div class="section-tabs" style="flex-wrap:nowrap;overflow-x:auto;gap:0;padding-bottom:2px;margin-bottom:1.25rem">
+      <div class="section-tabs" role="tablist" aria-label="Secciones del perfil" style="flex-wrap:nowrap;overflow-x:auto;gap:0;padding-bottom:2px;margin-bottom:1.25rem">
         <span style="font-size:9px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.06em;padding:0 6px 0 2px;white-space:nowrap;align-self:center">① Diagnóstico</span>
-        <div class="section-tab active" onclick="switchTab('general',this)" data-section="general" style="white-space:nowrap">General</div>
-        <div class="section-tab" onclick="switchTab('performance',this)" data-section="performance" style="white-space:nowrap">Performance</div>
-        <div class="section-tab" onclick="switchTab('potencial',this)" data-section="potencial" style="white-space:nowrap">Potencial</div>
-        <div class="section-tab" onclick="switchTab('ninebox',this)" data-section="ninebox" style="white-space:nowrap">9-Box</div>
+        <div class="section-tab active" role="tab" tabindex="0" onclick="switchTab('general',this)" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('general',this)" data-section="general" style="white-space:nowrap">General</div>
+        <div class="section-tab" role="tab" tabindex="0" onclick="switchTab('performance',this)" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('performance',this)" data-section="performance" style="white-space:nowrap">Performance</div>
+        <div class="section-tab" role="tab" tabindex="0" onclick="switchTab('potencial',this)" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('potencial',this)" data-section="potencial" style="white-space:nowrap">Potencial</div>
+        <div class="section-tab" role="tab" tabindex="0" onclick="switchTab('ninebox',this)" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('ninebox',this)" data-section="ninebox" style="white-space:nowrap">9-Box</div>
         <div style="width:1px;height:24px;background:var(--gray-200);margin:0 4px;flex-shrink:0;align-self:center"></div>
         <span style="font-size:9px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.06em;padding:0 6px 0 2px;white-space:nowrap;align-self:center">② Evaluación</span>
-        <div class="section-tab" onclick="switchTab('skills',this)" data-section="skills" style="white-space:nowrap">Mad. Técnica</div>
-        <div class="section-tab" onclick="switchTab('madurez',this)" data-section="madurez" style="white-space:nowrap">Mad. Profesional</div>
+        <div class="section-tab" role="tab" tabindex="0" onclick="switchTab('skills',this)" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('skills',this)" data-section="skills" style="white-space:nowrap">Mad. Técnica</div>
+        <div class="section-tab" role="tab" tabindex="0" onclick="switchTab('madurez',this)" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('madurez',this)" data-section="madurez" style="white-space:nowrap">Mad. Profesional</div>
         <div style="width:1px;height:24px;background:var(--gray-200);margin:0 4px;flex-shrink:0;align-self:center"></div>
         <span style="font-size:9px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.06em;padding:0 6px 0 2px;white-space:nowrap;align-self:center">③ Decisión</span>
-        <div class="section-tab" onclick="switchTab('risk',this)" data-section="risk" style="white-space:nowrap">Flight risk</div>
-        <div class="section-tab" onclick="switchTab('idp',this)" data-section="idp" style="white-space:nowrap">IDP</div>
-        <div class="section-tab" onclick="switchTab('resumen',this)" data-section="resumen" style="white-space:nowrap">Resumen</div>
+        <div class="section-tab" role="tab" tabindex="0" onclick="switchTab('risk',this)" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('risk',this)" data-section="risk" style="white-space:nowrap">Flight risk</div>
+        <div class="section-tab" role="tab" tabindex="0" onclick="switchTab('idp',this)" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('idp',this)" data-section="idp" style="white-space:nowrap">IDP</div>
+        <div class="section-tab" role="tab" tabindex="0" onclick="switchTab('resumen',this)" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('resumen',this)" data-section="resumen" style="white-space:nowrap">Resumen</div>
       </div>
 
       <!-- ═══ SECCIÓN GENERAL ═══ -->
@@ -1078,11 +1080,11 @@
       </div>
     </div><!-- end equipoView -->
 
-  </div><!-- end main -->
+  </main><!-- end main -->
 </div>
 
 <!-- MODAL ADD PERSON -->
-<div class="modal-overlay" id="addModal">
+<div class="modal-overlay" id="addModal" role="dialog" aria-modal="true">
   <div class="modal" style="width:500px">
     <h3>Nuevo perfil</h3>
     <!-- Equipo selector -->
@@ -1148,7 +1150,7 @@
 </div>
 
 <!-- EQUIPO ADD/EDIT MODAL -->
-<div class="modal-overlay" id="equipoModal">
+<div class="modal-overlay" id="equipoModal" role="dialog" aria-modal="true">
   <div class="modal" style="width:460px">
     <h3 id="equipoModalTitle">Agregar integrante</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
@@ -1189,28 +1191,28 @@
 </div>
 
 <!-- DIMENSION EDITOR MODAL -->
-<div class="modal-overlay" id="dimModal">
+<div class="modal-overlay" id="dimModal" role="dialog" aria-modal="true">
   <div class="modal" style="width:600px;max-height:85vh;overflow-y:auto">
     <h3 id="dimModalTitle">✏ Editar dimensiones</h3>
     <p style="font-size:12px;color:var(--gray-400);margin-bottom:16px" id="dimModalDesc">Solo visible para administradores.</p>
     <div id="dimEditorList" style="margin-bottom:16px"></div>
     <button class="btn btn-ghost btn-sm" style="width:100%;border:1px dashed var(--gray-300);color:var(--gray-500)" onclick="addDimRow()">+ Agregar dimensión</button>
     <div class="modal-actions" style="margin-top:16px">
-      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('dimModal').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="closeModal('dimModal')">Cancelar</button>
       <button class="btn btn-blue btn-sm" onclick="applyDimEdits()">Guardar cambios</button>
     </div>
   </div>
 </div>
 
 <!-- BENCHMARK EDITOR MODAL -->
-<div class="modal-overlay" id="benchmarkModal">
+<div class="modal-overlay" id="benchmarkModal" role="dialog" aria-modal="true">
   <div class="modal" style="width:720px;max-height:85vh;overflow-y:auto">
     <h3>⚖ Benchmarks por Job Rol</h3>
     <p style="font-size:12px;color:var(--gray-400);margin-bottom:16px">Define el score esperado (1–5) por dimensión y nivel. Estos valores se usan para calcular el gap en Performance y Potencial.</p>
     <div id="benchmarkEditorContent"></div>
     <div class="modal-actions" style="margin-top:16px">
       <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="resetBenchmarks()">Restaurar defaults</button>
-      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('benchmarkModal').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="closeModal('benchmarkModal')">Cancelar</button>
       <button class="btn btn-blue btn-sm" onclick="applyBenchmarks()">Guardar benchmarks</button>
     </div>
   </div>
@@ -1219,34 +1221,34 @@
 <div class="save-indicator" id="saveIndicator">Guardado ✓</div>
 
 <!-- SAVE & CONTINUE MODAL -->
-<div class="save-modal-overlay" id="saveModal">
+<div class="save-modal-overlay" id="saveModal" role="dialog" aria-modal="true">
   <div class="save-modal">
     <h3>💾 Perfil guardado</h3>
     <p>Los datos han sido guardados correctamente. Puedes continuar completando el perfil cuando quieras.<br><br>
     <strong>Recuerda:</strong> El perfil aparecerá en la vista consolidada solo cuando lo cierres como completado.</p>
     <div style="background:var(--gray-50);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--gray-600);margin-bottom:16px" id="saveModalPct"></div>
     <div style="display:flex;justify-content:flex-end;gap:8px">
-      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('saveModal').classList.remove('open')">Continuar editando</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="closeModal('saveModal')">Continuar editando</button>
       <button class="btn btn-teal btn-sm" id="saveModalCloseBtn" onclick="closeSaveModalAndClose()">✓ Cerrar perfil ahora</button>
     </div>
   </div>
 </div>
 
 <!-- CLOSE PROFILE MODAL -->
-<div class="save-modal-overlay" id="closeProfileModal">
+<div class="save-modal-overlay" id="closeProfileModal" role="dialog" aria-modal="true">
   <div class="save-modal">
     <h3>✓ Cerrar perfil</h3>
     <p>Al cerrar el perfil, quedará disponible en la <strong>vista Todos</strong> del equipo. Solo perfiles cerrados y 100% completos aparecen en esa vista.</p>
     <div id="closeProfileSummary" style="margin-bottom:16px;font-size:12px"></div>
     <div style="display:flex;justify-content:flex-end;gap:8px">
-      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('closeProfileModal').classList.remove('open')">Volver al perfil</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="closeModal('closeProfileModal')">Volver al perfil</button>
       <button class="btn btn-blue btn-sm" id="closeProfileConfirmBtn" onclick="confirmCloseProfile()">Confirmar y cerrar</button>
     </div>
   </div>
 </div>
 
 <!-- REOPEN PROFILE MODAL -->
-<div class="save-modal-overlay" id="reopenModal">
+<div class="save-modal-overlay" id="reopenModal" role="dialog" aria-modal="true">
   <div class="save-modal">
     <h3>↩ Reabrir perfil para edición</h3>
     <p>Al reabrir, el perfil dejará de aparecer en la vista consolidada hasta que lo vuelvas a cerrar. Queda registrado quién lo reabrió y el motivo.</p>
@@ -1255,14 +1257,14 @@
       <textarea id="reopen-justif" rows="3" placeholder="ej: Error en score de performance, corrección de datos generales…" style="margin-top:6px;width:100%;border:1px solid var(--gray-300);border-radius:7px;padding:8px 10px;font-size:13px;resize:vertical"></textarea>
     </div>
     <div style="display:flex;justify-content:flex-end;gap:8px">
-      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('reopenModal').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="closeModal('reopenModal')">Cancelar</button>
       <button class="btn btn-sm" style="background:var(--amber);color:white" onclick="confirmReopenProfile()">Confirmar reapertura</button>
     </div>
   </div>
 </div>
 
 <!-- NEW CYCLE MODAL -->
-<div class="save-modal-overlay" id="newCycleModal">
+<div class="save-modal-overlay" id="newCycleModal" role="dialog" aria-modal="true">
   <div class="save-modal">
     <h3>🔄 Iniciar nuevo ciclo de evaluación</h3>
     <p>El ciclo actual quedará guardado como historial. Se creará una nueva evaluación para esta persona con los datos generales conservados y todos los scores en blanco.</p>
@@ -1275,21 +1277,21 @@
       <textarea id="newcycle-justif" rows="2" placeholder="ej: Revisión trimestral Q3 — Septiembre 2025" style="margin-top:6px;width:100%;border:1px solid var(--gray-300);border-radius:7px;padding:8px 10px;font-size:13px;resize:vertical"></textarea>
     </div>
     <div style="display:flex;justify-content:flex-end;gap:8px">
-      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('newCycleModal').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="closeModal('newCycleModal')">Cancelar</button>
       <button class="btn btn-teal btn-sm" onclick="confirmNewCycle()">Crear nuevo ciclo</button>
     </div>
   </div>
 </div>
 
 <!-- HISTORY MODAL -->
-<div class="history-modal-overlay" id="historyModal">
+<div class="history-modal-overlay" id="historyModal" role="dialog" aria-modal="true">
   <div class="history-modal">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">
       <div>
         <h3 id="historyModalTitle">Historial de evaluaciones</h3>
         <div class="hm-sub" id="historyModalSub">—</div>
       </div>
-      <button onclick="document.getElementById('historyModal').classList.remove('open')"
+      <button onclick="closeModal('historyModal')"
         style="background:var(--gray-100);border:1px solid var(--gray-200);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px;color:var(--gray-600)">✕ Cerrar</button>
     </div>
     <div id="historyModalBody"></div>

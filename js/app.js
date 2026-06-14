@@ -7,6 +7,85 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 let supabaseClient = null;
 let currentUser = null;
 let autoSaveTimer = null;
+let uiUpdateTimer = null;
+
+// ─── UTILITIES ───
+/** Escape HTML to prevent XSS when injecting user data into innerHTML */
+function esc(str) {
+  if(!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/** Debounced UI update — avoids excessive DOM rebuilds on each keystroke */
+function scheduleUIUpdate() {
+  if(uiUpdateTimer) return;
+  uiUpdateTimer = setTimeout(() => {
+    uiUpdateTimer = null;
+    renderSidebar();
+    updateSectionAlerts();
+    updateTabProgress();
+  }, 300);
+}
+
+/** Focus trap for modals — traps Tab/Shift+Tab within modal */
+function trapFocus(modalEl) {
+  const focusable = modalEl.querySelectorAll('input:not([disabled]),select:not([disabled]),textarea:not([disabled]),button:not([disabled]),[tabindex]:not([tabindex="-1"])');
+  if(!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  first.focus();
+  modalEl._focusTrapHandler = (e) => {
+    if(e.key !== 'Tab') return;
+    if(e.shiftKey) {
+      if(document.activeElement === first) { e.preventDefault(); last.focus(); }
+    } else {
+      if(document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  };
+  modalEl.addEventListener('keydown', modalEl._focusTrapHandler);
+}
+
+function releaseFocus(modalEl) {
+  if(modalEl._focusTrapHandler) {
+    modalEl.removeEventListener('keydown', modalEl._focusTrapHandler);
+    delete modalEl._focusTrapHandler;
+  }
+}
+
+/** Open a modal overlay with accessibility support */
+function openModal(overlayId) {
+  const overlay = document.getElementById(overlayId);
+  if(!overlay) return;
+  overlay.classList.add('open');
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  const modal = overlay.querySelector('.modal,.save-modal,.history-modal');
+  if(modal) trapFocus(modal);
+}
+
+/** Close a modal overlay */
+function closeModal(overlayId) {
+  const overlay = document.getElementById(overlayId);
+  if(!overlay) return;
+  overlay.classList.remove('open');
+  const modal = overlay.querySelector('.modal,.save-modal,.history-modal');
+  if(modal) releaseFocus(modal);
+}
+
+/** Hide all views — DRY helper for show*() functions */
+function hideAllViews() {
+  ['emptyState','profileView','overviewView','methodologyView','roleCompView','homeView','manualView','equipoView'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = 'none';
+  });
+}
+
+/** Deactivate all nav items */
+function deactivateAllNav() {
+  ['nav-overview-mine','nav-overview-all','nav-methodology','nav-role-comp','nav-home','nav-manual','nav-equipo'].forEach(id => {
+    document.getElementById(id)?.classList.remove('active');
+  });
+}
 
 function initSupabase() {
   supabaseClient = supabase.createClient(SB_URL, SB_KEY);
@@ -31,7 +110,9 @@ async function doFirstLoginChange() {
   const pass2 = document.getElementById('firstlogin-pass2').value;
   const errEl = document.getElementById('firstlogin-error');
   errEl.textContent = '';
-  if(!pass || pass.length < 6) { errEl.textContent = 'Mínimo 6 caracteres.'; return; }
+  if(!pass || pass.length < 8) { errEl.textContent = 'Mínimo 8 caracteres.'; return; }
+  if(!/[A-Z]/.test(pass)) { errEl.textContent = 'Incluye al menos una mayúscula.'; return; }
+  if(!/[0-9]/.test(pass)) { errEl.textContent = 'Incluye al menos un número.'; return; }
   if(pass !== pass2) { errEl.textContent = 'Las contraseñas no coinciden.'; return; }
   const btn = document.getElementById('firstloginBtn');
   btn.textContent = 'Guardando...'; btn.disabled = true;
@@ -64,7 +145,9 @@ async function doResetPassword() {
   const errEl = document.getElementById('reset-error');
   const okEl  = document.getElementById('reset-success');
   errEl.textContent = ''; okEl.textContent = '';
-  if(!pass || pass.length < 6) { errEl.textContent = 'Mínimo 6 caracteres.'; return; }
+  if(!pass || pass.length < 8) { errEl.textContent = 'Mínimo 8 caracteres.'; return; }
+  if(!/[A-Z]/.test(pass)) { errEl.textContent = 'Incluye al menos una mayúscula.'; return; }
+  if(!/[0-9]/.test(pass)) { errEl.textContent = 'Incluye al menos un número.'; return; }
   if(pass !== pass2) { errEl.textContent = 'Las contraseñas no coinciden.'; return; }
   const btn = document.getElementById('resetBtn');
   btn.textContent = 'Guardando...'; btn.disabled = true;
@@ -105,6 +188,8 @@ async function doLogin() {
 
 async function doLogout() {
   if(!supabaseClient) return;
+  if(!confirm('¿Cerrar sesión?')) return;
+  stopSyncInterval();
   await supabaseClient.auth.signOut();
   currentUser = null;
   document.getElementById('userChip').style.display = 'none';
@@ -178,12 +263,12 @@ function canSeeProfile(p) {
 }
 
 // ─── SUPABASE DATA ───
-async function pushToSupabase(id, data) {
+async function pushToSupabase(id, data, retryCount = 0) {
   if(!supabaseClient || !currentUser) return;
   setSyncStatus('syncing', 'Guardando...');
   const payload = {
     id,
-    data,
+    data: retryCount === 0 ? data : (profiles[id] || data), // Always use latest state on retry
     updated_at: new Date().toISOString(),
     updated_by: currentUser.email,
     updated_by_name: currentUser.user_metadata?.full_name || currentUser.email,
@@ -191,7 +276,15 @@ async function pushToSupabase(id, data) {
   const { error } = await supabaseClient
     .from('talent_profiles')
     .upsert(payload, { onConflict: 'id' });
-  if(error) { setSyncStatus('err', 'Error al guardar'); console.error(error); }
+  if(error) {
+    console.error('Push error:', error);
+    if(retryCount < 2) {
+      setTimeout(() => pushToSupabase(id, data, retryCount + 1), 3000 * (retryCount + 1));
+      setSyncStatus('syncing', `Reintentando (${retryCount + 1}/2)...`);
+    } else {
+      setSyncStatus('err', 'Error al guardar — reintenta manualmente');
+    }
+  }
   else setSyncStatus('ok', 'Sincronizado');
 }
 
@@ -948,9 +1041,9 @@ function renderSidebar() {
     const chip = document.createElement('div');
     chip.className = 'person-chip' + (currentId === id ? ' active' : '');
     chip.innerHTML = `
-      <div class="person-avatar" style="background:${p.color}22;color:${p.color}">${initials}</div>
+      <div class="person-avatar" style="background:${esc(p.color)}22;color:${esc(p.color)}">${esc(initials)}</div>
       <div style="min-width:0;flex:1">
-        <div class="person-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre || '(sin nombre)'}</div>
+        <div class="person-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.nombre) || '(sin nombre)'}</div>
         <div style="display:flex;align-items:center;gap:5px;margin-top:2px">
           ${p._closed
             ? '<span style="font-size:9px;padding:1px 6px;background:var(--green-light);color:var(--green);border-radius:4px;font-weight:700;letter-spacing:0.02em">✓ Cerrado</span>'
@@ -971,16 +1064,17 @@ function renderSidebar() {
 // OPEN PROFILE
 // ═══════════════════════════════════════════════════════════════
 function openProfile(id) {
+  // Flush pending save for previous profile before switching
+  if(autoSaveTimer && currentId && currentId !== id) {
+    clearTimeout(autoSaveTimer);
+    pushToSupabase(currentId, profiles[currentId]);
+    autoSaveTimer = null;
+  }
   currentId = id;
   activeView = 'profile';
-  ['emptyState','overviewView','methodologyView','roleCompView','homeView','manualView'].forEach(vid => {
-    const el = document.getElementById(vid);
-    if(el) el.style.display = 'none';
-  });
+  hideAllViews();
   document.getElementById('profileView').style.display = 'block';
-  ['nav-overview-mine','nav-overview-all','nav-methodology','nav-role-comp','nav-home'].forEach(id => {
-    document.getElementById(id)?.classList.remove('active');
-  });
+  deactivateAllNav();
   renderSidebar();
   loadProfileToUI();
   switchTab('general', document.querySelector('.section-tab'));
@@ -1211,15 +1305,15 @@ function buildScoreTable(tbodyId, dims, scores, evidence, prefix, avgId) {
     const benchLabel = bench !== null ? bench.toFixed(1) : '—';
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><span class="dim-label">${dim}</span></td>
+      <td><span class="dim-label">${esc(dim)}</span></td>
       <td>
-        <div class="score-stars">
-          ${[1,2,3,4,5].map(n => `<div class="star ${scores[i]>=n?'active-'+n:''}" onclick="setScore('${prefix}',${i},${n},'${avgId}')">${n}</div>`).join('')}
+        <div class="score-stars" role="group" aria-label="${esc(dim)} — score">
+          ${[1,2,3,4,5].map(n => `<div class="star ${scores[i]>=n?'active-'+n:''}" role="button" tabindex="0" aria-label="Score ${n}" onclick="setScore('${prefix}',${i},${n},'${avgId}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setScore('${prefix}',${i},${n},'${avgId}')}">${n}</div>`).join('')}
         </div>
       </td>
       <td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;color:var(--gray-500)">${benchLabel}</td>
       <td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:${gapColor}">${gapLabel}</td>
-      <td><textarea class="evidence-input" rows="1" placeholder="${getEvidencePlaceholder(prefix,i)}" style="${!evidence[i]?.trim() ? 'border-color:var(--amber);background:#fffbeb' : ''}" onchange="setEvidence('${prefix}',${i},this.value)">${evidence[i]||''}</textarea></td>`;
+      <td><textarea class="evidence-input" rows="1" aria-label="Evidencia: ${esc(dim)}" placeholder="${getEvidencePlaceholder(prefix,i)}" style="${!evidence[i]?.trim() ? 'border-color:var(--amber);background:#fffbeb' : ''}" onchange="setEvidence('${prefix}',${i},this.value)">${esc(evidence[i]||'')}</textarea></td>`;
     tbody.appendChild(tr);
   });
   updateAvgDisplay(prefix, avgId);
@@ -1266,7 +1360,7 @@ function buildSkillTable() {
   const p = profiles[currentId];
   Object.entries(SKILL_GROUPS).forEach(([group, skills]) => {
     const groupRow = document.createElement('tr');
-    groupRow.innerHTML = `<td colspan="7" class="skill-group-header">▸ ${group}</td>`;
+    groupRow.innerHTML = `<td colspan="7" class="skill-group-header">▸ ${esc(group)}</td>`;
     tbody.appendChild(groupRow);
     skills.forEach(skill => {
       const d = p.skills[skill] || {actual:0,target:0,plan:'',prioridad:'',planActivo:'',na:false};
@@ -1276,27 +1370,29 @@ function buildSkillTable() {
       const gapClass = gap > 0 ? 'gap-pos' : gap < 0 ? 'gap-neg' : gap === 0 ? 'gap-zero' : '';
       const planReq = !isNA && d.planActivo === 'Sí';
       const rowOpacity = isNA ? 'opacity:0.35;' : '';
+      const escSkill = esc(skill);
+      const safeSkill = skill.replace(/'/g, "\\'");
       const tr = document.createElement('tr');
       tr.style.cssText = rowOpacity;
       tr.innerHTML = `
-        <td style="font-size:12px">${skill}</td>
+        <td style="font-size:12px">${escSkill}</td>
         <td style="text-align:center">
           <label style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;font-size:9px;color:${isNA?'var(--gray-600)':'var(--gray-400)'};font-weight:500">
             <input type="checkbox" ${isNA?'checked':''} title="Esta habilidad no aplica para el rol de esta persona"
               style="width:15px;height:15px;cursor:pointer;accent-color:var(--gray-500)"
-              onchange="setSkillNA('${skill}',this.checked)">
+              onchange="setSkillNA('${safeSkill}',this.checked)">
             ${isNA?'N/A':''}
           </label>
         </td>
         <td><div class="score-stars" style="${isNA?'pointer-events:none;opacity:0.4':''}">
-          ${[1,2,3,4,5].map(n=>`<div class="star ${!isNA&&d.actual>=n?'active-'+n:''}" onclick="${isNA?'':'setSkillScore(\''+skill+'\',\'actual\','+n+')'}">${n}</div>`).join('')}
+          ${[1,2,3,4,5].map(n=>`<div class="star ${!isNA&&d.actual>=n?'active-'+n:''}" onclick="${isNA?'':'setSkillScore(\''+safeSkill+'\',\'actual\','+n+')'}">${n}</div>`).join('')}
         </div></td>
         <td><div class="score-stars" style="${isNA?'pointer-events:none;opacity:0.4':''}">
-          ${[1,2,3,4,5].map(n=>`<div class="star ${!isNA&&d.target>=n?'active-'+n:''}" onclick="${isNA?'':'setSkillScore(\''+skill+'\',\'target\','+n+')'}">${n}</div>`).join('')}
+          ${[1,2,3,4,5].map(n=>`<div class="star ${!isNA&&d.target>=n?'active-'+n:''}" onclick="${isNA?'':'setSkillScore(\''+safeSkill+'\',\'target\','+n+')'}">${n}</div>`).join('')}
         </div></td>
         <td>${gap !== '' ? `<span class="gap-badge ${gapClass}">${gap > 0 ? '+'+gap : gap}</span>` : '<span style="color:var(--gray-400);font-size:12px">—</span>'}</td>
         <td>
-          <select class="risk-select" style="font-size:11px;padding:3px 5px" ${isNA?'disabled':''} onchange="setSkillPrio('${skill}',this.value)">
+          <select class="risk-select" style="font-size:11px;padding:3px 5px" ${isNA?'disabled':''} onchange="setSkillPrio('${safeSkill}',this.value)">
             <option value="">—</option>
             <option ${d.prioridad==='Alta'?'selected':''}>Alta</option>
             <option ${d.prioridad==='Media'?'selected':''}>Media</option>
@@ -1304,13 +1400,13 @@ function buildSkillTable() {
           </select>
         </td>
         <td>
-          <select class="risk-select" style="font-size:11px;padding:3px 5px" ${isNA?'disabled':''} onchange="setSkillPlanActivo('${skill}',this.value)">
+          <select class="risk-select" style="font-size:11px;padding:3px 5px" ${isNA?'disabled':''} onchange="setSkillPlanActivo('${safeSkill}',this.value)">
             <option value="">—</option>
             <option ${d.planActivo==='Sí'?'selected':''}>Sí</option>
             <option ${d.planActivo==='No'?'selected':''}>No</option>
           </select>
         </td>
-        <td><textarea class="evidence-input" rows="1" ${isNA?'disabled':''} placeholder="${planReq && !d.plan?.trim() ? '⚠ Obligatorio…' : 'Plan…'}" style="${planReq && !d.plan?.trim() ? 'border-color:var(--orange);background:#fff7ed' : ''}" onchange="setSkillPlan('${skill}',this.value)">${d.plan||''}</textarea></td>`;
+        <td><textarea class="evidence-input" rows="1" ${isNA?'disabled':''} placeholder="${planReq && !d.plan?.trim() ? '⚠ Obligatorio…' : 'Plan…'}" style="${planReq && !d.plan?.trim() ? 'border-color:var(--orange);background:#fff7ed' : ''}" onchange="setSkillPlan('${safeSkill}',this.value)">${esc(d.plan||'')}</textarea></td>`;
       tbody.appendChild(tr);
     });
   });
@@ -1363,7 +1459,7 @@ function buildMatTable() {
     const missingJustif = !d.justif?.trim();
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td style="font-size:12px">${dim}</td>
+      <td style="font-size:12px">${esc(dim)}</td>
       <td>
         <select class="risk-select" style="font-size:12px;width:100%;${missingNivel ? 'border-color:var(--amber);background:#fffbeb' : ''}" onchange="setMatNivel(${i},this.value)">
           <option value="">— Seleccionar —</option>
@@ -1374,7 +1470,7 @@ function buildMatTable() {
           <option ${d.nivel==='5'?'selected':''} value="5">5 — Líder estratégico (Chief/Evangelist)</option>
         </select>
       </td>
-      <td><textarea class="evidence-input" rows="1" placeholder="${missingJustif ? '⚠ Obligatorio…' : 'Justificación…'}" style="${missingJustif ? 'border-color:var(--amber);background:#fffbeb' : ''}" oninput="setMatJustifSilent(${i},this.value)" onblur="setMatJustif(${i},this.value)">${d.justif||''}</textarea></td>`;
+      <td><textarea class="evidence-input" rows="1" placeholder="${missingJustif ? '⚠ Obligatorio…' : 'Justificación…'}" style="${missingJustif ? 'border-color:var(--amber);background:#fffbeb' : ''}" oninput="setMatJustifSilent(${i},this.value)" onblur="setMatJustif(${i},this.value)">${esc(d.justif||'')}</textarea></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -1432,7 +1528,7 @@ function buildRiskTable() {
     const phAccion = needsObs && !d.accion?.trim() ? '⚠ Obligatorio…' : 'Acción…';
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td style="font-size:12px">${item}</td>
+      <td style="font-size:12px">${esc(item)}</td>
       <td>
         <select class="risk-select" onchange="setRiskEstado(${i},this.value)">
           <option value="">—</option>
@@ -1441,8 +1537,8 @@ function buildRiskTable() {
           <option ${d.estado==='Bajo'?'selected':''} style="color:#16a34a">Bajo</option>
         </select>
       </td>
-      <td><textarea class="evidence-input" rows="1" placeholder="${phObs}" style="${bgObs}" onchange="setRiskObs(${i},this.value)">${d.obs||''}</textarea></td>
-      <td><textarea class="evidence-input" rows="1" placeholder="${phAccion}" style="${bgAccion}" onchange="setRiskAccion(${i},this.value)">${d.accion||''}</textarea></td>`;
+      <td><textarea class="evidence-input" rows="1" placeholder="${phObs}" style="${bgObs}" onchange="setRiskObs(${i},this.value)">${esc(d.obs||'')}</textarea></td>
+      <td><textarea class="evidence-input" rows="1" placeholder="${phAccion}" style="${bgAccion}" onchange="setRiskAccion(${i},this.value)">${esc(d.accion||'')}</textarea></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -1485,16 +1581,16 @@ function renderIDPTable() {
     const tr = document.createElement('tr');
     tr.className = 'idp-row';
     tr.innerHTML = `
-      <td><textarea class="evidence-input" rows="2" onchange="updateIDP(${i},'objetivo',this.value)">${row.objetivo||''}</textarea></td>
+      <td><textarea class="evidence-input" rows="2" onchange="updateIDP(${i},'objetivo',this.value)">${esc(row.objetivo||'')}</textarea></td>
       <td>
         <select class="risk-select" style="font-size:11px" onchange="updateIDP(${i},'tipo',this.value)">
           <option value="">—</option>
           ${['Técnico','Liderazgo','Negocio','Soft Skill','Certificación'].map(t=>`<option ${row.tipo===t?'selected':''}>${t}</option>`).join('')}
         </select>
       </td>
-      <td><textarea class="evidence-input" rows="2" onchange="updateIDP(${i},'accion',this.value)">${row.accion||''}</textarea></td>
-      <td><textarea class="evidence-input" rows="2" onchange="updateIDP(${i},'recurso',this.value)">${row.recurso||''}</textarea></td>
-      <td><input type="text" class="evidence-input" value="${row.plazo||''}" placeholder="ej: Q3" onchange="updateIDP(${i},'plazo',this.value)" style="width:72px"></td>
+      <td><textarea class="evidence-input" rows="2" onchange="updateIDP(${i},'accion',this.value)">${esc(row.accion||'')}</textarea></td>
+      <td><textarea class="evidence-input" rows="2" onchange="updateIDP(${i},'recurso',this.value)">${esc(row.recurso||'')}</textarea></td>
+      <td><input type="text" class="evidence-input" value="${esc(row.plazo||'')}" placeholder="ej: Q3" onchange="updateIDP(${i},'plazo',this.value)" style="width:72px"></td>
       <td>
         <select class="risk-select" style="font-size:11px" onchange="updateIDP(${i},'estado',this.value)">
           <option value="">—</option>
@@ -1649,10 +1745,13 @@ function closeProfileMenuOnOutside(e) {
 }
 
 function switchTab(name, el) {
-  document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.section-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
   document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
-  if(el) el.classList.add('active');
-  else document.querySelector(`.section-tab[data-section="${name}"]`)?.classList.add('active');
+  if(el) { el.classList.add('active'); el.setAttribute('aria-selected','true'); }
+  else {
+    const tab = document.querySelector(`.section-tab[data-section="${name}"]`);
+    if(tab) { tab.classList.add('active'); tab.setAttribute('aria-selected','true'); }
+  }
   document.getElementById('sec-'+name)?.classList.add('active');
   if(name === 'ninebox') updateNinebox();
   if(name === 'resumen') updateSummaryMetrics();
@@ -1703,11 +1802,10 @@ function autoSave() {
   updateResumenValidation();
   p._updatedAt = new Date().toISOString();
   saveLocalState();
-  renderSidebar();
   showSaveIndicator();
-  updateSectionAlerts();
-  updateTabProgress();
-  // Update completeness bar
+  // Debounced UI updates (sidebar, alerts, tabs) — avoid thrashing on each keystroke
+  scheduleUIUpdate();
+  // Update completeness bar (lightweight)
   const pct2 = calcCompleteness(p);
   const col2 = completenessColor(pct2);
   const complDiv2 = document.getElementById('profileCompleteness');
@@ -1814,8 +1912,8 @@ function updateResumenGapSummary() {
   el.innerHTML = gaps.slice(0,5).map(g =>
     `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
       <span style="font-size:10px;padding:2px 6px;background:${g.gap>=2?'var(--red-light)':'var(--amber-light)'};color:${g.gap>=2?'var(--red)':'var(--amber)'};border-radius:4px;font-weight:600">gap ${g.gap>0?'+':''}${g.gap}</span>
-      <span style="font-size:12px">${g.skill}</span>
-      <span style="font-size:10px;color:var(--gray-400)">${g.group}</span>
+      <span style="font-size:12px">${esc(g.skill)}</span>
+      <span style="font-size:10px;color:var(--gray-400)">${esc(g.group)}</span>
     </div>`
   ).join('');
 
@@ -1878,7 +1976,7 @@ function suggestIDPFromGaps() {
 
 function openBenchmarkModal() {
   renderBenchmarkEditor();
-  document.getElementById('benchmarkModal').classList.add('open');
+  openModal('benchmarkModal');
 }
 
 function renderBenchmarkEditor() {
@@ -1922,7 +2020,7 @@ function applyBenchmarks() {
     benchmarks[prefix][level][idx] = Math.min(5, Math.max(0, val));
   });
   saveBenchmarks();
-  document.getElementById('benchmarkModal').classList.remove('open');
+  closeModal('benchmarkModal');
   // Refresh current profile table if open
   if(currentId && activeView === 'profile') {
     const p = profiles[currentId];
@@ -1958,7 +2056,7 @@ function openDimEditor(target) {
   document.getElementById('dimModalTitle').textContent = '✏ ' + cfg.title;
   document.getElementById('dimModalDesc').textContent = cfg.desc;
   renderDimEditorList();
-  document.getElementById('dimModal').classList.add('open');
+  openModal('dimModal');
 }
 
 function renderDimEditorList() {
@@ -1974,7 +2072,7 @@ function renderDimEditorList() {
     row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px';
     row.innerHTML = `
       <span style="font-size:11px;color:var(--gray-400);font-family:DM Mono,monospace;width:20px;flex-shrink:0">${i+1}</span>
-      <input type="text" value="${dim}" data-idx="${i}"
+      <input type="text" value="${esc(dim)}" data-idx="${i}"
         style="flex:1;border:1px solid var(--gray-200);border-radius:6px;padding:7px 10px;font-size:13px"
         oninput="updateDimTemp(${i}, this.value)">
       <button onclick="removeDimRow(${i})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:16px;padding:0 4px" title="Eliminar">×</button>`;
@@ -1988,7 +2086,7 @@ function renderSkillGroupEditor(list) {
     groupDiv.style.cssText = 'margin-bottom:16px;border:1px solid var(--gray-200);border-radius:8px;overflow:hidden';
     groupDiv.innerHTML = `
       <div style="background:var(--gray-50);padding:8px 12px;display:flex;align-items:center;gap:8px">
-        <input type="text" value="${group}" data-group="${gi}"
+        <input type="text" value="${esc(group)}" data-group="${gi}"
           style="flex:1;border:1px solid var(--gray-200);border-radius:4px;padding:4px 8px;font-size:12px;font-weight:600"
           oninput="updateGroupName(${gi}, this.value)">
         <button onclick="removeGroup(${gi})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px" title="Eliminar grupo">×</button>
@@ -1996,7 +2094,7 @@ function renderSkillGroupEditor(list) {
       <div style="padding:8px 12px" id="skill-group-${gi}">
         ${skills.map((s, si) => `
           <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
-            <input type="text" value="${s}" data-group="${gi}" data-skill="${si}"
+            <input type="text" value="${esc(s)}" data-group="${gi}" data-skill="${si}"
               style="flex:1;border:1px solid var(--gray-200);border-radius:4px;padding:4px 8px;font-size:12px"
               oninput="updateSkillName(${gi}, ${si}, this.value)">
             <button onclick="removeSkill(${gi},${si})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:13px">×</button>
@@ -2082,7 +2180,7 @@ async function applyDimEdits() {
     rebuildBenchmarksForDim(dimEditTarget, arr.length);
   }
   await saveDimensions();
-  document.getElementById('dimModal').classList.remove('open');
+  closeModal('dimModal');
   // Refresh current profile view
   if(currentId && activeView === 'profile') {
     const p = profiles[currentId];
@@ -2110,15 +2208,10 @@ function rebuildBenchmarksForDim(prefix, newLen) {
 function showMethodology() {
   currentId = null;
   activeView = 'methodology';
-  ['emptyState','profileView','overviewView','roleCompView','homeView','manualView','equipoView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  hideAllViews();
   document.getElementById('methodologyView').style.display = 'block';
-  document.getElementById('nav-overview-mine').classList.remove('active');
-  document.getElementById('nav-overview-all').classList.remove('active');
+  deactivateAllNav();
   document.getElementById('nav-methodology').classList.add('active');
-  document.getElementById('nav-role-comp').classList.remove('active');
-  document.getElementById('nav-manual')?.classList.remove('active');
-  document.getElementById('nav-equipo')?.classList.remove('active');
-  document.getElementById('nav-home')?.classList.remove('active');
   renderSidebar();
   renderMethodologyBenchmarkTable();
 }
@@ -2135,15 +2228,10 @@ const RC_PILLAR_CONFIG = {
 function showRoleCompetencies() {
   currentId = null;
   activeView = 'rolecomp';
-  ['emptyState','profileView','overviewView','methodologyView','homeView','equipoView','manualView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  hideAllViews();
   document.getElementById('roleCompView').style.display = 'block';
-  document.getElementById('nav-overview-mine').classList.remove('active');
-  document.getElementById('nav-overview-all').classList.remove('active');
-  document.getElementById('nav-methodology').classList.remove('active');
+  deactivateAllNav();
   document.getElementById('nav-role-comp').classList.add('active');
-  document.getElementById('nav-manual')?.classList.remove('active');
-  document.getElementById('nav-equipo')?.classList.remove('active');
-  document.getElementById('nav-home')?.classList.remove('active');
   renderSidebar();
   renderRCView();
 }
@@ -2332,13 +2420,9 @@ function showOverview(filter) {
   overviewFilter = filter || 'all';
   currentId = null;
   activeView = 'overview';
-  ['emptyState','profileView','methodologyView','roleCompView','homeView','manualView','equipoView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  hideAllViews();
   document.getElementById('overviewView').style.display = 'block';
-  document.getElementById('nav-methodology').classList.remove('active');
-  document.getElementById('nav-role-comp').classList.remove('active');
-  document.getElementById('nav-home')?.classList.remove('active');
-  document.getElementById('nav-manual')?.classList.remove('active');
-  document.getElementById('nav-equipo')?.classList.remove('active');
+  deactivateAllNav();
   // Update nav active state
   document.getElementById('nav-overview-mine').classList.toggle('active', overviewFilter==='mine');
   document.getElementById('nav-overview-all').classList.toggle('active', overviewFilter==='all');
@@ -2433,9 +2517,9 @@ function renderOverview() {
     tr.innerHTML = `
       <td>
         <div style="display:flex;align-items:center;gap:8px">
-          <div style="width:26px;height:26px;border-radius:50%;background:${p.color}22;color:${p.color};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${initials}</div>
+          <div style="width:26px;height:26px;border-radius:50%;background:${esc(p.color)}22;color:${esc(p.color)};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${esc(initials)}</div>
           <div>
-            <span style="font-weight:500">${p.nombre||'—'}</span>${cycleLabel}
+            <span style="font-weight:500">${esc(p.nombre)||'—'}</span>${cycleLabel}
             ${(() => {
               if(p._closed) return '<span style="font-size:10px;padding:1px 5px;background:var(--green-light);color:var(--green);border-radius:4px;font-weight:600;margin-left:4px">✓ Cerrado</span>';
               const pct = calcCompleteness(p);
@@ -2445,9 +2529,9 @@ function renderOverview() {
           </div>
         </div>
       </td>
-      <td style="color:var(--gray-600)">${p.rol||'—'}</td>
-      <td><span style="font-size:11px;padding:2px 7px;border-radius:4px;font-weight:500;background:${p.general.nivel==='Manager'?'#ede9fe':p.general.nivel==='Líder'?'#dbeafe':'#f1f5f9'};color:${p.general.nivel==='Manager'?'#5b21b6':p.general.nivel==='Líder'?'#1e40af':'#475569'}">${p.general.nivel||'—'}</span></td>
-      <td>${p.general.seniority||'—'}</td>
+      <td style="color:var(--gray-600)">${esc(p.rol)||'—'}</td>
+      <td><span style="font-size:11px;padding:2px 7px;border-radius:4px;font-weight:500;background:${p.general.nivel==='Manager'?'#ede9fe':p.general.nivel==='Líder'?'#dbeafe':'#f1f5f9'};color:${p.general.nivel==='Manager'?'#5b21b6':p.general.nivel==='Líder'?'#1e40af':'#475569'}">${esc(p.general.nivel)||'—'}</span></td>
+      <td>${esc(p.general.seniority)||'—'}</td>
       <td>
         <div style="display:flex;align-items:center;gap:4px">
           <span style="font-weight:600;font-family:'DM Mono',monospace;color:${perf>=4?'var(--green)':perf>=3?'var(--amber)':perf>0?'var(--red)':'var(--gray-400)'}">${perf>0?perf.toFixed(1):'—'}</span>
@@ -2462,9 +2546,9 @@ function renderOverview() {
       </td>
       <td style="font-size:12px">${nb}</td>
       <td style="font-size:12px">${skillMatuLabel(p)}</td>
-      <td style="font-size:12px">${p.madurez.final||'—'}</td>
-      <td><span style="color:${riskColor};font-size:12px">${p.risk.global||'—'}</span></td>
-      <td style="font-size:12px">${p.resumen.decision||'—'}</td>
+      <td style="font-size:12px">${esc(p.madurez.final)||'—'}</td>
+      <td><span style="color:${riskColor};font-size:12px">${esc(p.risk.global)||'—'}</span></td>
+      <td style="font-size:12px">${esc(p.resumen.decision)||'—'}</td>
       <td>
         <div style="display:flex;align-items:center;gap:6px">
           <span style="font-size:11px;color:var(--gray-600)">${lastEvalDate}</span>
@@ -2472,7 +2556,7 @@ function renderOverview() {
             style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--gray-100);border:1px solid var(--gray-300);cursor:pointer;color:var(--navy);font-weight:600;white-space:nowrap">📋 Ver</button>` : ''}
         </div>
       </td>
-      <td style="font-size:11px;color:var(--gray-500)">${p._updatedByName||p._createdByName||'—'}</td>`;
+      <td style="font-size:11px;color:var(--gray-500)">${esc(p._updatedByName||p._createdByName||'—')}</td>`;
     tbody.appendChild(tr);
   });
 }
@@ -2481,7 +2565,6 @@ function renderOverview() {
 // ADD / DELETE MODAL
 // ═══════════════════════════════════════════════════════════════
 function openAddModal() {
-  document.getElementById('addModal').classList.add('open');
   document.getElementById('modal-nombre').value = '';
   document.getElementById('modal-seniority').value = '';
   selectedColor = '#2563eb';
@@ -2499,9 +2582,10 @@ function openAddModal() {
   if(eList) eList.innerHTML = '<div style="padding:8px 12px;font-size:12px;color:var(--gray-400)">Escribe para buscar…</div>';
   const eBadge = document.getElementById('modal-equipo-selected');
   if(eBadge) eBadge.style.display = 'none';
+  openModal('addModal');
   document.getElementById('modal-nombre').focus();
 }
-function closeAddModal() { document.getElementById('addModal').classList.remove('open'); }
+function closeAddModal() { closeModal('addModal'); }
 function selectColor(el) {
   selectedColor = el.dataset.color;
   document.querySelectorAll('.color-opt').forEach(c => {
@@ -2564,8 +2648,7 @@ function deleteCurrent() {
   const ids = Object.keys(profiles);
   if(ids.length) openProfile(ids[0]);
   else {
-    document.getElementById('profileView').style.display = 'none';
-    document.getElementById('overviewView').style.display = 'none';
+    hideAllViews();
     document.getElementById('emptyState').style.display = 'block';
   }
 }
@@ -2575,10 +2658,12 @@ function deleteCurrent() {
 // ═══════════════════════════════════════════════════════════════
 function exportJSON() {
   const blob = new Blob([JSON.stringify(profiles, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
+  a.href = url;
   a.download = 'talent_profiles_' + new Date().toISOString().slice(0,10) + '.json';
   a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2587,14 +2672,10 @@ function exportJSON() {
 function showHome() {
   currentId = null;
   activeView = 'home';
-  ['emptyState','profileView','overviewView','methodologyView','roleCompView','equipoView'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.style.display = 'none';
-  });
+  hideAllViews();
   document.getElementById('homeView').style.display = 'block';
-  ['nav-overview-mine','nav-overview-all','nav-methodology','nav-role-comp','nav-manual','nav-equipo'].forEach(id => {
-    document.getElementById(id)?.classList.remove('active');
-  });
+  deactivateAllNav();
+  document.getElementById('nav-home')?.classList.add('active');
   renderSidebar();
   renderHomeView();
 }
@@ -2634,10 +2715,10 @@ function renderHomeView() {
     const initials = (p.nombre||'??').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
     const closed = p._closed ? '<span style="font-size:10px;padding:1px 6px;background:var(--green-light);color:var(--green);border-radius:4px;font-weight:600">Cerrado</span>' : '';
     return `<div onclick="openProfile('${id}')" style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--gray-100);cursor:pointer;transition:background 0.1s" onmouseover="this.style.background='var(--gray-50)'" onmouseout="this.style.background=''">
-      <div style="width:32px;height:32px;border-radius:50%;background:${p.color}22;color:${p.color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${initials}</div>
+      <div style="width:32px;height:32px;border-radius:50%;background:${esc(p.color)}22;color:${esc(p.color)};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${esc(initials)}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px">${p.nombre||'—'} ${closed}</div>
-        <div style="font-size:11px;color:var(--gray-400)">${p.rol||'—'} · ${p.general?.seniority||'—'}</div>
+        <div style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px">${esc(p.nombre)||'—'} ${closed}</div>
+        <div style="font-size:11px;color:var(--gray-400)">${esc(p.rol)||'—'} · ${esc(p.general?.seniority)||'—'}</div>
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div style="font-size:12px;font-weight:600;font-family:'DM Mono',monospace;color:${col}">${pct}%</div>
@@ -2658,7 +2739,7 @@ function reopenProfile() {
     return;
   }
   document.getElementById('reopen-justif').value = '';
-  document.getElementById('reopenModal').classList.add('open');
+  openModal('reopenModal');
 }
 
 function confirmReopenProfile() {
@@ -2685,7 +2766,7 @@ function confirmReopenProfile() {
   p._reopenJustif = justif;
   p._reopenBy = uname;
   p._reopenAt = new Date().toISOString();
-  document.getElementById('reopenModal').classList.remove('open');
+  closeModal('reopenModal');
   autoSave();
   pushToSupabase(currentId, p);
   loadProfileToUI();
@@ -2701,7 +2782,7 @@ function confirmReopenProfile() {
 // ═══════════════════════════════════════════════════════════════
 function newCycleProfile() {
   document.getElementById('newcycle-justif').value = '';
-  document.getElementById('newCycleModal').classList.add('open');
+  openModal('newCycleModal');
 }
 
 function confirmNewCycle() {
@@ -2769,7 +2850,7 @@ function confirmNewCycle() {
   oldP._cycleJustif = justif;
   oldP._updatedAt = new Date().toISOString();
 
-  document.getElementById('newCycleModal').classList.remove('open');
+  closeModal('newCycleModal');
   autoSave();
   pushToSupabase(currentId, oldP);
   loadProfileToUI();
@@ -2788,13 +2869,9 @@ function confirmNewCycle() {
 function showManual() {
   currentId = null;
   activeView = 'manual';
-  ['emptyState','profileView','overviewView','methodologyView','roleCompView','homeView','manualView','equipoView'].forEach(id => {
-    const el = document.getElementById(id); if(el) el.style.display = 'none';
-  });
+  hideAllViews();
   document.getElementById('manualView').style.display = 'block';
-  ['nav-overview-mine','nav-overview-all','nav-methodology','nav-role-comp','nav-home'].forEach(id => {
-    document.getElementById(id)?.classList.remove('active');
-  });
+  deactivateAllNav();
   document.getElementById('nav-manual')?.classList.add('active');
   renderSidebar();
 
@@ -2948,9 +3025,9 @@ let equipoEditIdx = null; // null = add, number = edit index
 function showEquipo() {
   currentId = null;
   activeView = 'equipo';
-  ['emptyState','profileView','overviewView','methodologyView','roleCompView','homeView','manualView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  hideAllViews();
   document.getElementById('equipoView').style.display = 'block';
-  ['nav-overview-mine','nav-overview-all','nav-methodology','nav-role-comp','nav-home','nav-manual'].forEach(id=>{document.getElementById(id)?.classList.remove('active');});
+  deactivateAllNav();
   document.getElementById('nav-equipo')?.classList.add('active');
   renderSidebar();
   renderEquipoTable();
@@ -3029,11 +3106,11 @@ function renderEquipoTable() {
           : `<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--green-light);color:var(--green)" title="Perfil creado por otro evaluador">✓ Sí</span>`)
       : `<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:var(--gray-100);color:var(--gray-400)">— No</span>`;
     return `<tr>
-      <td style="font-family:var(--mono,monospace);font-size:11px">${m.nroEmpleado}</td>
-      <td style="font-weight:500">${m.nombre}</td>
-      <td><span style="font-size:11px;padding:2px 7px;border-radius:4px;background:var(--gray-100);color:var(--gray-700)">${m.jobRol||'—'}</span></td>
-      <td style="font-size:12px;color:var(--gray-600)">${m.ingreso||'—'}</td>
-      <td style="font-size:12px;color:var(--gray-600)">${m.antiguedad||'—'}</td>
+      <td style="font-family:var(--mono,monospace);font-size:11px">${esc(m.nroEmpleado)}</td>
+      <td style="font-weight:500">${esc(m.nombre)}</td>
+      <td><span style="font-size:11px;padding:2px 7px;border-radius:4px;background:var(--gray-100);color:var(--gray-700)">${esc(m.jobRol)||'—'}</span></td>
+      <td style="font-size:12px;color:var(--gray-600)">${esc(m.ingreso)||'—'}</td>
+      <td style="font-size:12px;color:var(--gray-600)">${esc(m.antiguedad)||'—'}</td>
       <td style="text-align:center">${profileBadge}</td>
       <td style="text-align:center">
         <button onclick="editEquipoMember(${idx})" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 5px;color:var(--blue)" title="Editar">✏️</button>
@@ -3051,7 +3128,7 @@ function openEquipoAddModal() {
     if(el) el.value = '';
   });
   document.getElementById('eq-jobRol').value = '';
-  document.getElementById('equipoModal').classList.add('open');
+  openModal('equipoModal');
 }
 
 function editEquipoMember(idx) {
@@ -3063,7 +3140,7 @@ function editEquipoMember(idx) {
   document.getElementById('eq-ingreso').value = m.ingreso || '';
   document.getElementById('eq-antiguedad').value = m.antiguedad || '';
   document.getElementById('eq-jobRol').value = m.jobRol || '';
-  document.getElementById('equipoModal').classList.add('open');
+  openModal('equipoModal');
 }
 
 function deleteEquipoMember(idx) {
@@ -3074,7 +3151,7 @@ function deleteEquipoMember(idx) {
 }
 
 function closeEquipoModal() {
-  document.getElementById('equipoModal').classList.remove('open');
+  closeModal('equipoModal');
   equipoEditIdx = null;
 }
 
@@ -3117,9 +3194,9 @@ function renderModalEquipoList() {
   if(!hits.length) { container.innerHTML = '<div style="padding:8px 12px;font-size:12px;color:var(--gray-400)">Sin resultados</div>'; return; }
   container.innerHTML = hits.map((m,i) => `
     <div onclick="selectModalEquipoMember(${equipoData.indexOf(m)})" style="padding:7px 12px;cursor:pointer;border-bottom:1px solid var(--gray-100);font-size:12px" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='white'">
-      <span style="font-weight:500">${m.nombre}</span>
-      <span style="color:var(--gray-400);margin-left:8px">${m.nroEmpleado}</span>
-      <span style="float:right;font-size:11px;color:var(--teal)">${m.jobRol||''}</span>
+      <span style="font-weight:500">${esc(m.nombre)}</span>
+      <span style="color:var(--gray-400);margin-left:8px">${esc(m.nroEmpleado)}</span>
+      <span style="float:right;font-size:11px;color:var(--teal)">${esc(m.jobRol)||''}</span>
     </div>`).join('');
 }
 
@@ -3151,9 +3228,6 @@ function clearModalEquipoSelection() {
   document.getElementById('modal-nombre').value = '';
   document.getElementById('modal-seniority').value = '';
 }
-
-// ─── Override openAddModal to reset equipo selection ───
-const _origOpenAddModal = typeof openAddModal === 'function' ? openAddModal : null;
 
 // ─── Auto-fill General after profile creation from equipo ───
 function autoFillGeneralFromEquipo(profileId) {
@@ -3295,24 +3369,24 @@ function openHistoryModal(profileId) {
       <div class="cc-header">
         <div>
           <span class="cc-title">Ciclo ${c.cycle}${c.isCurrent?` <span style='font-size:10px;padding:1px 6px;background:var(--teal);color:white;border-radius:4px;font-weight:600'>actual</span>`:''}</span>
-          ${c.justif?`<div style="font-size:11px;color:var(--gray-500);margin-top:2px">📝 ${c.justif}</div>`:''}
+          ${c.justif?`<div style="font-size:11px;color:var(--gray-500);margin-top:2px">📝 ${esc(c.justif)}</div>`:''}
         </div>
         <span class="cc-date">${dateStr}</span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px">
         <div><div style="font-size:10px;color:var(--gray-400);margin-bottom:3px">Performance</div>${miniBar(c.perf,'var(--blue)')}</div>
         <div><div style="font-size:10px;color:var(--gray-400);margin-bottom:3px">Potencial</div>${miniBar(c.pot,'var(--purple)')}</div>
-        <div><div style="font-size:10px;color:var(--gray-400);margin-bottom:3px">Madurez</div><span style="font-size:12px;font-weight:600">${c.madurez}</span></div>
-        <div><div style="font-size:10px;color:var(--gray-400);margin-bottom:3px">Risk</div><span style="font-size:11px;font-weight:600;color:${riskCol}">${c.risk||'—'}</span></div>
+        <div><div style="font-size:10px;color:var(--gray-400);margin-bottom:3px">Madurez</div><span style="font-size:12px;font-weight:600">${esc(c.madurez)}</span></div>
+        <div><div style="font-size:10px;color:var(--gray-400);margin-bottom:3px">Risk</div><span style="font-size:11px;font-weight:600;color:${riskCol}">${esc(c.risk)||'—'}</span></div>
       </div>
-      ${c.decision?`<div style="font-size:11px;background:var(--gray-50);border-radius:6px;padding:6px 10px;margin-bottom:6px"><strong>Decisión:</strong> ${c.decision}</div>`:''}
-      ${c.fortalezas?`<div style="font-size:11px;color:var(--gray-700);margin-bottom:4px"><strong style="color:var(--green)">✓ Fortalezas:</strong> ${c.fortalezas.replace(/\n/g,' · ')}</div>`:''}
-      ${c.mejoras?`<div style="font-size:11px;color:var(--gray-700)"><strong style="color:var(--amber)">⚡ Mejoras:</strong> ${c.mejoras.replace(/\n/g,' · ')}</div>`:''}
+      ${c.decision?`<div style="font-size:11px;background:var(--gray-50);border-radius:6px;padding:6px 10px;margin-bottom:6px"><strong>Decisión:</strong> ${esc(c.decision)}</div>`:''}
+      ${c.fortalezas?`<div style="font-size:11px;color:var(--gray-700);margin-bottom:4px"><strong style="color:var(--green)">✓ Fortalezas:</strong> ${esc(c.fortalezas).replace(/\n/g,' · ')}</div>`:''}
+      ${c.mejoras?`<div style="font-size:11px;color:var(--gray-700)"><strong style="color:var(--amber)">⚡ Mejoras:</strong> ${esc(c.mejoras).replace(/\n/g,' · ')}</div>`:''}
     </div>`;
   });
 
   body.innerHTML = html || '<div style="text-align:center;padding:2rem;color:var(--gray-400)">Sin historial de ciclos previos</div>';
-  document.getElementById('historyModal').classList.add('open');
+  openModal('historyModal');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -3328,11 +3402,11 @@ function saveAndContinue() {
   // Show/hide "Cerrar ahora" button
   const closeNowBtn = document.getElementById('saveModalCloseBtn');
   if(closeNowBtn) closeNowBtn.style.display = canClose ? '' : 'none';
-  document.getElementById('saveModal').classList.add('open');
+  openModal('saveModal');
 }
 
 function closeSaveModalAndClose() {
-  document.getElementById('saveModal').classList.remove('open');
+  closeModal('saveModal');
   closeProfile();
 }
 
@@ -3365,7 +3439,7 @@ function closeProfile() {
   if(confirmBtn) {
     confirmBtn.style.display = canClose ? '' : 'none';
   }
-  document.getElementById('closeProfileModal').classList.add('open');
+  openModal('closeProfileModal');
 }
 
 function confirmCloseProfile() {
@@ -3378,7 +3452,7 @@ function confirmCloseProfile() {
   autoSave();
   clearTimeout(autoSaveTimer);
   pushToSupabase(currentId, profiles[currentId]);
-  document.getElementById('closeProfileModal').classList.remove('open');
+  closeModal('closeProfileModal');
   const name = profiles[currentId].nombre || 'el perfil';
   currentId = null;
   showOverview('mine');
@@ -3883,7 +3957,7 @@ function showSectionAlert(alertId, missingArr) {
   const wasOpen = !!document.getElementById(uid) &&
                   document.getElementById(uid).style.display !== 'none';
   const items = missingArr.map(m =>
-    `<span style="display:inline-block;background:rgba(220,38,38,0.08);border-radius:4px;padding:1px 7px;margin:2px 3px 2px 0;white-space:nowrap">⚠ ${m}</span>`
+    `<span style="display:inline-block;background:rgba(220,38,38,0.08);border-radius:4px;padding:1px 7px;margin:2px 3px 2px 0;white-space:nowrap">⚠ ${esc(m)}</span>`
   ).join('');
   el.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none"
@@ -3896,10 +3970,18 @@ function showSectionAlert(alertId, missingArr) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// KEYBOARD SHORTCUT
+// KEYBOARD SHORTCUTS
 // ═══════════════════════════════════════════════════════════════
 document.addEventListener('keydown', e => {
   if((e.ctrlKey||e.metaKey) && e.key === 's') { e.preventDefault(); saveAll(); }
+  // Escape closes any open modal
+  if(e.key === 'Escape') {
+    const modals = ['historyModal','newCycleModal','reopenModal','closeProfileModal','saveModal','benchmarkModal','dimModal','addModal','equipoModal'];
+    for(const id of modals) {
+      const el = document.getElementById(id);
+      if(el && el.classList.contains('open')) { closeModal(id); break; }
+    }
+  }
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -3949,7 +4031,21 @@ renderSidebar();
   }
 })();
 
-// Periodic pull every 60s
-setInterval(async () => {
-  if(supabaseClient && currentUser) await pullFromSupabase();
-}, 60000);
+// Periodic pull every 60s — only when tab is visible and user is authenticated
+let syncIntervalId = null;
+function startSyncInterval() {
+  if(syncIntervalId) return;
+  syncIntervalId = setInterval(async () => {
+    if(supabaseClient && currentUser && !document.hidden) {
+      await pullFromSupabase();
+    }
+  }, 60000);
+}
+function stopSyncInterval() {
+  if(syncIntervalId) { clearInterval(syncIntervalId); syncIntervalId = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden) stopSyncInterval();
+  else if(currentUser) startSyncInterval();
+});
+startSyncInterval();
