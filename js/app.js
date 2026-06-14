@@ -3019,6 +3019,7 @@ async function loadEquipoData() {
       .from('talent_equipo')
       .select('nro_empleado, nombre, ingreso, antiguedad, job_rol')
       .order('nombre');
+    if(error) { console.error('loadEquipoData error:', error); }
     if(!error && data && data.length) {
       const mapped = data.map(r => ({
         nroEmpleado: r.nro_empleado,
@@ -3030,12 +3031,16 @@ async function loadEquipoData() {
       try { localStorage.setItem('equipoData_v1', JSON.stringify(mapped)); } catch(e) {}
       return mapped;
     }
+    if(!error && data && data.length === 0) {
+      console.warn('loadEquipoData: tabla talent_equipo existe pero está vacía (0 rows). ¿Ejecutaste seed_equipo.sql?');
+    }
   }
   // Fallback to localStorage cache
   try {
     const stored = localStorage.getItem('equipoData_v1');
-    if(stored) return JSON.parse(stored);
+    if(stored) { console.log('loadEquipoData: usando cache localStorage'); return JSON.parse(stored); }
   } catch(e) {}
+  console.warn('loadEquipoData: sin datos de equipo disponibles');
   return [];
 }
 
