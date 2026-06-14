@@ -7,6 +7,25 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 let supabaseClient = null;
 let currentUser = null;
 let autoSaveTimer = null;
+let uiUpdateTimer = null;
+
+// ─── UTILITIES ───
+/** Escape HTML to prevent XSS when injecting user data into innerHTML */
+function esc(str) {
+  if(!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/** Debounced UI update — avoids excessive DOM rebuilds on each keystroke */
+function scheduleUIUpdate() {
+  if(uiUpdateTimer) return;
+  uiUpdateTimer = setTimeout(() => {
+    uiUpdateTimer = null;
+    renderSidebar();
+    updateSectionAlerts();
+    updateTabProgress();
+  }, 300);
+}
 
 function initSupabase() {
   supabaseClient = supabase.createClient(SB_URL, SB_KEY);
@@ -31,7 +50,9 @@ async function doFirstLoginChange() {
   const pass2 = document.getElementById('firstlogin-pass2').value;
   const errEl = document.getElementById('firstlogin-error');
   errEl.textContent = '';
-  if(!pass || pass.length < 6) { errEl.textContent = 'Mínimo 6 caracteres.'; return; }
+  if(!pass || pass.length < 8) { errEl.textContent = 'Mínimo 8 caracteres.'; return; }
+  if(!/[A-Z]/.test(pass)) { errEl.textContent = 'Incluye al menos una mayúscula.'; return; }
+  if(!/[0-9]/.test(pass)) { errEl.textContent = 'Incluye al menos un número.'; return; }
   if(pass !== pass2) { errEl.textContent = 'Las contraseñas no coinciden.'; return; }
   const btn = document.getElementById('firstloginBtn');
   btn.textContent = 'Guardando...'; btn.disabled = true;
@@ -64,7 +85,9 @@ async function doResetPassword() {
   const errEl = document.getElementById('reset-error');
   const okEl  = document.getElementById('reset-success');
   errEl.textContent = ''; okEl.textContent = '';
-  if(!pass || pass.length < 6) { errEl.textContent = 'Mínimo 6 caracteres.'; return; }
+  if(!pass || pass.length < 8) { errEl.textContent = 'Mínimo 8 caracteres.'; return; }
+  if(!/[A-Z]/.test(pass)) { errEl.textContent = 'Incluye al menos una mayúscula.'; return; }
+  if(!/[0-9]/.test(pass)) { errEl.textContent = 'Incluye al menos un número.'; return; }
   if(pass !== pass2) { errEl.textContent = 'Las contraseñas no coinciden.'; return; }
   const btn = document.getElementById('resetBtn');
   btn.textContent = 'Guardando...'; btn.disabled = true;
@@ -105,6 +128,7 @@ async function doLogin() {
 
 async function doLogout() {
   if(!supabaseClient) return;
+  if(!confirm('¿Cerrar sesión?')) return;
   await supabaseClient.auth.signOut();
   currentUser = null;
   document.getElementById('userChip').style.display = 'none';
@@ -178,7 +202,7 @@ function canSeeProfile(p) {
 }
 
 // ─── SUPABASE DATA ───
-async function pushToSupabase(id, data) {
+async function pushToSupabase(id, data, retryCount = 0) {
   if(!supabaseClient || !currentUser) return;
   setSyncStatus('syncing', 'Guardando...');
   const payload = {
@@ -191,7 +215,15 @@ async function pushToSupabase(id, data) {
   const { error } = await supabaseClient
     .from('talent_profiles')
     .upsert(payload, { onConflict: 'id' });
-  if(error) { setSyncStatus('err', 'Error al guardar'); console.error(error); }
+  if(error) {
+    console.error('Push error:', error);
+    if(retryCount < 2) {
+      setTimeout(() => pushToSupabase(id, data, retryCount + 1), 3000 * (retryCount + 1));
+      setSyncStatus('syncing', `Reintentando (${retryCount + 1}/2)...`);
+    } else {
+      setSyncStatus('err', 'Error al guardar — reintenta manualmente');
+    }
+  }
   else setSyncStatus('ok', 'Sincronizado');
 }
 
@@ -948,9 +980,9 @@ function renderSidebar() {
     const chip = document.createElement('div');
     chip.className = 'person-chip' + (currentId === id ? ' active' : '');
     chip.innerHTML = `
-      <div class="person-avatar" style="background:${p.color}22;color:${p.color}">${initials}</div>
+      <div class="person-avatar" style="background:${esc(p.color)}22;color:${esc(p.color)}">${esc(initials)}</div>
       <div style="min-width:0;flex:1">
-        <div class="person-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre || '(sin nombre)'}</div>
+        <div class="person-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.nombre) || '(sin nombre)'}</div>
         <div style="display:flex;align-items:center;gap:5px;margin-top:2px">
           ${p._closed
             ? '<span style="font-size:9px;padding:1px 6px;background:var(--green-light);color:var(--green);border-radius:4px;font-weight:700;letter-spacing:0.02em">✓ Cerrado</span>'
@@ -1211,15 +1243,15 @@ function buildScoreTable(tbodyId, dims, scores, evidence, prefix, avgId) {
     const benchLabel = bench !== null ? bench.toFixed(1) : '—';
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><span class="dim-label">${dim}</span></td>
+      <td><span class="dim-label">${esc(dim)}</span></td>
       <td>
-        <div class="score-stars">
-          ${[1,2,3,4,5].map(n => `<div class="star ${scores[i]>=n?'active-'+n:''}" onclick="setScore('${prefix}',${i},${n},'${avgId}')">${n}</div>`).join('')}
+        <div class="score-stars" role="group" aria-label="${esc(dim)} — score">
+          ${[1,2,3,4,5].map(n => `<div class="star ${scores[i]>=n?'active-'+n:''}" role="button" tabindex="0" aria-label="Score ${n}" onclick="setScore('${prefix}',${i},${n},'${avgId}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setScore('${prefix}',${i},${n},'${avgId}')}">${n}</div>`).join('')}
         </div>
       </td>
       <td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;color:var(--gray-500)">${benchLabel}</td>
       <td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:${gapColor}">${gapLabel}</td>
-      <td><textarea class="evidence-input" rows="1" placeholder="${getEvidencePlaceholder(prefix,i)}" style="${!evidence[i]?.trim() ? 'border-color:var(--amber);background:#fffbeb' : ''}" onchange="setEvidence('${prefix}',${i},this.value)">${evidence[i]||''}</textarea></td>`;
+      <td><textarea class="evidence-input" rows="1" aria-label="Evidencia: ${esc(dim)}" placeholder="${getEvidencePlaceholder(prefix,i)}" style="${!evidence[i]?.trim() ? 'border-color:var(--amber);background:#fffbeb' : ''}" onchange="setEvidence('${prefix}',${i},this.value)">${esc(evidence[i]||'')}</textarea></td>`;
     tbody.appendChild(tr);
   });
   updateAvgDisplay(prefix, avgId);
@@ -1266,7 +1298,7 @@ function buildSkillTable() {
   const p = profiles[currentId];
   Object.entries(SKILL_GROUPS).forEach(([group, skills]) => {
     const groupRow = document.createElement('tr');
-    groupRow.innerHTML = `<td colspan="7" class="skill-group-header">▸ ${group}</td>`;
+    groupRow.innerHTML = `<td colspan="7" class="skill-group-header">▸ ${esc(group)}</td>`;
     tbody.appendChild(groupRow);
     skills.forEach(skill => {
       const d = p.skills[skill] || {actual:0,target:0,plan:'',prioridad:'',planActivo:'',na:false};
@@ -1276,27 +1308,29 @@ function buildSkillTable() {
       const gapClass = gap > 0 ? 'gap-pos' : gap < 0 ? 'gap-neg' : gap === 0 ? 'gap-zero' : '';
       const planReq = !isNA && d.planActivo === 'Sí';
       const rowOpacity = isNA ? 'opacity:0.35;' : '';
+      const escSkill = esc(skill);
+      const safeSkill = skill.replace(/'/g, "\\'");
       const tr = document.createElement('tr');
       tr.style.cssText = rowOpacity;
       tr.innerHTML = `
-        <td style="font-size:12px">${skill}</td>
+        <td style="font-size:12px">${escSkill}</td>
         <td style="text-align:center">
           <label style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;font-size:9px;color:${isNA?'var(--gray-600)':'var(--gray-400)'};font-weight:500">
             <input type="checkbox" ${isNA?'checked':''} title="Esta habilidad no aplica para el rol de esta persona"
               style="width:15px;height:15px;cursor:pointer;accent-color:var(--gray-500)"
-              onchange="setSkillNA('${skill}',this.checked)">
+              onchange="setSkillNA('${safeSkill}',this.checked)">
             ${isNA?'N/A':''}
           </label>
         </td>
         <td><div class="score-stars" style="${isNA?'pointer-events:none;opacity:0.4':''}">
-          ${[1,2,3,4,5].map(n=>`<div class="star ${!isNA&&d.actual>=n?'active-'+n:''}" onclick="${isNA?'':'setSkillScore(\''+skill+'\',\'actual\','+n+')'}">${n}</div>`).join('')}
+          ${[1,2,3,4,5].map(n=>`<div class="star ${!isNA&&d.actual>=n?'active-'+n:''}" onclick="${isNA?'':'setSkillScore(\''+safeSkill+'\',\'actual\','+n+')'}">${n}</div>`).join('')}
         </div></td>
         <td><div class="score-stars" style="${isNA?'pointer-events:none;opacity:0.4':''}">
-          ${[1,2,3,4,5].map(n=>`<div class="star ${!isNA&&d.target>=n?'active-'+n:''}" onclick="${isNA?'':'setSkillScore(\''+skill+'\',\'target\','+n+')'}">${n}</div>`).join('')}
+          ${[1,2,3,4,5].map(n=>`<div class="star ${!isNA&&d.target>=n?'active-'+n:''}" onclick="${isNA?'':'setSkillScore(\''+safeSkill+'\',\'target\','+n+')'}">${n}</div>`).join('')}
         </div></td>
         <td>${gap !== '' ? `<span class="gap-badge ${gapClass}">${gap > 0 ? '+'+gap : gap}</span>` : '<span style="color:var(--gray-400);font-size:12px">—</span>'}</td>
         <td>
-          <select class="risk-select" style="font-size:11px;padding:3px 5px" ${isNA?'disabled':''} onchange="setSkillPrio('${skill}',this.value)">
+          <select class="risk-select" style="font-size:11px;padding:3px 5px" ${isNA?'disabled':''} onchange="setSkillPrio('${safeSkill}',this.value)">
             <option value="">—</option>
             <option ${d.prioridad==='Alta'?'selected':''}>Alta</option>
             <option ${d.prioridad==='Media'?'selected':''}>Media</option>
@@ -1304,13 +1338,13 @@ function buildSkillTable() {
           </select>
         </td>
         <td>
-          <select class="risk-select" style="font-size:11px;padding:3px 5px" ${isNA?'disabled':''} onchange="setSkillPlanActivo('${skill}',this.value)">
+          <select class="risk-select" style="font-size:11px;padding:3px 5px" ${isNA?'disabled':''} onchange="setSkillPlanActivo('${safeSkill}',this.value)">
             <option value="">—</option>
             <option ${d.planActivo==='Sí'?'selected':''}>Sí</option>
             <option ${d.planActivo==='No'?'selected':''}>No</option>
           </select>
         </td>
-        <td><textarea class="evidence-input" rows="1" ${isNA?'disabled':''} placeholder="${planReq && !d.plan?.trim() ? '⚠ Obligatorio…' : 'Plan…'}" style="${planReq && !d.plan?.trim() ? 'border-color:var(--orange);background:#fff7ed' : ''}" onchange="setSkillPlan('${skill}',this.value)">${d.plan||''}</textarea></td>`;
+        <td><textarea class="evidence-input" rows="1" ${isNA?'disabled':''} placeholder="${planReq && !d.plan?.trim() ? '⚠ Obligatorio…' : 'Plan…'}" style="${planReq && !d.plan?.trim() ? 'border-color:var(--orange);background:#fff7ed' : ''}" onchange="setSkillPlan('${safeSkill}',this.value)">${esc(d.plan||'')}</textarea></td>`;
       tbody.appendChild(tr);
     });
   });
@@ -1363,7 +1397,7 @@ function buildMatTable() {
     const missingJustif = !d.justif?.trim();
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td style="font-size:12px">${dim}</td>
+      <td style="font-size:12px">${esc(dim)}</td>
       <td>
         <select class="risk-select" style="font-size:12px;width:100%;${missingNivel ? 'border-color:var(--amber);background:#fffbeb' : ''}" onchange="setMatNivel(${i},this.value)">
           <option value="">— Seleccionar —</option>
@@ -1374,7 +1408,7 @@ function buildMatTable() {
           <option ${d.nivel==='5'?'selected':''} value="5">5 — Líder estratégico (Chief/Evangelist)</option>
         </select>
       </td>
-      <td><textarea class="evidence-input" rows="1" placeholder="${missingJustif ? '⚠ Obligatorio…' : 'Justificación…'}" style="${missingJustif ? 'border-color:var(--amber);background:#fffbeb' : ''}" oninput="setMatJustifSilent(${i},this.value)" onblur="setMatJustif(${i},this.value)">${d.justif||''}</textarea></td>`;
+      <td><textarea class="evidence-input" rows="1" placeholder="${missingJustif ? '⚠ Obligatorio…' : 'Justificación…'}" style="${missingJustif ? 'border-color:var(--amber);background:#fffbeb' : ''}" oninput="setMatJustifSilent(${i},this.value)" onblur="setMatJustif(${i},this.value)">${esc(d.justif||'')}</textarea></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -1432,7 +1466,7 @@ function buildRiskTable() {
     const phAccion = needsObs && !d.accion?.trim() ? '⚠ Obligatorio…' : 'Acción…';
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td style="font-size:12px">${item}</td>
+      <td style="font-size:12px">${esc(item)}</td>
       <td>
         <select class="risk-select" onchange="setRiskEstado(${i},this.value)">
           <option value="">—</option>
@@ -1441,8 +1475,8 @@ function buildRiskTable() {
           <option ${d.estado==='Bajo'?'selected':''} style="color:#16a34a">Bajo</option>
         </select>
       </td>
-      <td><textarea class="evidence-input" rows="1" placeholder="${phObs}" style="${bgObs}" onchange="setRiskObs(${i},this.value)">${d.obs||''}</textarea></td>
-      <td><textarea class="evidence-input" rows="1" placeholder="${phAccion}" style="${bgAccion}" onchange="setRiskAccion(${i},this.value)">${d.accion||''}</textarea></td>`;
+      <td><textarea class="evidence-input" rows="1" placeholder="${phObs}" style="${bgObs}" onchange="setRiskObs(${i},this.value)">${esc(d.obs||'')}</textarea></td>
+      <td><textarea class="evidence-input" rows="1" placeholder="${phAccion}" style="${bgAccion}" onchange="setRiskAccion(${i},this.value)">${esc(d.accion||'')}</textarea></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -1703,11 +1737,10 @@ function autoSave() {
   updateResumenValidation();
   p._updatedAt = new Date().toISOString();
   saveLocalState();
-  renderSidebar();
   showSaveIndicator();
-  updateSectionAlerts();
-  updateTabProgress();
-  // Update completeness bar
+  // Debounced UI updates (sidebar, alerts, tabs) — avoid thrashing on each keystroke
+  scheduleUIUpdate();
+  // Update completeness bar (lightweight)
   const pct2 = calcCompleteness(p);
   const col2 = completenessColor(pct2);
   const complDiv2 = document.getElementById('profileCompleteness');
@@ -2433,9 +2466,9 @@ function renderOverview() {
     tr.innerHTML = `
       <td>
         <div style="display:flex;align-items:center;gap:8px">
-          <div style="width:26px;height:26px;border-radius:50%;background:${p.color}22;color:${p.color};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${initials}</div>
+          <div style="width:26px;height:26px;border-radius:50%;background:${esc(p.color)}22;color:${esc(p.color)};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${esc(initials)}</div>
           <div>
-            <span style="font-weight:500">${p.nombre||'—'}</span>${cycleLabel}
+            <span style="font-weight:500">${esc(p.nombre)||'—'}</span>${cycleLabel}
             ${(() => {
               if(p._closed) return '<span style="font-size:10px;padding:1px 5px;background:var(--green-light);color:var(--green);border-radius:4px;font-weight:600;margin-left:4px">✓ Cerrado</span>';
               const pct = calcCompleteness(p);
@@ -2445,9 +2478,9 @@ function renderOverview() {
           </div>
         </div>
       </td>
-      <td style="color:var(--gray-600)">${p.rol||'—'}</td>
-      <td><span style="font-size:11px;padding:2px 7px;border-radius:4px;font-weight:500;background:${p.general.nivel==='Manager'?'#ede9fe':p.general.nivel==='Líder'?'#dbeafe':'#f1f5f9'};color:${p.general.nivel==='Manager'?'#5b21b6':p.general.nivel==='Líder'?'#1e40af':'#475569'}">${p.general.nivel||'—'}</span></td>
-      <td>${p.general.seniority||'—'}</td>
+      <td style="color:var(--gray-600)">${esc(p.rol)||'—'}</td>
+      <td><span style="font-size:11px;padding:2px 7px;border-radius:4px;font-weight:500;background:${p.general.nivel==='Manager'?'#ede9fe':p.general.nivel==='Líder'?'#dbeafe':'#f1f5f9'};color:${p.general.nivel==='Manager'?'#5b21b6':p.general.nivel==='Líder'?'#1e40af':'#475569'}">${esc(p.general.nivel)||'—'}</span></td>
+      <td>${esc(p.general.seniority)||'—'}</td>
       <td>
         <div style="display:flex;align-items:center;gap:4px">
           <span style="font-weight:600;font-family:'DM Mono',monospace;color:${perf>=4?'var(--green)':perf>=3?'var(--amber)':perf>0?'var(--red)':'var(--gray-400)'}">${perf>0?perf.toFixed(1):'—'}</span>
@@ -2462,9 +2495,9 @@ function renderOverview() {
       </td>
       <td style="font-size:12px">${nb}</td>
       <td style="font-size:12px">${skillMatuLabel(p)}</td>
-      <td style="font-size:12px">${p.madurez.final||'—'}</td>
-      <td><span style="color:${riskColor};font-size:12px">${p.risk.global||'—'}</span></td>
-      <td style="font-size:12px">${p.resumen.decision||'—'}</td>
+      <td style="font-size:12px">${esc(p.madurez.final)||'—'}</td>
+      <td><span style="color:${riskColor};font-size:12px">${esc(p.risk.global)||'—'}</span></td>
+      <td style="font-size:12px">${esc(p.resumen.decision)||'—'}</td>
       <td>
         <div style="display:flex;align-items:center;gap:6px">
           <span style="font-size:11px;color:var(--gray-600)">${lastEvalDate}</span>
@@ -2634,10 +2667,10 @@ function renderHomeView() {
     const initials = (p.nombre||'??').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
     const closed = p._closed ? '<span style="font-size:10px;padding:1px 6px;background:var(--green-light);color:var(--green);border-radius:4px;font-weight:600">Cerrado</span>' : '';
     return `<div onclick="openProfile('${id}')" style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--gray-100);cursor:pointer;transition:background 0.1s" onmouseover="this.style.background='var(--gray-50)'" onmouseout="this.style.background=''">
-      <div style="width:32px;height:32px;border-radius:50%;background:${p.color}22;color:${p.color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${initials}</div>
+      <div style="width:32px;height:32px;border-radius:50%;background:${esc(p.color)}22;color:${esc(p.color)};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${esc(initials)}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px">${p.nombre||'—'} ${closed}</div>
-        <div style="font-size:11px;color:var(--gray-400)">${p.rol||'—'} · ${p.general?.seniority||'—'}</div>
+        <div style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px">${esc(p.nombre)||'—'} ${closed}</div>
+        <div style="font-size:11px;color:var(--gray-400)">${esc(p.rol)||'—'} · ${esc(p.general?.seniority)||'—'}</div>
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div style="font-size:12px;font-weight:600;font-family:'DM Mono',monospace;color:${col}">${pct}%</div>
@@ -3029,10 +3062,10 @@ function renderEquipoTable() {
           : `<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--green-light);color:var(--green)" title="Perfil creado por otro evaluador">✓ Sí</span>`)
       : `<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:var(--gray-100);color:var(--gray-400)">— No</span>`;
     return `<tr>
-      <td style="font-family:var(--mono,monospace);font-size:11px">${m.nroEmpleado}</td>
-      <td style="font-weight:500">${m.nombre}</td>
-      <td><span style="font-size:11px;padding:2px 7px;border-radius:4px;background:var(--gray-100);color:var(--gray-700)">${m.jobRol||'—'}</span></td>
-      <td style="font-size:12px;color:var(--gray-600)">${m.ingreso||'—'}</td>
+      <td style="font-family:var(--mono,monospace);font-size:11px">${esc(m.nroEmpleado)}</td>
+      <td style="font-weight:500">${esc(m.nombre)}</td>
+      <td><span style="font-size:11px;padding:2px 7px;border-radius:4px;background:var(--gray-100);color:var(--gray-700)">${esc(m.jobRol)||'—'}</span></td>
+      <td style="font-size:12px;color:var(--gray-600)">${esc(m.ingreso)||'—'}</td>
       <td style="font-size:12px;color:var(--gray-600)">${m.antiguedad||'—'}</td>
       <td style="text-align:center">${profileBadge}</td>
       <td style="text-align:center">
@@ -3117,9 +3150,9 @@ function renderModalEquipoList() {
   if(!hits.length) { container.innerHTML = '<div style="padding:8px 12px;font-size:12px;color:var(--gray-400)">Sin resultados</div>'; return; }
   container.innerHTML = hits.map((m,i) => `
     <div onclick="selectModalEquipoMember(${equipoData.indexOf(m)})" style="padding:7px 12px;cursor:pointer;border-bottom:1px solid var(--gray-100);font-size:12px" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='white'">
-      <span style="font-weight:500">${m.nombre}</span>
-      <span style="color:var(--gray-400);margin-left:8px">${m.nroEmpleado}</span>
-      <span style="float:right;font-size:11px;color:var(--teal)">${m.jobRol||''}</span>
+      <span style="font-weight:500">${esc(m.nombre)}</span>
+      <span style="color:var(--gray-400);margin-left:8px">${esc(m.nroEmpleado)}</span>
+      <span style="float:right;font-size:11px;color:var(--teal)">${esc(m.jobRol)||''}</span>
     </div>`).join('');
 }
 
@@ -3949,7 +3982,21 @@ renderSidebar();
   }
 })();
 
-// Periodic pull every 60s
-setInterval(async () => {
-  if(supabaseClient && currentUser) await pullFromSupabase();
-}, 60000);
+// Periodic pull every 60s — only when tab is visible and user is authenticated
+let syncIntervalId = null;
+function startSyncInterval() {
+  if(syncIntervalId) return;
+  syncIntervalId = setInterval(async () => {
+    if(supabaseClient && currentUser && !document.hidden) {
+      await pullFromSupabase();
+    }
+  }, 60000);
+}
+function stopSyncInterval() {
+  if(syncIntervalId) { clearInterval(syncIntervalId); syncIntervalId = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden) stopSyncInterval();
+  else if(currentUser) startSyncInterval();
+});
+startSyncInterval();

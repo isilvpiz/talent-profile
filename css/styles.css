@@ -501,3 +501,23 @@ body.is-admin .admin-edit-btn { display: inline-flex; align-items: center; }
   background:var(--teal); display:flex; align-items:center;
   justify-content:center; font-size:10px; font-weight:700; color:white;
 }
+
+/* ─── ACCESSIBILITY FIXES ─── */
+/* Improved focus visible for keyboard navigation */
+.star:focus-visible, .section-tab:focus-visible, .sidebar-nav-item:focus-visible,
+.person-chip:focus-visible, .btn:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+/* Ensure labels meet WCAG AA contrast (4.5:1 for small text) */
+label { color: var(--gray-600); }
+/* Skip link styles */
+.skip-link:focus { top: 0 !important; }
+/* Modal focus trap indicator */
+.modal-overlay.open .modal:focus-visible,
+.save-modal-overlay.open .save-modal:focus-visible {
+  outline: 2px solid var(--blue);
+}
+/* Nav sidebar — ensure clickable divs look interactive */
+.sidebar-nav-item { cursor: pointer; }
+.sidebar-nav-item:focus-visible { background: var(--gray-50); color: var(--gray-800); }

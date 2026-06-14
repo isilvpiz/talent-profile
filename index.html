@@ -23,7 +23,7 @@
     <div id="auth-login-form">
       <div class="form-group" style="margin-bottom:12px">
         <label>Email</label>
-        <input type="text" id="login-email" placeholder="tu@nttdata.com" onkeydown="if(event.key==='Enter')doLogin()">
+        <input type="email" id="login-email" placeholder="tu@nttdata.com" autocomplete="email" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
       <div class="form-group" style="margin-bottom:16px">
         <label>Contraseña</label>
@@ -69,7 +69,9 @@
   🚧 En desarrollo — Los perfiles y sus resultados son de prueba y no representan evaluaciones reales
 </div>
 
-<div class="topbar">
+<a href="#mainContent" class="skip-link" style="position:absolute;top:-40px;left:0;background:var(--navy);color:white;padding:8px 16px;z-index:1000;font-size:13px;transition:top 0.2s" onfocus="this.style.top='0'" onblur="this.style.top='-40px'">Saltar al contenido</a>
+
+<header class="topbar" role="banner">
   <div class="topbar-brand">
     <div class="dot"></div>
     <div>
@@ -94,11 +96,11 @@
     <button class="btn btn-ghost btn-sm" onclick="exportJSON()">Exportar JSON</button>
     <button class="btn btn-teal btn-sm" onclick="openAddModal()">+ Nuevo perfil</button>
   </div>
-</div>
+</header>
 
 <div class="layout">
   <!-- SIDEBAR -->
-  <div class="sidebar" id="sidebar">
+  <nav class="sidebar" id="sidebar" role="navigation" aria-label="Navegación principal">
     <!-- Perfiles — zona scrolleable -->
     <div style="flex:1;overflow-y:auto;padding:1.25rem 0 0.5rem">
       <div class="sidebar-section">
@@ -110,39 +112,39 @@
     </div>
     <!-- Navegación — fija abajo -->
     <div style="border-top:1px solid var(--gray-200);padding:0.75rem 0;flex-shrink:0;background:var(--white)">
-      <div class="sidebar-nav-item" onclick="showHome()" id="nav-home">
+      <div class="sidebar-nav-item" onclick="showHome()" id="nav-home" role="button" tabindex="0" onkeydown="if(event.key==='Enter')showHome()">
         <div class="sidebar-dot"></div>
-        🏠 Inicio
+        <span aria-hidden="true">🏠</span> Inicio
       </div>
-      <div class="sidebar-nav-item" onclick="showOverview('mine')" id="nav-overview-mine" style="margin-top:2px">
+      <div class="sidebar-nav-item" onclick="showOverview('mine')" id="nav-overview-mine" style="margin-top:2px" role="button" tabindex="0" onkeydown="if(event.key==='Enter')showOverview('mine')">
         <div class="sidebar-dot"></div>
-        👤 Mis perfiles
+        <span aria-hidden="true">👤</span> Mis perfiles
       </div>
-      <div class="sidebar-nav-item" onclick="showOverview('all')" id="nav-overview-all" style="margin-top:2px">
+      <div class="sidebar-nav-item" onclick="showOverview('all')" id="nav-overview-all" style="margin-top:2px" role="button" tabindex="0" onkeydown="if(event.key==='Enter')showOverview('all')">
         <div class="sidebar-dot"></div>
-        📊 Vista Consolidada
+        <span aria-hidden="true">📊</span> Vista Consolidada
       </div>
-      <div class="sidebar-nav-item" onclick="showMethodology()" id="nav-methodology" style="margin-top:2px">
+      <div class="sidebar-nav-item" onclick="showMethodology()" id="nav-methodology" style="margin-top:2px" role="button" tabindex="0" onkeydown="if(event.key==='Enter')showMethodology()">
         <div class="sidebar-dot"></div>
-        📖 Guía metodológica
+        <span aria-hidden="true">📖</span> Guía metodológica
       </div>
-      <div class="sidebar-nav-item" onclick="showManual()" id="nav-manual" style="margin-top:2px">
+      <div class="sidebar-nav-item" onclick="showManual()" id="nav-manual" style="margin-top:2px" role="button" tabindex="0" onkeydown="if(event.key==='Enter')showManual()">
         <div class="sidebar-dot"></div>
-        📘 Manual de usuario
+        <span aria-hidden="true">📘</span> Manual de usuario
       </div>
-      <div class="sidebar-nav-item" onclick="showRoleCompetencies()" id="nav-role-comp" style="margin-top:2px">
+      <div class="sidebar-nav-item" onclick="showRoleCompetencies()" id="nav-role-comp" style="margin-top:2px" role="button" tabindex="0" onkeydown="if(event.key==='Enter')showRoleCompetencies()">
         <div class="sidebar-dot"></div>
-        🎯 Competencias por Rol
+        <span aria-hidden="true">🎯</span> Competencias por Rol
       </div>
-      <div class="sidebar-nav-item" onclick="showEquipo()" id="nav-equipo" style="margin-top:2px">
+      <div class="sidebar-nav-item" onclick="showEquipo()" id="nav-equipo" style="margin-top:2px" role="button" tabindex="0" onkeydown="if(event.key==='Enter')showEquipo()">
         <div class="sidebar-dot"></div>
-        👥 Equipo
+        <span aria-hidden="true">👥</span> Equipo
       </div>
     </div>
-  </div>
+  </nav>
 
   <!-- MAIN -->
-  <div class="main" id="mainContent">
+  <main class="main" id="mainContent" role="main">
     <div class="empty-state" id="emptyState" style="display:none">
       <div class="icon">◎</div>
       <h3>Sin perfiles aún</h3>
@@ -1078,7 +1080,7 @@
       </div>
     </div><!-- end equipoView -->
 
-  </div><!-- end main -->
+  </main><!-- end main -->
 </div>
 
 <!-- MODAL ADD PERSON -->
