@@ -1,11 +1,18 @@
 # Talent Profile — Tech Steering
 
 ## Stack
-- **Frontend:** un único archivo HTML (`talent_profile_app.html`). Sin build, sin framework. CSS y JS inline.
+- **Frontend:** `index.html` (markup) + `css/styles.css` + `js/app.js`. Sin build, sin framework.
 - **Backend:** Supabase (PostgreSQL + Auth + REST API)
-- **Hosting:** GitHub Pages (deploy = push del HTML)
+- **Hosting:** GitHub Pages (deploy = push)
 - Supabase JS via CDN: `@supabase/supabase-js@2`
 - Fuentes: DM Sans + DM Mono (Google Fonts)
+
+## Estructura de archivos
+```
+index.html       ← solo HTML markup (~1300 líneas)
+css/styles.css   ← todos los estilos (~500 líneas)
+js/app.js        ← toda la lógica JS (~3950 líneas)
+```
 
 ## Supabase
 - URL: `https://pkuxwosgnhdlifmrumuu.supabase.co`
@@ -24,7 +31,7 @@
 - 12 roles de seniority en optgroups (Track Técnico, Analítico, Gestión, Transversal)
 
 ## Reglas de implementación (aprendizajes)
-- **Validar JS con `node --check` después de cada cambio.** No entregar sin esto.
+- **Validar JS con `node --check js/app.js` después de cada cambio.** No entregar sin esto.
 - **Ownership = triple match:** email crudo + email humanizado + nombre completo (evita bugs de `_createdByName` cuando `getCurrentUserName()` humaniza direcciones).
 - **Usar maps estáticos, no lecturas del DOM** para iconos de pestaña (`tab.textContent` se contamina tras innerHTML).
 - Migración de benchmarks: detecta claves de formato viejo y resetea a defaults por rol.
