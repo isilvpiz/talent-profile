@@ -3066,7 +3066,7 @@ async function deleteEquipoFromSupabase(nroEmpleado) {
 let equipoData = [];
 let equipoEditIdx = null; // null = add, number = edit index
 
-function showEquipo() {
+async function showEquipo() {
   currentId = null;
   activeView = 'equipo';
   hideAllViews();
@@ -3074,6 +3074,10 @@ function showEquipo() {
   deactivateAllNav();
   document.getElementById('nav-equipo')?.classList.add('active');
   renderSidebar();
+  // Reload equipo from Supabase if empty or stale
+  if(!equipoData.length && supabaseClient && currentUser) {
+    equipoData = await loadEquipoData();
+  }
   renderEquipoTable();
 }
 
