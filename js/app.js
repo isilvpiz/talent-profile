@@ -1973,7 +1973,7 @@ function suggestIDPFromGaps() {
 
 function openBenchmarkModal() {
   renderBenchmarkEditor();
-  document.getElementById('benchmarkModal').classList.add('open');
+  openModal('benchmarkModal');
 }
 
 function renderBenchmarkEditor() {
@@ -2017,7 +2017,7 @@ function applyBenchmarks() {
     benchmarks[prefix][level][idx] = Math.min(5, Math.max(0, val));
   });
   saveBenchmarks();
-  document.getElementById('benchmarkModal').classList.remove('open');
+  closeModal('benchmarkModal');
   // Refresh current profile table if open
   if(currentId && activeView === 'profile') {
     const p = profiles[currentId];
@@ -2053,7 +2053,7 @@ function openDimEditor(target) {
   document.getElementById('dimModalTitle').textContent = '✏ ' + cfg.title;
   document.getElementById('dimModalDesc').textContent = cfg.desc;
   renderDimEditorList();
-  document.getElementById('dimModal').classList.add('open');
+  openModal('dimModal');
 }
 
 function renderDimEditorList() {
@@ -2177,7 +2177,7 @@ async function applyDimEdits() {
     rebuildBenchmarksForDim(dimEditTarget, arr.length);
   }
   await saveDimensions();
-  document.getElementById('dimModal').classList.remove('open');
+  closeModal('dimModal');
   // Refresh current profile view
   if(currentId && activeView === 'profile') {
     const p = profiles[currentId];
@@ -2553,7 +2553,7 @@ function renderOverview() {
             style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--gray-100);border:1px solid var(--gray-300);cursor:pointer;color:var(--navy);font-weight:600;white-space:nowrap">📋 Ver</button>` : ''}
         </div>
       </td>
-      <td style="font-size:11px;color:var(--gray-500)">${p._updatedByName||p._createdByName||'—'}</td>`;
+      <td style="font-size:11px;color:var(--gray-500)">${esc(p._updatedByName||p._createdByName||'—')}</td>`;
     tbody.appendChild(tr);
   });
 }
@@ -2562,7 +2562,6 @@ function renderOverview() {
 // ADD / DELETE MODAL
 // ═══════════════════════════════════════════════════════════════
 function openAddModal() {
-  document.getElementById('addModal').classList.add('open');
   document.getElementById('modal-nombre').value = '';
   document.getElementById('modal-seniority').value = '';
   selectedColor = '#2563eb';
@@ -2580,9 +2579,10 @@ function openAddModal() {
   if(eList) eList.innerHTML = '<div style="padding:8px 12px;font-size:12px;color:var(--gray-400)">Escribe para buscar…</div>';
   const eBadge = document.getElementById('modal-equipo-selected');
   if(eBadge) eBadge.style.display = 'none';
+  openModal('addModal');
   document.getElementById('modal-nombre').focus();
 }
-function closeAddModal() { document.getElementById('addModal').classList.remove('open'); }
+function closeAddModal() { closeModal('addModal'); }
 function selectColor(el) {
   selectedColor = el.dataset.color;
   document.querySelectorAll('.color-opt').forEach(c => {
@@ -2645,8 +2645,7 @@ function deleteCurrent() {
   const ids = Object.keys(profiles);
   if(ids.length) openProfile(ids[0]);
   else {
-    document.getElementById('profileView').style.display = 'none';
-    document.getElementById('overviewView').style.display = 'none';
+    hideAllViews();
     document.getElementById('emptyState').style.display = 'block';
   }
 }
@@ -2737,7 +2736,7 @@ function reopenProfile() {
     return;
   }
   document.getElementById('reopen-justif').value = '';
-  document.getElementById('reopenModal').classList.add('open');
+  openModal('reopenModal');
 }
 
 function confirmReopenProfile() {
@@ -2764,7 +2763,7 @@ function confirmReopenProfile() {
   p._reopenJustif = justif;
   p._reopenBy = uname;
   p._reopenAt = new Date().toISOString();
-  document.getElementById('reopenModal').classList.remove('open');
+  closeModal('reopenModal');
   autoSave();
   pushToSupabase(currentId, p);
   loadProfileToUI();
@@ -2780,7 +2779,7 @@ function confirmReopenProfile() {
 // ═══════════════════════════════════════════════════════════════
 function newCycleProfile() {
   document.getElementById('newcycle-justif').value = '';
-  document.getElementById('newCycleModal').classList.add('open');
+  openModal('newCycleModal');
 }
 
 function confirmNewCycle() {
@@ -2848,7 +2847,7 @@ function confirmNewCycle() {
   oldP._cycleJustif = justif;
   oldP._updatedAt = new Date().toISOString();
 
-  document.getElementById('newCycleModal').classList.remove('open');
+  closeModal('newCycleModal');
   autoSave();
   pushToSupabase(currentId, oldP);
   loadProfileToUI();
@@ -3126,7 +3125,7 @@ function openEquipoAddModal() {
     if(el) el.value = '';
   });
   document.getElementById('eq-jobRol').value = '';
-  document.getElementById('equipoModal').classList.add('open');
+  openModal('equipoModal');
 }
 
 function editEquipoMember(idx) {
@@ -3138,7 +3137,7 @@ function editEquipoMember(idx) {
   document.getElementById('eq-ingreso').value = m.ingreso || '';
   document.getElementById('eq-antiguedad').value = m.antiguedad || '';
   document.getElementById('eq-jobRol').value = m.jobRol || '';
-  document.getElementById('equipoModal').classList.add('open');
+  openModal('equipoModal');
 }
 
 function deleteEquipoMember(idx) {
@@ -3149,7 +3148,7 @@ function deleteEquipoMember(idx) {
 }
 
 function closeEquipoModal() {
-  document.getElementById('equipoModal').classList.remove('open');
+  closeModal('equipoModal');
   equipoEditIdx = null;
 }
 
@@ -3384,7 +3383,7 @@ function openHistoryModal(profileId) {
   });
 
   body.innerHTML = html || '<div style="text-align:center;padding:2rem;color:var(--gray-400)">Sin historial de ciclos previos</div>';
-  document.getElementById('historyModal').classList.add('open');
+  openModal('historyModal');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -3400,11 +3399,11 @@ function saveAndContinue() {
   // Show/hide "Cerrar ahora" button
   const closeNowBtn = document.getElementById('saveModalCloseBtn');
   if(closeNowBtn) closeNowBtn.style.display = canClose ? '' : 'none';
-  document.getElementById('saveModal').classList.add('open');
+  openModal('saveModal');
 }
 
 function closeSaveModalAndClose() {
-  document.getElementById('saveModal').classList.remove('open');
+  closeModal('saveModal');
   closeProfile();
 }
 
@@ -3437,7 +3436,7 @@ function closeProfile() {
   if(confirmBtn) {
     confirmBtn.style.display = canClose ? '' : 'none';
   }
-  document.getElementById('closeProfileModal').classList.add('open');
+  openModal('closeProfileModal');
 }
 
 function confirmCloseProfile() {
@@ -3450,7 +3449,7 @@ function confirmCloseProfile() {
   autoSave();
   clearTimeout(autoSaveTimer);
   pushToSupabase(currentId, profiles[currentId]);
-  document.getElementById('closeProfileModal').classList.remove('open');
+  closeModal('closeProfileModal');
   const name = profiles[currentId].nombre || 'el perfil';
   currentId = null;
   showOverview('mine');
@@ -3955,7 +3954,7 @@ function showSectionAlert(alertId, missingArr) {
   const wasOpen = !!document.getElementById(uid) &&
                   document.getElementById(uid).style.display !== 'none';
   const items = missingArr.map(m =>
-    `<span style="display:inline-block;background:rgba(220,38,38,0.08);border-radius:4px;padding:1px 7px;margin:2px 3px 2px 0;white-space:nowrap">⚠ ${m}</span>`
+    `<span style="display:inline-block;background:rgba(220,38,38,0.08);border-radius:4px;padding:1px 7px;margin:2px 3px 2px 0;white-space:nowrap">⚠ ${esc(m)}</span>`
   ).join('');
   el.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none"
