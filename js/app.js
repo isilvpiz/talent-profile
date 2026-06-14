@@ -27,6 +27,66 @@ function scheduleUIUpdate() {
   }, 300);
 }
 
+/** Focus trap for modals — traps Tab/Shift+Tab within modal */
+function trapFocus(modalEl) {
+  const focusable = modalEl.querySelectorAll('input:not([disabled]),select:not([disabled]),textarea:not([disabled]),button:not([disabled]),[tabindex]:not([tabindex="-1"])');
+  if(!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  first.focus();
+  modalEl._focusTrapHandler = (e) => {
+    if(e.key !== 'Tab') return;
+    if(e.shiftKey) {
+      if(document.activeElement === first) { e.preventDefault(); last.focus(); }
+    } else {
+      if(document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  };
+  modalEl.addEventListener('keydown', modalEl._focusTrapHandler);
+}
+
+function releaseFocus(modalEl) {
+  if(modalEl._focusTrapHandler) {
+    modalEl.removeEventListener('keydown', modalEl._focusTrapHandler);
+    delete modalEl._focusTrapHandler;
+  }
+}
+
+/** Open a modal overlay with accessibility support */
+function openModal(overlayId) {
+  const overlay = document.getElementById(overlayId);
+  if(!overlay) return;
+  overlay.classList.add('open');
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  const modal = overlay.querySelector('.modal,.save-modal,.history-modal');
+  if(modal) trapFocus(modal);
+}
+
+/** Close a modal overlay */
+function closeModal(overlayId) {
+  const overlay = document.getElementById(overlayId);
+  if(!overlay) return;
+  overlay.classList.remove('open');
+  const modal = overlay.querySelector('.modal,.save-modal,.history-modal');
+  if(modal) releaseFocus(modal);
+}
+
+/** Hide all views — DRY helper for show*() functions */
+function hideAllViews() {
+  ['emptyState','profileView','overviewView','methodologyView','roleCompView','homeView','manualView','equipoView'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = 'none';
+  });
+}
+
+/** Deactivate all nav items */
+function deactivateAllNav() {
+  ['nav-overview-mine','nav-overview-all','nav-methodology','nav-role-comp','nav-home','nav-manual','nav-equipo'].forEach(id => {
+    document.getElementById(id)?.classList.remove('active');
+  });
+}
+
 function initSupabase() {
   supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 }
@@ -129,6 +189,7 @@ async function doLogin() {
 async function doLogout() {
   if(!supabaseClient) return;
   if(!confirm('¿Cerrar sesión?')) return;
+  stopSyncInterval();
   await supabaseClient.auth.signOut();
   currentUser = null;
   document.getElementById('userChip').style.display = 'none';
@@ -207,7 +268,7 @@ async function pushToSupabase(id, data, retryCount = 0) {
   setSyncStatus('syncing', 'Guardando...');
   const payload = {
     id,
-    data,
+    data: retryCount === 0 ? data : (profiles[id] || data), // Always use latest state on retry
     updated_at: new Date().toISOString(),
     updated_by: currentUser.email,
     updated_by_name: currentUser.user_metadata?.full_name || currentUser.email,
@@ -1003,16 +1064,17 @@ function renderSidebar() {
 // OPEN PROFILE
 // ═══════════════════════════════════════════════════════════════
 function openProfile(id) {
+  // Flush pending save for previous profile before switching
+  if(autoSaveTimer && currentId && currentId !== id) {
+    clearTimeout(autoSaveTimer);
+    pushToSupabase(currentId, profiles[currentId]);
+    autoSaveTimer = null;
+  }
   currentId = id;
   activeView = 'profile';
-  ['emptyState','overviewView','methodologyView','roleCompView','homeView','manualView'].forEach(vid => {
-    const el = document.getElementById(vid);
-    if(el) el.style.display = 'none';
-  });
+  hideAllViews();
   document.getElementById('profileView').style.display = 'block';
-  ['nav-overview-mine','nav-overview-all','nav-methodology','nav-role-comp','nav-home'].forEach(id => {
-    document.getElementById(id)?.classList.remove('active');
-  });
+  deactivateAllNav();
   renderSidebar();
   loadProfileToUI();
   switchTab('general', document.querySelector('.section-tab'));
@@ -1519,16 +1581,16 @@ function renderIDPTable() {
     const tr = document.createElement('tr');
     tr.className = 'idp-row';
     tr.innerHTML = `
-      <td><textarea class="evidence-input" rows="2" onchange="updateIDP(${i},'objetivo',this.value)">${row.objetivo||''}</textarea></td>
+      <td><textarea class="evidence-input" rows="2" onchange="updateIDP(${i},'objetivo',this.value)">${esc(row.objetivo||'')}</textarea></td>
       <td>
         <select class="risk-select" style="font-size:11px" onchange="updateIDP(${i},'tipo',this.value)">
           <option value="">—</option>
           ${['Técnico','Liderazgo','Negocio','Soft Skill','Certificación'].map(t=>`<option ${row.tipo===t?'selected':''}>${t}</option>`).join('')}
         </select>
       </td>
-      <td><textarea class="evidence-input" rows="2" onchange="updateIDP(${i},'accion',this.value)">${row.accion||''}</textarea></td>
-      <td><textarea class="evidence-input" rows="2" onchange="updateIDP(${i},'recurso',this.value)">${row.recurso||''}</textarea></td>
-      <td><input type="text" class="evidence-input" value="${row.plazo||''}" placeholder="ej: Q3" onchange="updateIDP(${i},'plazo',this.value)" style="width:72px"></td>
+      <td><textarea class="evidence-input" rows="2" onchange="updateIDP(${i},'accion',this.value)">${esc(row.accion||'')}</textarea></td>
+      <td><textarea class="evidence-input" rows="2" onchange="updateIDP(${i},'recurso',this.value)">${esc(row.recurso||'')}</textarea></td>
+      <td><input type="text" class="evidence-input" value="${esc(row.plazo||'')}" placeholder="ej: Q3" onchange="updateIDP(${i},'plazo',this.value)" style="width:72px"></td>
       <td>
         <select class="risk-select" style="font-size:11px" onchange="updateIDP(${i},'estado',this.value)">
           <option value="">—</option>
@@ -2007,7 +2069,7 @@ function renderDimEditorList() {
     row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px';
     row.innerHTML = `
       <span style="font-size:11px;color:var(--gray-400);font-family:DM Mono,monospace;width:20px;flex-shrink:0">${i+1}</span>
-      <input type="text" value="${dim}" data-idx="${i}"
+      <input type="text" value="${esc(dim)}" data-idx="${i}"
         style="flex:1;border:1px solid var(--gray-200);border-radius:6px;padding:7px 10px;font-size:13px"
         oninput="updateDimTemp(${i}, this.value)">
       <button onclick="removeDimRow(${i})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:16px;padding:0 4px" title="Eliminar">×</button>`;
@@ -2021,7 +2083,7 @@ function renderSkillGroupEditor(list) {
     groupDiv.style.cssText = 'margin-bottom:16px;border:1px solid var(--gray-200);border-radius:8px;overflow:hidden';
     groupDiv.innerHTML = `
       <div style="background:var(--gray-50);padding:8px 12px;display:flex;align-items:center;gap:8px">
-        <input type="text" value="${group}" data-group="${gi}"
+        <input type="text" value="${esc(group)}" data-group="${gi}"
           style="flex:1;border:1px solid var(--gray-200);border-radius:4px;padding:4px 8px;font-size:12px;font-weight:600"
           oninput="updateGroupName(${gi}, this.value)">
         <button onclick="removeGroup(${gi})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px" title="Eliminar grupo">×</button>
@@ -2029,7 +2091,7 @@ function renderSkillGroupEditor(list) {
       <div style="padding:8px 12px" id="skill-group-${gi}">
         ${skills.map((s, si) => `
           <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
-            <input type="text" value="${s}" data-group="${gi}" data-skill="${si}"
+            <input type="text" value="${esc(s)}" data-group="${gi}" data-skill="${si}"
               style="flex:1;border:1px solid var(--gray-200);border-radius:4px;padding:4px 8px;font-size:12px"
               oninput="updateSkillName(${gi}, ${si}, this.value)">
             <button onclick="removeSkill(${gi},${si})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:13px">×</button>
@@ -2143,15 +2205,10 @@ function rebuildBenchmarksForDim(prefix, newLen) {
 function showMethodology() {
   currentId = null;
   activeView = 'methodology';
-  ['emptyState','profileView','overviewView','roleCompView','homeView','manualView','equipoView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  hideAllViews();
   document.getElementById('methodologyView').style.display = 'block';
-  document.getElementById('nav-overview-mine').classList.remove('active');
-  document.getElementById('nav-overview-all').classList.remove('active');
+  deactivateAllNav();
   document.getElementById('nav-methodology').classList.add('active');
-  document.getElementById('nav-role-comp').classList.remove('active');
-  document.getElementById('nav-manual')?.classList.remove('active');
-  document.getElementById('nav-equipo')?.classList.remove('active');
-  document.getElementById('nav-home')?.classList.remove('active');
   renderSidebar();
   renderMethodologyBenchmarkTable();
 }
@@ -2168,15 +2225,10 @@ const RC_PILLAR_CONFIG = {
 function showRoleCompetencies() {
   currentId = null;
   activeView = 'rolecomp';
-  ['emptyState','profileView','overviewView','methodologyView','homeView','equipoView','manualView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  hideAllViews();
   document.getElementById('roleCompView').style.display = 'block';
-  document.getElementById('nav-overview-mine').classList.remove('active');
-  document.getElementById('nav-overview-all').classList.remove('active');
-  document.getElementById('nav-methodology').classList.remove('active');
+  deactivateAllNav();
   document.getElementById('nav-role-comp').classList.add('active');
-  document.getElementById('nav-manual')?.classList.remove('active');
-  document.getElementById('nav-equipo')?.classList.remove('active');
-  document.getElementById('nav-home')?.classList.remove('active');
   renderSidebar();
   renderRCView();
 }
@@ -2365,13 +2417,9 @@ function showOverview(filter) {
   overviewFilter = filter || 'all';
   currentId = null;
   activeView = 'overview';
-  ['emptyState','profileView','methodologyView','roleCompView','homeView','manualView','equipoView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  hideAllViews();
   document.getElementById('overviewView').style.display = 'block';
-  document.getElementById('nav-methodology').classList.remove('active');
-  document.getElementById('nav-role-comp').classList.remove('active');
-  document.getElementById('nav-home')?.classList.remove('active');
-  document.getElementById('nav-manual')?.classList.remove('active');
-  document.getElementById('nav-equipo')?.classList.remove('active');
+  deactivateAllNav();
   // Update nav active state
   document.getElementById('nav-overview-mine').classList.toggle('active', overviewFilter==='mine');
   document.getElementById('nav-overview-all').classList.toggle('active', overviewFilter==='all');
@@ -2608,10 +2656,12 @@ function deleteCurrent() {
 // ═══════════════════════════════════════════════════════════════
 function exportJSON() {
   const blob = new Blob([JSON.stringify(profiles, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
+  a.href = url;
   a.download = 'talent_profiles_' + new Date().toISOString().slice(0,10) + '.json';
   a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2620,14 +2670,10 @@ function exportJSON() {
 function showHome() {
   currentId = null;
   activeView = 'home';
-  ['emptyState','profileView','overviewView','methodologyView','roleCompView','equipoView'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.style.display = 'none';
-  });
+  hideAllViews();
   document.getElementById('homeView').style.display = 'block';
-  ['nav-overview-mine','nav-overview-all','nav-methodology','nav-role-comp','nav-manual','nav-equipo'].forEach(id => {
-    document.getElementById(id)?.classList.remove('active');
-  });
+  deactivateAllNav();
+  document.getElementById('nav-home')?.classList.add('active');
   renderSidebar();
   renderHomeView();
 }
@@ -2821,13 +2867,9 @@ function confirmNewCycle() {
 function showManual() {
   currentId = null;
   activeView = 'manual';
-  ['emptyState','profileView','overviewView','methodologyView','roleCompView','homeView','manualView','equipoView'].forEach(id => {
-    const el = document.getElementById(id); if(el) el.style.display = 'none';
-  });
+  hideAllViews();
   document.getElementById('manualView').style.display = 'block';
-  ['nav-overview-mine','nav-overview-all','nav-methodology','nav-role-comp','nav-home'].forEach(id => {
-    document.getElementById(id)?.classList.remove('active');
-  });
+  deactivateAllNav();
   document.getElementById('nav-manual')?.classList.add('active');
   renderSidebar();
 
@@ -2981,9 +3023,9 @@ let equipoEditIdx = null; // null = add, number = edit index
 function showEquipo() {
   currentId = null;
   activeView = 'equipo';
-  ['emptyState','profileView','overviewView','methodologyView','roleCompView','homeView','manualView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  hideAllViews();
   document.getElementById('equipoView').style.display = 'block';
-  ['nav-overview-mine','nav-overview-all','nav-methodology','nav-role-comp','nav-home','nav-manual'].forEach(id=>{document.getElementById(id)?.classList.remove('active');});
+  deactivateAllNav();
   document.getElementById('nav-equipo')?.classList.add('active');
   renderSidebar();
   renderEquipoTable();
@@ -3185,9 +3227,6 @@ function clearModalEquipoSelection() {
   document.getElementById('modal-seniority').value = '';
 }
 
-// ─── Override openAddModal to reset equipo selection ───
-const _origOpenAddModal = typeof openAddModal === 'function' ? openAddModal : null;
-
 // ─── Auto-fill General after profile creation from equipo ───
 function autoFillGeneralFromEquipo(profileId) {
   if(!selectedEquipoMember) return;
@@ -3328,19 +3367,19 @@ function openHistoryModal(profileId) {
       <div class="cc-header">
         <div>
           <span class="cc-title">Ciclo ${c.cycle}${c.isCurrent?` <span style='font-size:10px;padding:1px 6px;background:var(--teal);color:white;border-radius:4px;font-weight:600'>actual</span>`:''}</span>
-          ${c.justif?`<div style="font-size:11px;color:var(--gray-500);margin-top:2px">📝 ${c.justif}</div>`:''}
+          ${c.justif?`<div style="font-size:11px;color:var(--gray-500);margin-top:2px">📝 ${esc(c.justif)}</div>`:''}
         </div>
         <span class="cc-date">${dateStr}</span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px">
         <div><div style="font-size:10px;color:var(--gray-400);margin-bottom:3px">Performance</div>${miniBar(c.perf,'var(--blue)')}</div>
         <div><div style="font-size:10px;color:var(--gray-400);margin-bottom:3px">Potencial</div>${miniBar(c.pot,'var(--purple)')}</div>
-        <div><div style="font-size:10px;color:var(--gray-400);margin-bottom:3px">Madurez</div><span style="font-size:12px;font-weight:600">${c.madurez}</span></div>
-        <div><div style="font-size:10px;color:var(--gray-400);margin-bottom:3px">Risk</div><span style="font-size:11px;font-weight:600;color:${riskCol}">${c.risk||'—'}</span></div>
+        <div><div style="font-size:10px;color:var(--gray-400);margin-bottom:3px">Madurez</div><span style="font-size:12px;font-weight:600">${esc(c.madurez)}</span></div>
+        <div><div style="font-size:10px;color:var(--gray-400);margin-bottom:3px">Risk</div><span style="font-size:11px;font-weight:600;color:${riskCol}">${esc(c.risk)||'—'}</span></div>
       </div>
-      ${c.decision?`<div style="font-size:11px;background:var(--gray-50);border-radius:6px;padding:6px 10px;margin-bottom:6px"><strong>Decisión:</strong> ${c.decision}</div>`:''}
-      ${c.fortalezas?`<div style="font-size:11px;color:var(--gray-700);margin-bottom:4px"><strong style="color:var(--green)">✓ Fortalezas:</strong> ${c.fortalezas.replace(/\n/g,' · ')}</div>`:''}
-      ${c.mejoras?`<div style="font-size:11px;color:var(--gray-700)"><strong style="color:var(--amber)">⚡ Mejoras:</strong> ${c.mejoras.replace(/\n/g,' · ')}</div>`:''}
+      ${c.decision?`<div style="font-size:11px;background:var(--gray-50);border-radius:6px;padding:6px 10px;margin-bottom:6px"><strong>Decisión:</strong> ${esc(c.decision)}</div>`:''}
+      ${c.fortalezas?`<div style="font-size:11px;color:var(--gray-700);margin-bottom:4px"><strong style="color:var(--green)">✓ Fortalezas:</strong> ${esc(c.fortalezas).replace(/\n/g,' · ')}</div>`:''}
+      ${c.mejoras?`<div style="font-size:11px;color:var(--gray-700)"><strong style="color:var(--amber)">⚡ Mejoras:</strong> ${esc(c.mejoras).replace(/\n/g,' · ')}</div>`:''}
     </div>`;
   });
 
@@ -3929,10 +3968,18 @@ function showSectionAlert(alertId, missingArr) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// KEYBOARD SHORTCUT
+// KEYBOARD SHORTCUTS
 // ═══════════════════════════════════════════════════════════════
 document.addEventListener('keydown', e => {
   if((e.ctrlKey||e.metaKey) && e.key === 's') { e.preventDefault(); saveAll(); }
+  // Escape closes any open modal
+  if(e.key === 'Escape') {
+    const modals = ['historyModal','newCycleModal','reopenModal','closeProfileModal','saveModal','benchmarkModal','dimModal','addModal','equipoModal'];
+    for(const id of modals) {
+      const el = document.getElementById(id);
+      if(el && el.classList.contains('open')) { closeModal(id); break; }
+    }
+  }
 });
 
 // ═══════════════════════════════════════════════════════════════

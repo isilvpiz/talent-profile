@@ -256,21 +256,21 @@
         </div>
       </div>
       <!-- SECTION TABS -->
-      <div class="section-tabs" style="flex-wrap:nowrap;overflow-x:auto;gap:0;padding-bottom:2px;margin-bottom:1.25rem">
+      <div class="section-tabs" role="tablist" aria-label="Secciones del perfil" style="flex-wrap:nowrap;overflow-x:auto;gap:0;padding-bottom:2px;margin-bottom:1.25rem">
         <span style="font-size:9px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.06em;padding:0 6px 0 2px;white-space:nowrap;align-self:center">① Diagnóstico</span>
-        <div class="section-tab active" onclick="switchTab('general',this)" data-section="general" style="white-space:nowrap">General</div>
-        <div class="section-tab" onclick="switchTab('performance',this)" data-section="performance" style="white-space:nowrap">Performance</div>
-        <div class="section-tab" onclick="switchTab('potencial',this)" data-section="potencial" style="white-space:nowrap">Potencial</div>
-        <div class="section-tab" onclick="switchTab('ninebox',this)" data-section="ninebox" style="white-space:nowrap">9-Box</div>
+        <div class="section-tab active" role="tab" tabindex="0" onclick="switchTab('general',this)" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('general',this)" data-section="general" style="white-space:nowrap">General</div>
+        <div class="section-tab" role="tab" tabindex="0" onclick="switchTab('performance',this)" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('performance',this)" data-section="performance" style="white-space:nowrap">Performance</div>
+        <div class="section-tab" role="tab" tabindex="0" onclick="switchTab('potencial',this)" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('potencial',this)" data-section="potencial" style="white-space:nowrap">Potencial</div>
+        <div class="section-tab" role="tab" tabindex="0" onclick="switchTab('ninebox',this)" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('ninebox',this)" data-section="ninebox" style="white-space:nowrap">9-Box</div>
         <div style="width:1px;height:24px;background:var(--gray-200);margin:0 4px;flex-shrink:0;align-self:center"></div>
         <span style="font-size:9px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.06em;padding:0 6px 0 2px;white-space:nowrap;align-self:center">② Evaluación</span>
-        <div class="section-tab" onclick="switchTab('skills',this)" data-section="skills" style="white-space:nowrap">Mad. Técnica</div>
-        <div class="section-tab" onclick="switchTab('madurez',this)" data-section="madurez" style="white-space:nowrap">Mad. Profesional</div>
+        <div class="section-tab" role="tab" tabindex="0" onclick="switchTab('skills',this)" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('skills',this)" data-section="skills" style="white-space:nowrap">Mad. Técnica</div>
+        <div class="section-tab" role="tab" tabindex="0" onclick="switchTab('madurez',this)" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('madurez',this)" data-section="madurez" style="white-space:nowrap">Mad. Profesional</div>
         <div style="width:1px;height:24px;background:var(--gray-200);margin:0 4px;flex-shrink:0;align-self:center"></div>
         <span style="font-size:9px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.06em;padding:0 6px 0 2px;white-space:nowrap;align-self:center">③ Decisión</span>
-        <div class="section-tab" onclick="switchTab('risk',this)" data-section="risk" style="white-space:nowrap">Flight risk</div>
-        <div class="section-tab" onclick="switchTab('idp',this)" data-section="idp" style="white-space:nowrap">IDP</div>
-        <div class="section-tab" onclick="switchTab('resumen',this)" data-section="resumen" style="white-space:nowrap">Resumen</div>
+        <div class="section-tab" role="tab" tabindex="0" onclick="switchTab('risk',this)" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('risk',this)" data-section="risk" style="white-space:nowrap">Flight risk</div>
+        <div class="section-tab" role="tab" tabindex="0" onclick="switchTab('idp',this)" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('idp',this)" data-section="idp" style="white-space:nowrap">IDP</div>
+        <div class="section-tab" role="tab" tabindex="0" onclick="switchTab('resumen',this)" onkeydown="if(event.key==='Enter'||event.key===' ')switchTab('resumen',this)" data-section="resumen" style="white-space:nowrap">Resumen</div>
       </div>
 
       <!-- ═══ SECCIÓN GENERAL ═══ -->
@@ -1084,7 +1084,7 @@
 </div>
 
 <!-- MODAL ADD PERSON -->
-<div class="modal-overlay" id="addModal">
+<div class="modal-overlay" id="addModal" role="dialog" aria-modal="true">
   <div class="modal" style="width:500px">
     <h3>Nuevo perfil</h3>
     <!-- Equipo selector -->
@@ -1150,7 +1150,7 @@
 </div>
 
 <!-- EQUIPO ADD/EDIT MODAL -->
-<div class="modal-overlay" id="equipoModal">
+<div class="modal-overlay" id="equipoModal" role="dialog" aria-modal="true">
   <div class="modal" style="width:460px">
     <h3 id="equipoModalTitle">Agregar integrante</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
@@ -1191,7 +1191,7 @@
 </div>
 
 <!-- DIMENSION EDITOR MODAL -->
-<div class="modal-overlay" id="dimModal">
+<div class="modal-overlay" id="dimModal" role="dialog" aria-modal="true">
   <div class="modal" style="width:600px;max-height:85vh;overflow-y:auto">
     <h3 id="dimModalTitle">✏ Editar dimensiones</h3>
     <p style="font-size:12px;color:var(--gray-400);margin-bottom:16px" id="dimModalDesc">Solo visible para administradores.</p>
@@ -1205,7 +1205,7 @@
 </div>
 
 <!-- BENCHMARK EDITOR MODAL -->
-<div class="modal-overlay" id="benchmarkModal">
+<div class="modal-overlay" id="benchmarkModal" role="dialog" aria-modal="true">
   <div class="modal" style="width:720px;max-height:85vh;overflow-y:auto">
     <h3>⚖ Benchmarks por Job Rol</h3>
     <p style="font-size:12px;color:var(--gray-400);margin-bottom:16px">Define el score esperado (1–5) por dimensión y nivel. Estos valores se usan para calcular el gap en Performance y Potencial.</p>
@@ -1221,7 +1221,7 @@
 <div class="save-indicator" id="saveIndicator">Guardado ✓</div>
 
 <!-- SAVE & CONTINUE MODAL -->
-<div class="save-modal-overlay" id="saveModal">
+<div class="save-modal-overlay" id="saveModal" role="dialog" aria-modal="true">
   <div class="save-modal">
     <h3>💾 Perfil guardado</h3>
     <p>Los datos han sido guardados correctamente. Puedes continuar completando el perfil cuando quieras.<br><br>
@@ -1235,7 +1235,7 @@
 </div>
 
 <!-- CLOSE PROFILE MODAL -->
-<div class="save-modal-overlay" id="closeProfileModal">
+<div class="save-modal-overlay" id="closeProfileModal" role="dialog" aria-modal="true">
   <div class="save-modal">
     <h3>✓ Cerrar perfil</h3>
     <p>Al cerrar el perfil, quedará disponible en la <strong>vista Todos</strong> del equipo. Solo perfiles cerrados y 100% completos aparecen en esa vista.</p>
@@ -1248,7 +1248,7 @@
 </div>
 
 <!-- REOPEN PROFILE MODAL -->
-<div class="save-modal-overlay" id="reopenModal">
+<div class="save-modal-overlay" id="reopenModal" role="dialog" aria-modal="true">
   <div class="save-modal">
     <h3>↩ Reabrir perfil para edición</h3>
     <p>Al reabrir, el perfil dejará de aparecer en la vista consolidada hasta que lo vuelvas a cerrar. Queda registrado quién lo reabrió y el motivo.</p>
@@ -1264,7 +1264,7 @@
 </div>
 
 <!-- NEW CYCLE MODAL -->
-<div class="save-modal-overlay" id="newCycleModal">
+<div class="save-modal-overlay" id="newCycleModal" role="dialog" aria-modal="true">
   <div class="save-modal">
     <h3>🔄 Iniciar nuevo ciclo de evaluación</h3>
     <p>El ciclo actual quedará guardado como historial. Se creará una nueva evaluación para esta persona con los datos generales conservados y todos los scores en blanco.</p>
@@ -1284,7 +1284,7 @@
 </div>
 
 <!-- HISTORY MODAL -->
-<div class="history-modal-overlay" id="historyModal">
+<div class="history-modal-overlay" id="historyModal" role="dialog" aria-modal="true">
   <div class="history-modal">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">
       <div>
