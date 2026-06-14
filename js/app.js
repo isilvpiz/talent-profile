@@ -1745,10 +1745,13 @@ function closeProfileMenuOnOutside(e) {
 }
 
 function switchTab(name, el) {
-  document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.section-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
   document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
-  if(el) el.classList.add('active');
-  else document.querySelector(`.section-tab[data-section="${name}"]`)?.classList.add('active');
+  if(el) { el.classList.add('active'); el.setAttribute('aria-selected','true'); }
+  else {
+    const tab = document.querySelector(`.section-tab[data-section="${name}"]`);
+    if(tab) { tab.classList.add('active'); tab.setAttribute('aria-selected','true'); }
+  }
   document.getElementById('sec-'+name)?.classList.add('active');
   if(name === 'ninebox') updateNinebox();
   if(name === 'resumen') updateSummaryMetrics();
@@ -1909,8 +1912,8 @@ function updateResumenGapSummary() {
   el.innerHTML = gaps.slice(0,5).map(g =>
     `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
       <span style="font-size:10px;padding:2px 6px;background:${g.gap>=2?'var(--red-light)':'var(--amber-light)'};color:${g.gap>=2?'var(--red)':'var(--amber)'};border-radius:4px;font-weight:600">gap ${g.gap>0?'+':''}${g.gap}</span>
-      <span style="font-size:12px">${g.skill}</span>
-      <span style="font-size:10px;color:var(--gray-400)">${g.group}</span>
+      <span style="font-size:12px">${esc(g.skill)}</span>
+      <span style="font-size:10px;color:var(--gray-400)">${esc(g.group)}</span>
     </div>`
   ).join('');
 
@@ -3107,7 +3110,7 @@ function renderEquipoTable() {
       <td style="font-weight:500">${esc(m.nombre)}</td>
       <td><span style="font-size:11px;padding:2px 7px;border-radius:4px;background:var(--gray-100);color:var(--gray-700)">${esc(m.jobRol)||'—'}</span></td>
       <td style="font-size:12px;color:var(--gray-600)">${esc(m.ingreso)||'—'}</td>
-      <td style="font-size:12px;color:var(--gray-600)">${m.antiguedad||'—'}</td>
+      <td style="font-size:12px;color:var(--gray-600)">${esc(m.antiguedad)||'—'}</td>
       <td style="text-align:center">${profileBadge}</td>
       <td style="text-align:center">
         <button onclick="editEquipoMember(${idx})" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 5px;color:var(--blue)" title="Editar">✏️</button>

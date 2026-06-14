@@ -39,7 +39,7 @@
       <p style="font-size:12px;color:var(--gray-400);margin-bottom:16px">Por seguridad, elige una contraseña personal antes de continuar.</p>
       <div class="form-group" style="margin-bottom:12px">
         <label>Nueva contraseña</label>
-        <input type="password" id="firstlogin-pass" placeholder="mínimo 6 caracteres">
+        <input type="password" id="firstlogin-pass" placeholder="mínimo 8 caracteres (mayúscula + número)">
       </div>
       <div class="form-group" style="margin-bottom:16px">
         <label>Confirmar contraseña</label>
@@ -52,7 +52,7 @@
       <p style="font-size:13px;color:var(--gray-600);margin-bottom:16px">Elige tu nueva contraseña.</p>
       <div class="form-group" style="margin-bottom:12px">
         <label>Nueva contraseña</label>
-        <input type="password" id="reset-pass" placeholder="mínimo 6 caracteres">
+        <input type="password" id="reset-pass" placeholder="mínimo 8 caracteres (mayúscula + número)">
       </div>
       <div class="form-group" style="margin-bottom:16px">
         <label>Confirmar contraseña</label>
@@ -1198,7 +1198,7 @@
     <div id="dimEditorList" style="margin-bottom:16px"></div>
     <button class="btn btn-ghost btn-sm" style="width:100%;border:1px dashed var(--gray-300);color:var(--gray-500)" onclick="addDimRow()">+ Agregar dimensión</button>
     <div class="modal-actions" style="margin-top:16px">
-      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('dimModal').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="closeModal('dimModal')">Cancelar</button>
       <button class="btn btn-blue btn-sm" onclick="applyDimEdits()">Guardar cambios</button>
     </div>
   </div>
@@ -1212,7 +1212,7 @@
     <div id="benchmarkEditorContent"></div>
     <div class="modal-actions" style="margin-top:16px">
       <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="resetBenchmarks()">Restaurar defaults</button>
-      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('benchmarkModal').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="closeModal('benchmarkModal')">Cancelar</button>
       <button class="btn btn-blue btn-sm" onclick="applyBenchmarks()">Guardar benchmarks</button>
     </div>
   </div>
@@ -1228,7 +1228,7 @@
     <strong>Recuerda:</strong> El perfil aparecerá en la vista consolidada solo cuando lo cierres como completado.</p>
     <div style="background:var(--gray-50);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--gray-600);margin-bottom:16px" id="saveModalPct"></div>
     <div style="display:flex;justify-content:flex-end;gap:8px">
-      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('saveModal').classList.remove('open')">Continuar editando</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="closeModal('saveModal')">Continuar editando</button>
       <button class="btn btn-teal btn-sm" id="saveModalCloseBtn" onclick="closeSaveModalAndClose()">✓ Cerrar perfil ahora</button>
     </div>
   </div>
@@ -1241,7 +1241,7 @@
     <p>Al cerrar el perfil, quedará disponible en la <strong>vista Todos</strong> del equipo. Solo perfiles cerrados y 100% completos aparecen en esa vista.</p>
     <div id="closeProfileSummary" style="margin-bottom:16px;font-size:12px"></div>
     <div style="display:flex;justify-content:flex-end;gap:8px">
-      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('closeProfileModal').classList.remove('open')">Volver al perfil</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="closeModal('closeProfileModal')">Volver al perfil</button>
       <button class="btn btn-blue btn-sm" id="closeProfileConfirmBtn" onclick="confirmCloseProfile()">Confirmar y cerrar</button>
     </div>
   </div>
@@ -1257,7 +1257,7 @@
       <textarea id="reopen-justif" rows="3" placeholder="ej: Error en score de performance, corrección de datos generales…" style="margin-top:6px;width:100%;border:1px solid var(--gray-300);border-radius:7px;padding:8px 10px;font-size:13px;resize:vertical"></textarea>
     </div>
     <div style="display:flex;justify-content:flex-end;gap:8px">
-      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('reopenModal').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="closeModal('reopenModal')">Cancelar</button>
       <button class="btn btn-sm" style="background:var(--amber);color:white" onclick="confirmReopenProfile()">Confirmar reapertura</button>
     </div>
   </div>
@@ -1277,7 +1277,7 @@
       <textarea id="newcycle-justif" rows="2" placeholder="ej: Revisión trimestral Q3 — Septiembre 2025" style="margin-top:6px;width:100%;border:1px solid var(--gray-300);border-radius:7px;padding:8px 10px;font-size:13px;resize:vertical"></textarea>
     </div>
     <div style="display:flex;justify-content:flex-end;gap:8px">
-      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="document.getElementById('newCycleModal').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200)" onclick="closeModal('newCycleModal')">Cancelar</button>
       <button class="btn btn-teal btn-sm" onclick="confirmNewCycle()">Crear nuevo ciclo</button>
     </div>
   </div>
@@ -1291,7 +1291,7 @@
         <h3 id="historyModalTitle">Historial de evaluaciones</h3>
         <div class="hm-sub" id="historyModalSub">—</div>
       </div>
-      <button onclick="document.getElementById('historyModal').classList.remove('open')"
+      <button onclick="closeModal('historyModal')"
         style="background:var(--gray-100);border:1px solid var(--gray-200);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px;color:var(--gray-600)">✕ Cerrar</button>
     </div>
     <div id="historyModalBody"></div>
