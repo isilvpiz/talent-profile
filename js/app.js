@@ -1021,10 +1021,16 @@ function setProfileFilter(f) {
 }
 
 function getFilteredIds() {
-  const uname = currentUser?.user_metadata?.full_name || currentUser?.email;
+  const fullName = currentUser?.user_metadata?.full_name || '';
+  const email = currentUser?.email || '';
+  const emailName = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   return Object.keys(profiles).filter(id => {
     const p = profiles[id];
-    return p._createdByName === uname || p._updatedByName === uname;
+    const creator = p._createdByName || '';
+    const updater = p._updatedByName || '';
+    // Match against full_name, raw email, or humanized email
+    return creator === fullName || creator === email || creator === emailName
+        || updater === fullName || updater === email || updater === emailName;
   });
 }
 
