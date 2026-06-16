@@ -2699,8 +2699,8 @@ function renderHomeView() {
 
   const total      = myIds.length;
   const ready      = myIds.filter(id => calcCompleteness(profiles[id]) >= 100 && !profiles[id]._closed).length;
-  const risk       = myIds.filter(id => (profiles[id].risk?.global || '').includes('Alto')).length;
-  const inProgress = myIds.filter(id => { const pct = calcCompleteness(profiles[id]); return pct > 0 && pct < 100; }).length;
+  const risk       = myIds.filter(id => !profiles[id]._closed && (profiles[id].risk?.global || '').includes('Alto')).length;
+  const inProgress = myIds.filter(id => { const p = profiles[id]; if(p._closed) return false; const pct = calcCompleteness(p); return pct > 0 && pct < 100; }).length;
 
   document.getElementById('hs-total').textContent     = total;
   document.getElementById('hs-ready').textContent     = ready;
